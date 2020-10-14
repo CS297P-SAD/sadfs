@@ -18,12 +18,12 @@ file descriptors.
 * Client side -- library or service (daemon)?  
   We will need to keep track of open file descriptors at the client side.  
   How do we do this?  
-  **Service**
-  Pros
+  **Service**  
+  Pros  
     * Independent service can periodically inform the Master server that  
       the client is alive. Prevents a file from being lost to an unresponsive  
       client that has a locking handle.
     * Client application code will be simple without the need for boilerplate  
-      code.
-  Cons
+      code.  
+  Cons  
     * Increased complexity
