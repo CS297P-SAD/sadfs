@@ -24,6 +24,7 @@ file descriptors.
       the client is alive. Prevents a file from being lost to an unresponsive  
       client that has a locking handle.
     * Client application code will be simple without the need for boilerplate  
-      code.  
+      code.
+
   Cons  
     * Increased complexity
