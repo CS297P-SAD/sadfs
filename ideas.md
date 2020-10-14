@@ -1,13 +1,13 @@
 # Proposals
 ## API
-`sadfs::create` - creates a file
-`sadfs::unlink` - deletes a file
-`sadfs::mkdir`  - creates a directory
-`sadfs::rmdir`  - deletes a directory
-`sadfs::open`   - opens a file for reading or writing
-`sadfs::close`  - closes an opened file descriptor
-`sadfs::read`   - reads data from an opened file
-`sadfs::write`  - writes data to an opened file
+`sadfs::create` - creates a file  
+`sadfs::unlink` - deletes a file  
+`sadfs::mkdir`  - creates a directory  
+`sadfs::rmdir`  - deletes a directory  
+`sadfs::open`   - opens a file for reading or writing  
+`sadfs::close`  - closes an opened file descriptor  
+`sadfs::read`   - reads data from an opened file  
+`sadfs::write`  - writes data to an opened file  
 
 ## Specifics
 `sadfs::open` returns a file descriptor like open(2). Master server keeps  
