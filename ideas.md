@@ -82,8 +82,11 @@ file descriptors.
 
 
 # Tables stored on master:
-	Files:
+	Files: (persistent)
 	filename, locked?, lockTTL, list of chunkids
 
-	Chunks:
+	Chunks: (in memory)
 	chunkid, list of chunk servers
+
+  Chunk servers: (in memory)
+  IP, port, total space, used space
