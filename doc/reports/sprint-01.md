@@ -22,10 +22,10 @@
 ### Sprint Retrospective:
 This section should answer the following questions:
 * What did you do this sprint?  
-    We spent the first week finalizing our idea. The second week we continued  
-    to read up on potential distributed file system architectures while we  
-    designed our own. We also set up a git repo and the basic client and  
-    server programs.
+  We spent the first week finalizing our idea. The second week we continued  
+  to read up on potential distributed file system architectures while we  
+  designed our own. We also set up a git repo and the basic client and  
+  server programs.
 * What went well?
 * What didn’t go well?
 * What should go better?
