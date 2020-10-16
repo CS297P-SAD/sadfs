@@ -20,7 +20,6 @@
 | Formalize Project Idea |  |
 
 ### Sprint Retrospective:
-<<<<<<< HEAD
 * What did you do this sprint?
 
   We spent the first week finalizing our idea. The second week we continued to read up on potential distributed file system architectures while we designed our own. We also set up a git repo and the basic client and server programs
