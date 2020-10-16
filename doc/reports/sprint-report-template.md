@@ -18,12 +18,6 @@ mm/dd/2020 - mm/dd/2020
 | :---: | :----: |
 |  |  |
 
-### Sponsor Meeting:
-This section should answer the following questions:
-* What was discussed?
-* What did the sponsor like?
-* What should be improved?
-
 ### Sprint Retrospective:
 This section should answer the following questions:
 * What did you do this sprint?

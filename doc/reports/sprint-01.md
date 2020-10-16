@@ -12,21 +12,17 @@
 #### Planned
 | Items | Points |
 | :---: | :----: |
-|  |  |
+| Define User Stories |  |
+| Set up basic client/server infrastructure | |
 #### Completed
 | Items | Points |
 | :---: | :----: |
-|  |  |
-
-### Sponsor Meeting:
-This section should answer the following questions:
-* What was discussed?
-* What did the sponsor like?
-* What should be improved?
+| Formalize Project Idea |  |
 
 ### Sprint Retrospective:
 This section should answer the following questions:
 * What did you do this sprint?
+We spent the first week finalizing our idea. The second week we continued to read up on potential distributed file system architectures while we designed our own. We also set up a git repo and the basic client and server programs
 * What went well?
 * What didn’t go well?
 * What should go better?
@@ -35,6 +31,7 @@ This section should answer the following questions:
 List all tasks you were working on.
 |  ID  | Type | Owner | Title | Status | Estimate |
 | :--: | :--: | :---: | :---: | :----: | :------: |
-| 1 | User Story | Peter the Anteater | Eat all the ants he can find | In Progress | 3 |
-| 2 | User Story | Peter the Anteater | Zot! Zot! Zot! | Completed | 1 |
-|  |  |  |  |  |  |
+| 1 | User Story | Unassigned | Master opens listening port | Todo |  |
+| 2 | User Story | Unassigned | Chunk sends "I'm here" to master | Todo |  |
+| 3 | User Story | Unassigned | Client opens port to Master | Todo |  |
+| 4 | User Story | Unassigned | Client daemon opens Unix port | Todo |  |
