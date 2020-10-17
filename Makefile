@@ -5,7 +5,7 @@ INC = include
 LIB = boost_program_options
 
 CXX = g++
-CXX_FLAGS = -c -std=c++17 -ggdb 
+CXX_FLAGS = -c -std=c++17 -ggdb
 OPT ?= yes
 ifeq "$(OPT)" "yes"
 	CXX_FLAGS += -O
