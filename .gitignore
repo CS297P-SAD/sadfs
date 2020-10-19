@@ -1,3 +1,6 @@
+# Intermediate directories
+build/
+
 # Prerequisites
 *.d
 
