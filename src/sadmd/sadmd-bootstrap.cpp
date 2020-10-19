@@ -106,7 +106,7 @@ bootstrap(po::variables_map const& config)
 void
 start_server()
 {
-	std::cerr << "Error: strat_server() unimplemented\n";
+	std::cerr << "Error: start_server() unimplemented\n";
 	std::exit(1);
 }
 
