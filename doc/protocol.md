@@ -9,3 +9,6 @@
 | Grant Read Request | sadmd | sadfsd | chunkserverIP | chunkid | |
 | Read Chunk | sadfsd | sadcd | chunkid | | |
 | Chunk Contents | sadcd | sadfsd | data | | | 
+| Join Request | sadcd | sadmd | mem_available | | |
+| Reject Join Request | sadmd | sadcd | | | |
+| Accept Join Request | sadmd | sadcd | | | |
