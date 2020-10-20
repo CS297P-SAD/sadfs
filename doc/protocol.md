@@ -1,9 +1,9 @@
 | Action | From | To  | Param1 | Param2 | Param3 | 
 | :----: | :--: | :-: | :----: | :----: | :---:  |
-| Write Request | sadfsd | sadmd | filename | | |
-| Grant Write Request | sadmd | sadfsd | chunkid | chunkserverIP | metadata |
-| Reject Write Request | sadmd | sadfsd | metadata | | |
-| Write To Chunk | sadfsd,sadcd | sadcd | data | chunkid | metadata |
+| Write Request | sadfsd | sadmd | filename | offset | |
+| Grant Write Request | sadmd | sadfsd | chunkid | chunkserverIPs | |
+| Reject Write Request | sadmd | sadfsd | filename | offset | |
+| Write To Chunk | sadfsd,sadcd | sadcd | data | chunkid | chunkserverIPs |
 | Notify Master Of Chunk | sadcd | sadmd | chunkid | | |
 | Read Request | sadfsd | sadmd | filename | | |
 | Grant Read Request | sadmd | sadfsd | chunkserverIP | chunkid | |
