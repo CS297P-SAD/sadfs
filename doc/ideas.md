@@ -35,29 +35,31 @@ file descriptors.
 ## Writing 
 
 ### Sequence of events
-* Client sends write request to master
-* Master verifies that "file.txt" is not locked for writing
-* Master locks "file.txt" for writing
-* Master assigns "file.txt" to a new chunk or looks up the chunkid of the last non-full chunk
-	 * new chunk is added to database, but currently the list of corresponding servers is empty
-* Master compiles a list of chunk servers to store new chunk or list that it is already on
-* Master chooses a primary chunk server
-* Master sends client chunk id and primary ip address, other ip addresses are in the message's metadata
-* Client sends data to primary ip address along with forwarded metadata
+* Client sends write request to master, including offset
+* Master determines which chunk corresponds to offset
+* if chunk doesn't exist yet (i.e. file is empty or it needs to append a chunk)
+	* Master creates new unique chunkid
+		* new chunk is added to database, but currently the list of corresponding servers is empty
+	* Master assigns file to chunkid
+	* Master compiles a list of chunk servers to store new chunk
+* if chunk exists
+	* Master confirms that chunk is not locked for writing
+	* Master locks chunk for writing
+	* Master retrieves list of servers that contain that chunk
+* Master sends client chunkid and list of chunk servers
+* Client sends data to first chunk server on the list, along with the list of remaining chunk servers
 * Chunk server 1 writes data to a local file named chunkid
-* Chunk server 1 sends data to chunk servers 2 and 3
+* Chunk server 1 sends data to remaining chunk servers
 * Chunk server 1 sends master message saying it has chunkid
-* Chunk servers 2 and 3 write data, send master same message
+* Other chunk servers write data, send master same message
 * Master adds incoming IP addresses to list of servers containing chunkid
 
 ### Inter-server communication needed:
-* Client to master: write_request(filename)
-* Master to client: grant_request(chunkid, chunkserverIP, metadata)
-	* metadata includes list of secondary chunk servers, filename
-* Master to client: reject_request(metadata)
-* Client to chunk: write_chunk(data, chunkid, metadata)
-* Chunk to chunk: write_chunk(data, chunkid)
-	* can either have separate command for chunk to chunk or leave list of secondary chunkids empty
+* Client to master: write_request(filename, offset)
+* Master to client: grant_request(chunkid, chunkserverIPs)
+	* chunkserverIPs is a list of chunk servers
+* Master to client: reject_request(filename, offset)
+* Client to chunk: write_chunk(data, chunkid, chunkserverIPs)
 * Chunk to master: contain_chunk(chunkid)
   * maybe need a more obvious name, but this means "I contain chunk number `chunkid` "
 
