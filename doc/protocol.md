@@ -5,7 +5,7 @@
 | Reject Write Request | sadmd | sadfsd | filename | offset |
 | Write To Chunk | sadfsd,sadcd | sadcd | data | offset | chunkid | chunkserverIPs |
 | Notify Master Of Chunk | sadcd | sadmd | chunkid |
-| Read Request | sadfsd | sadmd | filename |
+| Read Request | sadfsd | sadmd | filename | chunk_num |
 | Grant Read Request | sadmd | sadfsd | chunkserverIP | chunkid |
 | Read Chunk | sadfsd | sadcd | chunkid |
 | Chunk Contents | sadcd | sadfsd | data |
