@@ -47,7 +47,7 @@ file descriptors.
 	* Master locks chunk for writing
 	* Master retrieves list of servers that contain that chunk
 * Master sends client chunkid and list of chunk servers
-* Client sends data to first chunk server on the list, along with the list of remaining chunk servers
+* Client sends data to first chunk server on the list, along with the offset within the chunk and the list of remaining chunk servers
 * Chunk server 1 writes data to a local file named chunkid
 * Chunk server 1 sends data to remaining chunk servers
 * Chunk server 1 sends master message saying it has chunkid
@@ -59,25 +59,25 @@ file descriptors.
 * Master to client: grant_request(chunkid, chunkserverIPs)
 	* chunkserverIPs is a list of chunk servers
 * Master to client: reject_request(filename, offset)
-* Client to chunk: write_chunk(data, chunkid, chunkserverIPs)
+* Client to chunk: write_chunk(data, offset, chunkid, chunkserverIPs)
 * Chunk to master: contain_chunk(chunkid)
   * maybe need a more obvious name, but this means "I contain chunk number `chunkid` "
 
-## Reading 
-(from file "file.txt")
+## Reading
 
 ### Sequence of events
-* Client sends read request to master
-* Master looks up first chunk for "file.txt"
-* Master looks up list of chunk servers that contain chunk 35
+* Client sends read request to master including filename and chunk within the file
+	* This doesn't require the file to know the chunkid, it just allows it to say e.g. "send me the third chunk in file.txt"
+* Master looks up chunkid
+* Master looks up list of chunk servers that contain chunkid
 * Master chooses optimal server for client
-* Master sends chunk server's IP address to client and the chunk id
-* Client sends read request for chunk 35 to chunk server
+* Master sends chunk server's IP address to client and the chunkid
+* Client sends read request for chunkid to chunk server
 * Chunk server sends data back to client
 
 ### Inter-server communication needed:
-* Client to master: read_request(filename)
-* Master to client: read_chunk(chunkserverip, chunkid)
+* Client to master: read_request(filename, chunk_number)
+* Master to client: read_chunk(chunkserverIP, chunkid)
 * Client to chunk: read_chunk_request(chunkid)
 * Chunk to client: read_data(data)
 
