@@ -43,9 +43,19 @@ SADMD_OBJ = $(SADMD_SRC:$(SRC)/%.cpp=$(BUILD)/%.o)
 SADCD_OBJ = $(SADCD_SRC:$(SRC)/%.cpp=$(BUILD)/%.o)
 SADFSD_OBJ = $(SADFSD_SRC:$(SRC)/%.cpp=$(BUILD)/%.o)
 
-all: sadmd-bootstrap
+client: sadfsd-bootstrap
+
+master: sadmd-bootstrap 
+
+chunk: sadcd-bootstrap
+
+sadfsd-bootstrap: mkdirs $(BUILD)/sadfsd/sadfsd-bootstrap.o
+	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/$@
 
 sadmd-bootstrap: mkdirs $(BUILD)/sadmd/sadmd-bootstrap.o
+	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/$@
+
+sadcd-bootstrap: mkdirs $(BUILD)/sadcd/sadcd-bootstrap.o
 	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/$@
 
 $(BUILD)/%.o: $(SRC)/%.cpp
@@ -57,4 +67,4 @@ clean:
 mkdirs:
 	@-mkdir -p $(BUILD_DIRS:%=$(BUILD)/%)
 
-.PHONY: clean mkdirs all sadmd-bootstrap
+.PHONY: clean mkdirs all sadmd-bootstrap sadcd-bootstrap sadfsd-bootstrap
