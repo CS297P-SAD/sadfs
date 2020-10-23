@@ -20,10 +20,13 @@ SADMD_OBJ=$(SADMD:%.cpp=%.o)
 SADCD_OBJ=$(SADCD:%.cpp=%.o)
 SADFSD_OBJ=$(SADFSD:%.cpp=%.o)
 
-all: sadmd-bootstrap
+all: sadmd-bootstrap sadcd-bootstrap
 
 sadmd-bootstrap: mkdirs $(BUILD)/sadmd/sadmd-bootstrap.o
 	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/sadmd/$@
+
+sadcd-bootstrap: mkdirs $(BUILD)/sadcd/sadcd-bootstrap.o
+	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/sadcd/$@
 
 $(BUILD)/%.o: $(SRC)/%.cpp
 	$(CXX) $(CXX_FLAGS) $(CXX_INC) $^ -o $@
@@ -34,4 +37,4 @@ clean:
 mkdirs:
 	@mkdir -p $(BUILD_DIRS:%=$(BUILD)/%)
 
-.PHONY: clean mkdirs all sadmd-bootstrap
+.PHONY: clean mkdirs all sadmd-bootstrap sadcd-bootstrap
