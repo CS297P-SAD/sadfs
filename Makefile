@@ -49,7 +49,7 @@ sadmd-bootstrap: mkdirs $(BUILD)/sadmd/sadmd-bootstrap.o
 	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/$@
 
 sadcd-bootstrap: mkdirs $(BUILD)/sadcd/sadcd-bootstrap.o
-	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/sadcd/$@
+	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/$@
 
 $(BUILD)/%.o: $(SRC)/%.cpp
 	$(CXX) $(CXX_FLAGS) $(CXX_INC) $^ -o $@
