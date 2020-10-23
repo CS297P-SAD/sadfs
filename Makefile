@@ -67,4 +67,4 @@ clean:
 mkdirs:
 	@-mkdir -p $(BUILD_DIRS:%=$(BUILD)/%)
 
-.PHONY: clean mkdirs all sadmd-bootstrap sadcd-bootstrap
+.PHONY: clean mkdirs all sadmd-bootstrap sadcd-bootstrap sadfsd-bootstrap
