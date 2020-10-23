@@ -10,7 +10,7 @@
 | 4 | Task       | Team       | Operation sequence design   | Completed | NA |
 | 5 | Task       | Team       | Communication protocol design | In progress | NA |
 | 6 | User Story | Daman      | As an admin, I should be able to configure default options for the Master server daemon in a configuration file, and override them over the command line | In progress | NA |
-| 7 | User Story | Unassigned | As an admin, I should be able to configure default options for the Chunk server daemon in a configuration file, and override them over the command line | In progress | NA |
+| 7 | User Story | Adam | As an admin, I should be able to configure default options for the Chunk server daemon in a configuration file, and override them over the command line | In progress | NA |
 | 8 | User Story | Unassigned | As an admin, I should be able to configure default options for the File System daemon in a configuration file, and override them over the command line | In progress | NA |
 | 9 | User Story | Unassigned | As an admin, I should be able to start the Master server daemon | Unassigned | NA |
 | 10 | User Story | Unassigned | As an admin, I should be able to start the Chunk server daemon | Unassigned | NA |
