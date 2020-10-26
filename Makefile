@@ -17,12 +17,11 @@ else
 	CXX = g++
 endif
 
+CXX_FLAGS = -c -std=c++17 -ggdb
 # do not optimize if requested
 ifneq "$(OPT)" "no"
 	CXX_FLAGS += -O
 endif
-
-CXX_FLAGS = -c -std=c++17 -ggdb
 CXX_INC = $(INC:%=-I%)       # add '-I' prefix to each value in INC
 CXX_LIB = $(LIB:%=-l%)       # add '-l' prefix to each value in LIB
 CXX_LIB += $(LIB_DIRS:%=-L%) # add '-L' prefix to each value in LIB_DIRS
