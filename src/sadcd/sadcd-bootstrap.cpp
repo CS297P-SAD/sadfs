@@ -14,6 +14,7 @@
 #include <fstream>
 #include <string>
 #include <string_view>
+ #include <unistd.h>  //execve(2)
 
 // external includes
 #include <boost/program_options.hpp>
@@ -97,16 +98,22 @@ display_help(po::options_description const& options)
 }
 
 void
-bootstrap(po::variables_map const& config)
+start_server(po::variables_map const& config)
 {
-	std::cerr << "Error: bootstrap() unimplemented\n";
-	std::exit(1);
-}
+	char port_str[2];
+	if (config.count("port"))
+	{
+		memcpy(port_str, &(config["port"].as<std::uint16_t>()), 2);
+	}else{
+		std::cerr << "Error: No port number was set\n";
+	}
+	const char *chunk_daemon = "sadcd";
+	char *const chunk_argv[] = {port_str, NULL};
 
-void
-start_server()
-{
-	std::cerr << "Error: start_server() unimplemented\n";
+	errno = 0;
+	execve(chunk_daemon, chunk_argv, NULL);
+	std::cerr << "Error: could not start chunk server: " << 
+		std::strerror(errno) << std::endl;
 	std::exit(1);
 }
 
@@ -135,8 +142,7 @@ main(int argc, char const** argv)
 	parse_config_file(variables, options);
 
 	// perform bootstrapping and start sadcd
-	bootstrap(variables);
-	start_server();
+	start_server(variables);
 
 	// start_server must not return since it is supposed to
 	// replace the program image with execve(2)

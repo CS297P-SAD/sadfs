@@ -1,5 +1,5 @@
 BUILD = build
-BUILD_DIRS = sadmd sadcd sadfsd
+BUILD_DIRS = sadmd sadcd sadfsd bin
 SRC = src
 INC = include
 LIB = boost_program_options
@@ -47,16 +47,19 @@ client: sadfsd-bootstrap
 
 master: sadmd-bootstrap 
 
-chunk: sadcd-bootstrap
+chunk: sadcd-bootstrap sadcd
 
 sadfsd-bootstrap: mkdirs $(BUILD)/sadfsd/sadfsd-bootstrap.o
-	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/$@
+	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/bin/$@
 
 sadmd-bootstrap: mkdirs $(BUILD)/sadmd/sadmd-bootstrap.o
-	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/$@
+	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/bin/$@
 
 sadcd-bootstrap: mkdirs $(BUILD)/sadcd/sadcd-bootstrap.o
-	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/$@
+	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/bin/$@
+
+sadcd: mkdirs $(SADCD_OBJ)
+	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/bin/$@
 
 $(BUILD)/%.o: $(SRC)/%.cpp
 	$(CXX) $(CXX_FLAGS) $(CXX_INC) $^ -o $@
@@ -67,4 +70,4 @@ clean:
 mkdirs:
 	@-mkdir -p $(BUILD_DIRS:%=$(BUILD)/%)
 
-.PHONY: clean mkdirs all sadmd-bootstrap sadcd-bootstrap sadfsd-bootstrap
+.PHONY: clean mkdirs all sadmd-bootstrap sadcd-bootstrap sadfsd-bootstrap sadcd
