@@ -40,7 +40,7 @@ public:
 	~listener() = default;
 
 	// accepts a new connection and returns a socket
-	socket accept() const noexcept;
+	socket accept() const;
 private:
 	socket sock_;
 };

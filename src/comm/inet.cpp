@@ -7,14 +7,14 @@
 // standard includes
 #include <arpa/inet.h>  // inet_aton
 #include <netinet/in.h> // in_addr
-#include <sys/socket.h> // bind, listen
+#include <sys/socket.h> // bind, listen, accept
 
 namespace sadfs { namespace inet {
 
 ip_addr::
 ip_addr(char const* ip)
 {
-	in_addr tmp;
+	auto tmp = in_addr{};
 	if (inet_aton(ip, &tmp) == 0)
 	{
 		// ip is malformed
@@ -34,7 +34,7 @@ listener(ip_addr ip, port_no port)
 	: sock_(socket::domain::inet, socket::type::stream)
 {
 	// bind to ip + port
-	sockaddr_in addr
+	auto addr = sockaddr_in
 	{
 		.sin_len    = 0,
 		.sin_family = AF_INET,
@@ -54,6 +54,22 @@ listener(ip_addr ip, port_no port)
 	{
 		// TODO; throw exception
 	}
+}
+
+socket listener::
+accept() const
+{
+	auto addr = sockaddr{};
+	auto len = socklen_t{sizeof(addr)};
+	auto fd = ::accept(sock_.descriptor(),
+	                   reinterpret_cast<sockaddr*>(&addr),
+	                   &len);
+	if (fd == -1)
+	{
+		// TODO: throw exception
+	}
+
+	return {sock_.comm_domain(), sock_.socket_type(), fd};
 }
 
 } // namespace inet
