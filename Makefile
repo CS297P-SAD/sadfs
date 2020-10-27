@@ -1,5 +1,7 @@
+BIN_DIR = bin
+BUILD_DIRS = sadmd sadcd sadfsd $(BIN_DIR)
 BUILD = build
-BUILD_DIRS = sadmd sadcd sadfsd
+BIN = $(BUILD)/$(BIN_DIR)
 SRC = src
 INC = include
 LIB = boost_program_options
@@ -27,43 +29,50 @@ CXX_LIB = $(LIB:%=-l%)       # add '-l' prefix to each value in LIB
 CXX_LIB += $(LIB_DIRS:%=-L%) # add '-L' prefix to each value in LIB_DIRS
 
 # build source file list
+COMMON_SRC = $(wildcard $(SRC)/comm/*.cpp)
+
 SADMD_SRC = $(filter-out \
 	    $(SRC)/sadmd/sadmd-bootstrap.cpp, \
 	    $(wildcard $(SRC)/sadmd/*.cpp))
+SADMD_SRC += $(COMMON_SRC)
+
 SADCD_SRC = $(filter-out \
 	    $(SRC)/sadcd/sadcd-bootstrap.cpp, \
 	    $(wildcard $(SRC)/sadcd/*.cpp))
+SACMD_SRC += $(COMMON_SRC)
+
 SADFSD_SRC = $(filter-out \
 	     $(SRC)/sadfsd/sadfsd-bootstrap.cpp, \
 	     $(wildcard $(SRC)/sadfsd/*.cpp))
+SADFSD_SRC += $(COMMON_SRC)
 
 # build object file list
 SADMD_OBJ = $(SADMD_SRC:$(SRC)/%.cpp=$(BUILD)/%.o)
 SADCD_OBJ = $(SADCD_SRC:$(SRC)/%.cpp=$(BUILD)/%.o)
 SADFSD_OBJ = $(SADFSD_SRC:$(SRC)/%.cpp=$(BUILD)/%.o)
 
-client: sadfsd-bootstrap
+client: $(BIN)/sadfsd-bootstrap
 
-master: sadmd-bootstrap 
+master: $(BIN)/sadmd-bootstrap
 
-chunk: sadcd-bootstrap
+chunk: $(BIN)/sadcd-bootstrap
 
-sadfsd-bootstrap: mkdirs $(BUILD)/sadfsd/sadfsd-bootstrap.o
-	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/$@
+$(BIN)/sadfsd-bootstrap: mkdirs $(BUILD)/sadfsd/sadfsd-bootstrap.o
+	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $@
 
-sadmd-bootstrap: mkdirs $(BUILD)/sadmd/sadmd-bootstrap.o
-	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/$@
+$(BIN)/sadmd-bootstrap: mkdirs $(BUILD)/sadmd/sadmd-bootstrap.o
+	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $@
 
-sadcd-bootstrap: mkdirs $(BUILD)/sadcd/sadcd-bootstrap.o
-	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $(BUILD)/$@
+$(BIN)/sadcd-bootstrap: mkdirs $(BUILD)/sadcd/sadcd-bootstrap.o
+	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $@
 
 $(BUILD)/%.o: $(SRC)/%.cpp
-	$(CXX) $(CXX_FLAGS) $(CXX_INC) $^ -o $@
+	$(CXX) $(CXX_FLAGS) $(CXX_INC) $< -o $@
 
 clean:
 	@-rm -r $(BUILD) >/dev/null 2>&1
 
 mkdirs:
-	@-mkdir -p $(BUILD_DIRS:%=$(BUILD)/%)
+	@mkdir -p $(BUILD_DIRS:%=$(BUILD)/%)
 
-.PHONY: clean mkdirs all sadmd-bootstrap sadcd-bootstrap sadfsd-bootstrap
+.PHONY: clean mkdirs client master chunk
