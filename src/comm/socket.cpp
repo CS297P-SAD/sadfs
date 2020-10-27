@@ -1,7 +1,7 @@
 /* implementation of sadfs::socket */
 
 // sadfs-specific includes
-#include <sadfs/socket.hpp>
+#include <sadfs/comm/socket.hpp>
 
 // standard includes
 #include <sys/socket.h>
