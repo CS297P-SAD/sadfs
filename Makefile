@@ -1,5 +1,5 @@
 BIN_DIR = bin
-BUILD_DIRS = sadmd sadcd sadfsd $(BIN_DIR)
+BUILD_DIRS = sadmd sadcd sadfsd comm $(BIN_DIR)
 BUILD = build
 BIN = $(BUILD)/$(BIN_DIR)
 SRC = src
