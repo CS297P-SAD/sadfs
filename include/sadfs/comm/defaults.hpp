@@ -1,4 +1,4 @@
-/* sadfs-wide defaults */
+/* communications-related defaults */
 
 namespace sadfs { namespace defaults {
 

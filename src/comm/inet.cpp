@@ -2,7 +2,7 @@
 
 // sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
-#include <sadfs/defaults.hpp>
+#include <sadfs/comm/defaults.hpp>
 
 // standard includes
 #include <arpa/inet.h>  // inet_aton, htons
