@@ -5,7 +5,7 @@
 #include <sadfs/defaults.hpp>
 
 // standard includes
-#include <arpa/inet.h>  // inet_aton
+#include <arpa/inet.h>  // inet_aton, htons
 #include <netinet/in.h> // in_addr
 #include <sys/socket.h> // bind, listen, accept
 
@@ -38,7 +38,7 @@ listener(ip_addr ip, port_no port)
 	{
 		.sin_len    = 0,
 		.sin_family = AF_INET,
-		.sin_port   = port,
+		.sin_port   = htons(port),
 		.sin_addr   {ip.value()},
 		.sin_zero   {}
 	};
