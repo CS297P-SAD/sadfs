@@ -61,15 +61,15 @@ accept() const
 {
 	auto addr = sockaddr{};
 	auto len = socklen_t{sizeof(addr)};
-	auto fd = ::accept(sock_.descriptor(),
-	                   reinterpret_cast<sockaddr*>(&addr),
-	                   &len);
-	if (fd == -1)
+	auto desc = ::accept(sock_.descriptor(),
+	                     reinterpret_cast<sockaddr*>(&addr),
+	                     &len);
+	if (desc == -1)
 	{
 		// TODO: throw exception
 	}
 
-	return {sock_.comm_domain(), sock_.socket_type(), fd};
+	return {sock_.comm_domain(), sock_.socket_type(), desc};
 }
 
 } // namespace inet
