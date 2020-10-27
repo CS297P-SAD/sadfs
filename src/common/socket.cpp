@@ -11,15 +11,15 @@ namespace sadfs {
 namespace {
 
 int
-lookup(socket::domain_type domain)
+lookup(socket::domain domain)
 {
 	int val{-1};
 	switch (domain)
 	{
-		case socket::domain_type::local:
+		case socket::domain::local:
 			val = AF_UNIX;
 			break;
-		case socket::domain_type::inet:
+		case socket::domain::inet:
 			val = AF_INET;
 			break;
 		default:
@@ -30,15 +30,15 @@ lookup(socket::domain_type domain)
 }
 
 int
-lookup(socket::socket_type type)
+lookup(socket::type type)
 {
 	int val{-1};
 	switch (type)
 	{
-		case socket::socket_type::conn_based:
+		case socket::type::stream:
 			val = SOCK_STREAM;
 			break;
-		case socket::socket_type::conn_less:
+		case socket::type::datagram:
 			val = SOCK_DGRAM;
 			break;
 		default:
@@ -51,7 +51,7 @@ lookup(socket::socket_type type)
 } // unnamed namespace
 
 socket::
-socket(domain_type domain, socket_type type)
+socket(domain domain, type type)
 {
 	descriptor_ = ::socket(lookup(domain), lookup(type), 0);
 	if (descriptor_ == -1)
@@ -64,7 +64,7 @@ socket(domain_type domain, socket_type type)
 }
 
 socket::
-socket(domain_type domain, socket_type type, int descriptor)
+socket(domain domain, type type, int descriptor)
 {
 	// TODO: verify parameters
 	domain_     = domain;
@@ -92,20 +92,20 @@ socket::
 	}
 }
 
-socket::domain_type
-socket::domain() const noexcept
+socket::domain socket::
+comm_domain() const noexcept
 {
 	return domain_;
 }
 
-socket::socket_type
-socket::type() const noexcept
+socket::type socket::
+socket_type() const noexcept
 {
 	return type_;
 }
 
-int
-socket::descriptor() const noexcept
+int socket::
+descriptor() const noexcept
 {
 	return descriptor_;
 }

@@ -6,29 +6,29 @@ namespace sadfs {
 class socket
 {
 public:
-	enum class domain_type { local, inet };
-	enum class socket_type { conn_based, conn_less };
+	enum class domain { local, inet };
+	enum class type { stream, datagram };
 
 	// creates a new socket
-	socket(domain_type, socket_type);
+	socket(domain, type);
 
 	// creates a representation of an existing socket
 	// does not create a new socket
-	socket(domain_type, socket_type, int);
+	socket(domain, type, int);
 
 	socket(socket&&);
 	socket(socket const&) = delete;
 	~socket() noexcept;
 
 	// accessors
-	domain_type domain()     const noexcept;
-	socket_type type()       const noexcept;
-	int         descriptor() const noexcept;
+	domain comm_domain() const noexcept;
+	type   socket_type() const noexcept;
+	int    descriptor()  const noexcept;
 
 private:
-	domain_type domain_;
-	socket_type type_;
-	int         descriptor_;
+	domain domain_;
+	type   type_;
+	int    descriptor_;
 };
 
 } // sadfs
