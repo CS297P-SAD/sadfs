@@ -44,7 +44,7 @@ listener(ip_addr ip, port_no port)
 	};
 	if (::bind(sock_.descriptor(),
 	           reinterpret_cast<sockaddr const*>(&addr),
-			   sizeof(addr)) == -1)
+	           sizeof(addr)) == -1)
 	{
 		// TODO: throw exception
 	}
