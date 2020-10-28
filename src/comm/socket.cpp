@@ -4,59 +4,51 @@
 #include <sadfs/comm/socket.hpp>
 
 // standard includes
-#include <sys/socket.h>
-#include <unistd.h>
+#include <stdexcept>    // std::invalid_argument
+#include <system_error> // std::system_error, std::system_category
+#include <sys/socket.h> // ::socket
+#include <unistd.h>     // ::close
 
 namespace sadfs {
 namespace {
 
 int
-lookup(socket::domain domain)
+lookup(socket::domain const domain)
 {
-	int val{-1};
 	switch (domain)
 	{
 		case socket::domain::local:
-			val = AF_UNIX;
-			break;
+			return AF_UNIX;
 		case socket::domain::inet:
-			val = AF_INET;
-			break;
-		default:
-			// TODO: throw exception
-			break;
+			return AF_INET;
 	}
-	return val;
+	throw std::invalid_argument("unsupported domain");
 }
 
 int
-lookup(socket::type type)
+lookup(socket::type const type)
 {
-	int val{-1};
 	switch (type)
 	{
 		case socket::type::stream:
-			val = SOCK_STREAM;
-			break;
+			return SOCK_STREAM;
 		case socket::type::datagram:
-			val = SOCK_DGRAM;
-			break;
-		default:
-			// TODO: throw exception
-			break;
+			return SOCK_DGRAM;
 	}
-	return val;
+	throw std::invalid_argument("unsupported socket type");
 }
 
 } // unnamed namespace
 
 socket::
-socket(domain domain, type type)
+socket(domain const domain, type const type)
 {
-	descriptor_ = ::socket(lookup(domain), lookup(type), 0);
+	// let the OS choose protocol by passing 0
+	descriptor_ = ::socket(lookup(domain), lookup(type), /* protocol */ 0);
 	if (descriptor_ == -1)
 	{
-		// TODO: throw exception
+		throw std::system_error(errno, std::system_category(),
+		                        "socket creation failed");
 	}
 
 	domain_ = domain;
@@ -64,21 +56,17 @@ socket(domain domain, type type)
 }
 
 socket::
-socket(domain domain, type type, int descriptor)
+socket(domain const domain, type const type, int const descriptor) noexcept
+	: domain_(domain), type_(type), descriptor_(descriptor)
 {
 	// TODO: verify parameters
-	domain_     = domain;
-	type_       = type;
-	descriptor_ = descriptor;
 }
 
 socket::
-socket(socket&& other)
+socket(socket&& other) noexcept
+	: domain_(other.domain_), type_(other.type_),
+	  descriptor_(other.descriptor_)
 {
-	domain_     = other.domain_;
-	type_       = other.type_;
-	descriptor_ = other.descriptor_;
-
 	// prevent other's destructor from closing the descriptor
 	other.descriptor_ = -1;
 }

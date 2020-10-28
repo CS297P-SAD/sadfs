@@ -10,13 +10,13 @@ public:
 	enum class type { stream, datagram };
 
 	// creates a new socket
-	socket(domain, type);
+	socket(domain const, type const);
 
 	// creates a representation of an existing socket
 	// does not create a new socket
-	socket(domain, type, int);
+	socket(domain const, type const, int const) noexcept;
 
-	socket(socket&&);
+	socket(socket&&) noexcept;
 	socket(socket const&) = delete;
 	~socket() noexcept;
 

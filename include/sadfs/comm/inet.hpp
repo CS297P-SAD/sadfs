@@ -33,7 +33,7 @@ class listener
 public:
 	// creates a listener on socket specified by
 	// ip_addr and port_no
-	listener(ip_addr, port_no);
+	listener(ip_addr const&, port_no);
 
 	listener(listener const&) = delete;
 	listener(listener&&) = default;
@@ -42,7 +42,9 @@ public:
 	// accepts a new connection and returns a socket
 	socket accept() const;
 private:
-	socket sock_;
+	ip_addr ip_;
+	port_no port_;
+	socket  socket_;
 };
 
 namespace constants { // sadfs::inet::constants
