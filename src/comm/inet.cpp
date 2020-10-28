@@ -52,14 +52,10 @@ listener(ip_addr const& ip, port_no port)
 	  socket_(socket::domain::inet, socket::type::stream)
 {
 	// bind to ip + port
-	auto addr = sockaddr_in
-	{
-		.sin_len    = 0,
-		.sin_family = AF_INET,
-		.sin_port   = htons(port_),
-		.sin_addr   {ip_.value()},
-		.sin_zero   {}
-	};
+	auto addr = sockaddr_in{};
+	addr.sin_family = AF_INET;
+	addr.sin_port   = htons(port_);
+	addr.sin_addr   = {ip_.value()};
 	if (::bind(socket_.descriptor(),
 	           reinterpret_cast<sockaddr const*>(&addr),
 	           sizeof(addr)) == -1)
