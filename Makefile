@@ -1,5 +1,5 @@
 BIN_DIR = bin
-BUILD_DIRS = sadmd sadcd sadfsd comm $(BIN_DIR)
+BUILD_DIRS = sadmd sadcd sadfsd comm example $(BIN_DIR)
 BUILD = build
 BIN = $(BUILD)/$(BIN_DIR)
 SRC = src
@@ -34,22 +34,20 @@ COMMON_SRC = $(wildcard $(SRC)/comm/*.cpp)
 SADMD_SRC = $(filter-out \
 	    $(SRC)/sadmd/sadmd-bootstrap.cpp, \
 	    $(wildcard $(SRC)/sadmd/*.cpp))
-SADMD_SRC += $(COMMON_SRC)
 
 SADCD_SRC = $(filter-out \
 	    $(SRC)/sadcd/sadcd-bootstrap.cpp, \
 	    $(wildcard $(SRC)/sadcd/*.cpp))
-SACMD_SRC += $(COMMON_SRC)
 
 SADFSD_SRC = $(filter-out \
 	     $(SRC)/sadfsd/sadfsd-bootstrap.cpp, \
 	     $(wildcard $(SRC)/sadfsd/*.cpp))
-SADFSD_SRC += $(COMMON_SRC)
 
 # build object file list
 SADMD_OBJ = $(SADMD_SRC:$(SRC)/%.cpp=$(BUILD)/%.o)
 SADCD_OBJ = $(SADCD_SRC:$(SRC)/%.cpp=$(BUILD)/%.o)
 SADFSD_OBJ = $(SADFSD_SRC:$(SRC)/%.cpp=$(BUILD)/%.o)
+COMMON_OBJ = $(COMMON_SRC:$(SRC)/%.cpp=$(BUILD)/%.o)
 
 client: $(BIN)/sadfsd-bootstrap
 
@@ -57,16 +55,26 @@ master: $(BIN)/sadmd-bootstrap
 
 chunk: $(BIN)/sadcd-bootstrap
 
-$(BIN)/sadfsd-bootstrap: mkdirs $(BUILD)/sadfsd/sadfsd-bootstrap.o
+ex: $(patsubst example/%.cpp, $(BIN)/%, $(wildcard example/*.cpp))
+
+# sadfs binaries
+$(BIN)/%: mkdirs $(BUILD)/sadfsd/%.o
 	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $@
 
-$(BIN)/sadmd-bootstrap: mkdirs $(BUILD)/sadmd/sadmd-bootstrap.o
+$(BIN)/%: mkdirs $(BUILD)/sadmd/%.o
 	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $@
 
-$(BIN)/sadcd-bootstrap: mkdirs $(BUILD)/sadcd/sadcd-bootstrap.o
+$(BIN)/%: mkdirs $(BUILD)/sadcd/%.o
 	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $@
 
 $(BUILD)/%.o: $(SRC)/%.cpp
+	$(CXX) $(CXX_FLAGS) $(CXX_INC) $< -o $@
+
+# example binaries
+$(BIN)/%: mkdirs $(BUILD)/example/%.o $(COMMON_OBJ)
+	$(CXX) $(filter-out $<, $^) -o $@
+
+$(BUILD)/example/%.o: example/%.cpp
 	$(CXX) $(CXX_FLAGS) $(CXX_INC) $< -o $@
 
 clean:
@@ -75,4 +83,4 @@ clean:
 mkdirs:
 	@mkdir -p $(BUILD_DIRS:%=$(BUILD)/%)
 
-.PHONY: clean mkdirs client master chunk
+.PHONY: clean mkdirs client master chunk ex
