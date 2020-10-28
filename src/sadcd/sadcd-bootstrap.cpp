@@ -97,21 +97,28 @@ display_help(po::options_description const& options)
 		options << '\n';
 }
 
+// Populates command-line args for sadcd and starts it
 void
 start_server(po::variables_map const& config)
 {
+	// Copy port from uint16 to C string
 	char port_str[2];
 	if (config.count("port"))
 	{
 		memcpy(port_str, &(config["port"].as<std::uint16_t>()), 2);
 	}else{
 		std::cerr << "Error: No port number was set\n";
+		std::exit(1);
 	}
+	
+	// Arguments needed for execve
 	const char *chunk_daemon = "sadcd";
 	char *const chunk_argv[] = {port_str, NULL};
 
 	errno = 0;
 	execve(chunk_daemon, chunk_argv, NULL);
+
+	// Execve only returns if an error occured
 	std::cerr << "Error: could not start chunk server: " << 
 		std::strerror(errno) << std::endl;
 	std::exit(1);

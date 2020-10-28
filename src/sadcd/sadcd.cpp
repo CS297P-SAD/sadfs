@@ -4,4 +4,5 @@ int
 main(int argc, char *argv[])
 {
 	std::cout << "Server started" << std::endl;
+	//TODO: open ports
 }
