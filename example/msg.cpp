@@ -15,12 +15,10 @@ main(int argc, char** argv)
 	using namespace sadfs;
 
 	auto sock = sadfs::socket(socket::domain::inet, socket::type::stream);
-	auto addr = sockaddr_in
-	{
-		.sin_family = AF_INET,
-		.sin_port = htons(6666),
-		.sin_addr = {inet::ip_addr("127.0.0.1").value()}
-	};
+	auto addr = sockaddr_in{};
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(6666);
+	addr.sin_addr = {inet::constants::ip_localhost.value()};
 	if (connect(sock.descriptor(),
 	            reinterpret_cast<sockaddr const*>(&addr),
 	            sizeof(addr)) == -1)
