@@ -101,8 +101,11 @@ display_help(po::options_description const& options)
 void
 start_server(po::variables_map const& config)
 {	
+	char sadcd_str[] = "sadcd";
+	char port_arg_str[] = "port";
+
 	//Verify a port number was given
-	if (!config.count("port"))
+	if (!config.count(port_arg_str))
 	{
 		std::cerr << "Error: No port number was set\n";
 		std::exit(1);
@@ -114,7 +117,7 @@ start_server(po::variables_map const& config)
 	strncpy(port_str, port.c_str(), sizeof(char) * port.size());
 	
 	// Arguments needed for execve
-	std::array<char *, 4> chunk_argv = {"sadcd", "port", port_str, NULL};
+	std::array<char *, 4> chunk_argv = {sadcd_str, port_arg_str, port_str, NULL};
 
 	execve(chunk_argv[0], &(chunk_argv[0]), NULL);
 
