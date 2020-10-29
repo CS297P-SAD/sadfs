@@ -53,7 +53,7 @@ client: $(BIN)/sadfsd-bootstrap
 
 master: $(BIN)/sadmd-bootstrap
 
-chunk: $(BIN)/sadcd-bootstrap
+chunk: $(BIN)/sadcd-bootstrap $(BIN)/sadcd
 
 ex: $(patsubst example/%.cpp, $(BIN)/%, $(wildcard example/*.cpp))
 

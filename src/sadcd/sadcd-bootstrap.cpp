@@ -14,6 +14,7 @@
 #include <fstream>
 #include <string>
 #include <string_view>
+ #include <unistd.h>  //execve(2)
 
 // external includes
 #include <boost/program_options.hpp>
@@ -96,18 +97,27 @@ display_help(po::options_description const& options)
 		options << '\n';
 }
 
+// Populates command-line args for sadcd and starts it
 void
-bootstrap(po::variables_map const& config)
-{
-	std::cerr << "Error: bootstrap() unimplemented\n";
-	std::exit(1);
-}
+start_server(po::variables_map const& config)
+{	
+	//Verify a port number was given
+	if (!config.count("port"))
+	{
+		std::cerr << "Error: No port number was set\n";
+		std::exit(1);
+	}
+	
+	// Arguments needed for execve
+	auto chunk_argv = std::array<char* const, 4>
+	{
+		std::string{"sadcd"}.data(), 
+		std::string{"--port"}.data(), 
+		std::to_string(config["port"].as<std::uint16_t>()).data(),
+		nullptr
+	};
 
-void
-start_server()
-{
-	std::cerr << "Error: start_server() unimplemented\n";
-	std::exit(1);
+	execve(chunk_argv[0], chunk_argv.data(), nullptr);
 }
 
 } // unnamed namespace
@@ -135,8 +145,7 @@ main(int argc, char const** argv)
 	parse_config_file(variables, options);
 
 	// perform bootstrapping and start sadcd
-	bootstrap(variables);
-	start_server();
+	start_server(variables);
 
 	// start_server must not return since it is supposed to
 	// replace the program image with execve(2)
