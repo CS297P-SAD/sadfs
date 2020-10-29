@@ -101,30 +101,23 @@ display_help(po::options_description const& options)
 void
 start_server(po::variables_map const& config)
 {	
-	char sadcd_str[] = "sadcd";
-	char port_arg_str[] = "port";
-
 	//Verify a port number was given
-	if (!config.count(port_arg_str))
+	if (!config.count("port"))
 	{
 		std::cerr << "Error: No port number was set\n";
 		std::exit(1);
 	}
-
-	// Copy port from uint16 to C string
-	auto port = std::to_string(config["port"].as<std::uint16_t>());
-	char *port_str;
-	strncpy(port_str, port.c_str(), sizeof(char) * port.size());
 	
 	// Arguments needed for execve
-	std::array<char *, 4> chunk_argv = {sadcd_str, port_arg_str, port_str, NULL};
+	auto chunk_argv = std::array<char* const, 4>
+	{
+		std::string{"sadcd"}.data(), 
+		std::string{"--port"}.data(), 
+		std::to_string(config["port"].as<std::uint16_t>()).data(),
+		nullptr
+	};
 
-	execve(chunk_argv[0], &(chunk_argv[0]), NULL);
-
-	// Execve only returns if an error occured
-	std::cerr << "Error: could not start chunk server: " << 
-		std::strerror(errno) << std::endl;
-	std::exit(1);
+	execve(chunk_argv[0], chunk_argv.data(), nullptr);
 }
 
 } // unnamed namespace
