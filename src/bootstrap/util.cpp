@@ -36,7 +36,7 @@ parse_args(po::variables_map& variables,
 	try
 	{
 		po::store(po::parse_command_line(argc, argv, options),
-	              variables);
+		          variables);
 	}
 	catch (po::error const& ex)
 	{
