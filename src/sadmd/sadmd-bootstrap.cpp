@@ -31,7 +31,7 @@ config_options()
 	// adds options that are configured in the config file,
 	// but can be overridden from the command-line
 	desc.add_options()
-		("port,p", po::value<std::uint16_t>(),
+		("port,p", po::value<std::uint16_t>()->required(),
 			"override configured port number on which "
 			"the server listens for incoming connections")
 		;
@@ -55,7 +55,6 @@ parse_args(po::variables_map& variables,
 {
 	po::store(po::parse_command_line(argc, argv, options),
 	          variables);
-	po::notify(variables);
 }
 
 // parses config file and populates variables
@@ -83,8 +82,6 @@ parse_config_file(po::variables_map& variables,
 			      << ex.what() << "\n";
 		std::exit(1);
 	}
-
-	po::notify(variables);
 }
 
 void
@@ -97,21 +94,30 @@ display_help(po::options_description const& options)
 }
 
 void
-bootstrap(po::variables_map const& config)
-{
-	std::cerr << "Error: bootstrap() unimplemented\n";
-	std::exit(1);
-}
-
-void
-start_server()
+start_server(po::variables_map const& variables)
 {
 	std::cerr << "Error: start_server() unimplemented\n";
 	std::exit(1);
 }
 
-} // unnamed namespace
+void
+notify(po::variables_map& variables)
+{
+	try
+	{
+		po::notify(variables);
+	}
+	catch (po::error const& ex)
+	{
+		// looks like a mandatory option is not configured
+		std::cerr << "Error: " << ex.what() << "\n"
+		          << "Alternatively, it can be configured via "
+		          << sadfs::sadmd::defaults::config_path << "\n";
+		std::exit(1);
+	}
+}
 
+} // unnamed namespace
 
 int
 main(int argc, char const** argv)
@@ -134,9 +140,11 @@ main(int argc, char const** argv)
 	// read options not specified via the CLI
 	parse_config_file(variables, options);
 
+	// notify any handlers
+	::notify(variables);
+
 	// perform bootstrapping and start sadmd
-	bootstrap(variables);
-	start_server();
+	start_server(variables);
 
 	// start_server must not return since it is supposed to
 	// replace the program image with execve(2)
