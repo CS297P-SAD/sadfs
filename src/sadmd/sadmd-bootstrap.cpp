@@ -86,7 +86,7 @@ parse_config_file(po::variables_map& variables,
 	catch (po::error const& ex)
 	{
 		fatal_error("Error: failed to parse " + filename + ": "
-			        + ex.what() + "\n");
+		            + ex.what() + "\n");
 	}
 }
 
