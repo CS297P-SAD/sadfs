@@ -1,5 +1,5 @@
-#ifndef SADFS_BOOTSTRAP_BOOTSTRAP_HPP
-#define SADFS_BOOTSTRAP_BOOTSTRAP_HPP
+#ifndef SADFS_BOOTSTRAP_UTIL_HPP
+#define SADFS_BOOTSTRAP_UTIL_HPP
 /* declares bootstrapping utility functions */
 
 #include <boost/program_options.hpp>
@@ -21,4 +21,4 @@ void verify(po::variables_map&);
 } // bootstrap namespace
 } // sadfs namespace
 
-#endif // SADFS_BOOTSTRAP_BOOTSTRAP_HPP
+#endif // SADFS_BOOTSTRAP_UTIL_HPP
