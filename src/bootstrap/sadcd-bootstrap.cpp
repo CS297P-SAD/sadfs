@@ -6,13 +6,14 @@
 
 // sadfs-specific includes
 #include <sadfs/sadcd/defaults.hpp>
+#include <sadfs/bootstrap/util.hpp>
 
 // standard includes
 #include <array>
 #include <cerrno>     // errno
 #include <cstdint>    // std::uint16_t
+#include <cstdlib>    // std::exit
 #include <cstring>    // std::strerror
-#include <fstream>
 #include <iostream>
 #include <string>
 #include <unistd.h>   // execvp(3)
@@ -49,47 +50,6 @@ config_options()
 	return desc;
 }
 
-// parses command-line args and populates variables
-void
-parse_args(po::variables_map& variables,
-           int argc, char const** argv,
-           po::options_description const& options)
-{
-	po::store(po::parse_command_line(argc, argv, options),
-	          variables);
-}
-
-// parses config file and populates variables
-void
-parse_config_file(po::variables_map& variables,
-                 po::options_description const& options)
-{
-	auto const filename = variables["config"].as<std::string>();
-	auto fatal_error = [](auto const& msg)
-	{
-		std::cerr << msg;
-		std::exit(1);
-	};
-
-	auto file = std::ifstream(filename.c_str());
-	if (!file.is_open())
-	{
-		fatal_error("Error: " + filename + " does not exist\n");
-	}
-
-	// po::store will throw an exception if the
-	// config file's syntax is incorrect
-	try
-	{
-		po::store(po::parse_config_file(file, options), variables);
-	}
-	catch (po::error const& ex)
-	{
-		fatal_error("Error: failed to parse " + filename + ": "
-		            + ex.what() + "\n");
-	}
-}
-
 void
 display_help(po::options_description const& options)
 {
@@ -97,23 +57,6 @@ display_help(po::options_description const& options)
 		"Usage: sadcd-bootstrap OPTIONS\n\n" <<
 		"Options:\n" <<
 		options << '\n';
-}
-
-void
-notify(po::variables_map& variables)
-{
-	try
-	{
-		po::notify(variables);
-	}
-	catch (po::error const& ex)
-	{
-		// looks like a mandatory option is not configured
-		std::cerr << "Error: " << ex.what() << "\n"
-		          << "Alternatively, it can be configured via "
-		          << sadfs::sadcd::defaults::config_path << "\n";
-		std::exit(1);
-	}
 }
 
 // Populates command-line args for sadcd and starts it
@@ -155,7 +98,7 @@ main(int argc, char const** argv)
 
 	// boost doesn't overwrite parsed options. since we want command-line
 	// args to override options read from the config file, parse them first.
-	parse_args(variables, argc, argv, options);
+	sadfs::bootstrap::parse_args(variables, argc, argv, options);
 
 	// at this point, we can determine if we need to display the help/usage
 	// message. there's no need to read the config file from disk if so.
@@ -166,11 +109,11 @@ main(int argc, char const** argv)
 	}
 
 	// read options not specified via the CLI
-	parse_config_file(variables, options);
+	sadfs::bootstrap::parse_config_file(variables, options);
 
-	// notify any handlers; po::notify throws
-	// if mandatory options are not configured
-	::notify(variables);
+	// verify that mandatory options have been configured
+	// po::notify throws if they are not
+	sadfs::bootstrap::verify(variables);
 
 	// perform bootstrapping and start sadcd
 	start_server(variables);

@@ -1,7 +1,5 @@
-BIN_DIR = bin
-BUILD_DIRS = sadmd sadcd sadfsd comm example $(BIN_DIR)
 BUILD = build
-BIN = $(BUILD)/$(BIN_DIR)
+BIN = $(BUILD)/bin
 SRC = src
 INC = include
 LIB = boost_program_options
@@ -32,17 +30,11 @@ CXX_LIB += $(LIB_DIRS:%=-L%) # add '-L' prefix to each value in LIB_DIRS
 # build source file list
 COMMON_SRC = $(wildcard $(SRC)/comm/*.cpp)
 
-SADMD_SRC = $(filter-out \
-	    $(SRC)/sadmd/sadmd-bootstrap.cpp, \
-	    $(wildcard $(SRC)/sadmd/*.cpp))
+SADMD_SRC = $(wildcard $(SRC)/sadmd/*.cpp))
 
-SADCD_SRC = $(filter-out \
-	    $(SRC)/sadcd/sadcd-bootstrap.cpp, \
-	    $(wildcard $(SRC)/sadcd/*.cpp))
+SADCD_SRC = $(wildcard $(SRC)/sadcd/*.cpp))
 
-SADFSD_SRC = $(filter-out \
-	     $(SRC)/sadfsd/sadfsd-bootstrap.cpp, \
-	     $(wildcard $(SRC)/sadfsd/*.cpp))
+SADFSD_SRC = $(wildcard $(SRC)/sadfsd/*.cpp))
 
 # build object file list
 SADMD_OBJ = $(SADMD_SRC:$(SRC)/%.cpp=$(BUILD)/%.o)
@@ -70,6 +62,10 @@ $(BIN)/%: $(BUILD)/sadmd/%.o
 	$(CXX) $^ $(CXX_LIB) -o $@
 
 $(BIN)/%: $(BUILD)/sadcd/%.o
+	@$(MKDIR) $(@D)
+	$(CXX) $^ $(CXX_LIB) -o $@
+
+$(BIN)/%-bootstrap: $(BUILD)/bootstrap/%-bootstrap.o $(BUILD)/bootstrap/util.o
 	@$(MKDIR) $(@D)
 	$(CXX) $^ $(CXX_LIB) -o $@
 
