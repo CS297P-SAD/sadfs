@@ -20,7 +20,7 @@ else
 	CXX = g++
 endif
 
-CXX_FLAGS = -c -std=c++17 -ggdb
+CXX_FLAGS = -c -std=c++17 -ggdb -W -Wall -Wextra -Werror
 # do not optimize if requested
 ifneq "$(OPT)" "no"
 	CXX_FLAGS += -O
@@ -52,7 +52,7 @@ COMMON_OBJ = $(COMMON_SRC:$(SRC)/%.cpp=$(BUILD)/%.o)
 
 client: $(BIN)/sadfsd-bootstrap
 
-master: $(BIN)/sadmd-bootstrap
+master: $(BIN)/sadmd-bootstrap $(BIN)/sadmd
 
 chunk: $(BIN)/sadcd-bootstrap $(BIN)/sadcd
 
