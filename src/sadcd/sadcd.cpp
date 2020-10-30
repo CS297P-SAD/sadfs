@@ -1,7 +1,7 @@
 #include <iostream>
 
 int 
-main(int argc, char *argv[])
+main(int, char **)
 {
 	std::cout << "Server started" << std::endl;
 	//TODO: open ports
