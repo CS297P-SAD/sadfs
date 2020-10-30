@@ -1,19 +1,21 @@
 /* This gets compiled to the binary sadmd-bootstrap that,
  * as the name suggests, performs bootstrapping tasks required
  * to run sadmd -- the Master server daemon. As a last step,
- * it calls execve(2) to execute sadmd.
+ * it calls execvp(3) to execute sadmd.
  */
 
 // sadfs-specific includes
 #include <sadfs/sadmd/defaults.hpp>
 
 // standard includes
+#include <array>
+#include <cerrno>     // errno
 #include <cstdint>    // std::uint16_t
-#include <exception>
-#include <iostream>
+#include <cstring>    // std::strerror
 #include <fstream>
+#include <iostream>
 #include <string>
-#include <string_view>
+#include <unistd.h>   // execvp(3)
 
 // external includes
 #include <boost/program_options.hpp>
@@ -62,25 +64,29 @@ void
 parse_config_file(po::variables_map& variables,
                  po::options_description const& options)
 {
-	auto const filename = std::string_view(
-	                          variables["config"].as<std::string>());
+	auto const filename = variables["config"].as<std::string>();
+	auto fatal_error = [](auto const& msg)
+	{
+		std::cerr << msg;
+		std::exit(1);
+	};
 
-	auto file     = std::ifstream(filename.data());
+	auto file = std::ifstream(filename.c_str());
 	if (!file.is_open())
 	{
-		std::cerr << "Error: " << filename << " does not exist\n";
-		std::exit(1);
+		fatal_error("Error: " + filename + " does not exist\n");
 	}
 
+	// po::store will throw an exception if the
+	// config file's syntax is incorrect
 	try
 	{
 		po::store(po::parse_config_file(file, options), variables);
 	}
-	catch (std::exception const& ex)
+	catch (po::error const& ex)
 	{
-		std::cerr << "Error: failed to parse " << filename << '\n'
-			      << ex.what() << "\n";
-		std::exit(1);
+		fatal_error("Error: failed to parse " + filename + ": "
+			        + ex.what() + "\n");
 	}
 }
 
@@ -91,13 +97,6 @@ display_help(po::options_description const& options)
 		"Usage: sadmd-bootstrap OPTIONS\n\n" <<
 		"Options:\n" <<
 		options << '\n';
-}
-
-void
-start_server(po::variables_map const& variables)
-{
-	std::cerr << "Error: start_server() unimplemented\n";
-	std::exit(1);
 }
 
 void
@@ -115,6 +114,33 @@ notify(po::variables_map& variables)
 		          << sadfs::sadmd::defaults::config_path << "\n";
 		std::exit(1);
 	}
+}
+
+[[noreturn]] void
+start_server(po::variables_map const& variables)
+{
+	using namespace std::string_literals;
+	// construct arguments to pass
+	auto args = std::array
+	{
+		"sadmd"s,
+		"--port"s,
+		std::to_string(variables["port"].as<std::uint16_t>())
+	};
+
+	// allocate space for pointers, including terminating nullptr
+	auto argv = std::array<char*, args.size()+1>{nullptr};
+
+	// construct argv from args
+	auto get_ptr = [](auto& str) { return str.data(); };
+	std::transform(args.begin(), args.end(), argv.begin(), get_ptr);
+
+	execvp(argv.at(0), argv.data());
+
+	// execvp returned -- something went wrong
+	std::cerr << "Error: failed to start server: "
+	          << std::strerror(errno) << "\n";
+	std::exit(errno);
 }
 
 } // unnamed namespace
@@ -140,14 +166,13 @@ main(int argc, char const** argv)
 	// read options not specified via the CLI
 	parse_config_file(variables, options);
 
-	// notify any handlers
+	// notify any handlers; po::notify throws
+	// if mandatory options are not configured
 	::notify(variables);
 
 	// perform bootstrapping and start sadmd
 	start_server(variables);
 
-	// start_server must not return since it is supposed to
-	// replace the program image with execve(2)
-	std::cerr << "Error: could not start server\n";
-	return 1;
+	// start_server will not return since it is supposed to
+	// replace the program image with execvp(3), or die trying
 }
