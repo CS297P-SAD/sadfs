@@ -7,6 +7,7 @@ INC = include
 LIB = boost_program_options
 LIB_DIRS =
 
+MKDIR = mkdir -p
 # detect OS
 OS ?= $(shell uname -s)
 
@@ -57,30 +58,35 @@ chunk: $(BIN)/sadcd-bootstrap $(BIN)/sadcd
 
 ex: $(patsubst example/%.cpp, $(BIN)/%, $(wildcard example/*.cpp))
 
+all: client master chunk ex
+
 # sadfs binaries
-$(BIN)/%: mkdirs $(BUILD)/sadfsd/%.o
-	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $@
+$(BIN)/%: $(BUILD)/sadfsd/%.o
+	@$(MKDIR) $(@D)
+	$(CXX) $^ $(CXX_LIB) -o $@
 
-$(BIN)/%: mkdirs $(BUILD)/sadmd/%.o
-	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $@
+$(BIN)/%: $(BUILD)/sadmd/%.o
+	@$(MKDIR) $(@D)
+	$(CXX) $^ $(CXX_LIB) -o $@
 
-$(BIN)/%: mkdirs $(BUILD)/sadcd/%.o
-	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $@
+$(BIN)/%: $(BUILD)/sadcd/%.o
+	@$(MKDIR) $(@D)
+	$(CXX) $^ $(CXX_LIB) -o $@
 
 $(BUILD)/%.o: $(SRC)/%.cpp
-	$(CXX) $(CXX_FLAGS) $(CXX_INC) $< -o $@
+	@$(MKDIR) $(@D)
+	$(CXX) $(CXX_FLAGS) $(CXX_INC) $^ -o $@
 
 # example binaries
-$(BIN)/%: mkdirs $(BUILD)/example/%.o $(COMMON_OBJ)
-	$(CXX) $(filter-out $<, $^) -o $@
+$(BIN)/%: $(BUILD)/example/%.o $(COMMON_OBJ)
+	@$(MKDIR) $(@D)
+	$(CXX) $^ -o $@
 
 $(BUILD)/example/%.o: example/%.cpp
-	$(CXX) $(CXX_FLAGS) $(CXX_INC) $< -o $@
+	@$(MKDIR) $(@D)
+	$(CXX) $(CXX_FLAGS) $(CXX_INC) $^ -o $@
 
 clean:
 	@-rm -r $(BUILD) >/dev/null 2>&1
 
-mkdirs:
-	@mkdir -p $(BUILD_DIRS:%=$(BUILD)/%)
-
-.PHONY: clean mkdirs client master chunk ex
+.PHONY: clean client master chunk ex
