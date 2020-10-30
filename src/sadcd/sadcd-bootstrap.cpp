@@ -1,20 +1,21 @@
 /* This gets compiled to the binary sadcd-bootstrap that,
  * as the name suggests, performs bootstrapping tasks required
  * to run sadcd -- the Chunk server daemon. As a last step,
- * it calls execve(2) to execute sadcd.
+ * it calls execvp(3) to execute sadcd.
  */
 
 // sadfs-specific includes
 #include <sadfs/sadcd/defaults.hpp>
 
 // standard includes
+#include <array>
+#include <cerrno>     // errno
 #include <cstdint>    // std::uint16_t
-#include <exception>
-#include <iostream>
+#include <cstring>    // std::strerror
 #include <fstream>
+#include <iostream>
 #include <string>
-#include <string_view>
- #include <unistd.h>  //execve(2)
+#include <unistd.h>   // execvp(3)
 
 // external includes
 #include <boost/program_options.hpp>
@@ -32,7 +33,7 @@ config_options()
 	// adds options that are configured in the config file,
 	// but can be overridden from the command-line
 	desc.add_options()
-		("port,p", po::value<std::uint16_t>(),
+		("port,p", po::value<std::uint16_t>()->required(),
 			"override configured port number on which "
 			"the server listens for incoming connections")
 		;
@@ -56,7 +57,6 @@ parse_args(po::variables_map& variables,
 {
 	po::store(po::parse_command_line(argc, argv, options),
 	          variables);
-	po::notify(variables);
 }
 
 // parses config file and populates variables
@@ -64,28 +64,30 @@ void
 parse_config_file(po::variables_map& variables,
                  po::options_description const& options)
 {
-	auto const filename = std::string_view(
-	                          variables["config"].as<std::string>());
+	auto const filename = variables["config"].as<std::string>();
+	auto fatal_error = [](auto const& msg)
+	{
+		std::cerr << msg;
+		std::exit(1);
+	};
 
-	auto file     = std::ifstream(filename.data());
+	auto file = std::ifstream(filename.c_str());
 	if (!file.is_open())
 	{
-		std::cerr << "Error: " << filename << " does not exist\n";
-		std::exit(1);
+		fatal_error("Error: " + filename + " does not exist\n");
 	}
 
+	// po::store will throw an exception if the
+	// config file's syntax is incorrect
 	try
 	{
 		po::store(po::parse_config_file(file, options), variables);
 	}
-	catch (std::exception const& ex)
+	catch (po::error const& ex)
 	{
-		std::cerr << "Error: failed to parse " << filename << '\n'
-			      << ex.what() << "\n";
-		std::exit(1);
+		fatal_error("Error: failed to parse " + filename + ": "
+		            + ex.what() + "\n");
 	}
-
-	po::notify(variables);
 }
 
 void
@@ -97,27 +99,49 @@ display_help(po::options_description const& options)
 		options << '\n';
 }
 
-// Populates command-line args for sadcd and starts it
 void
-start_server(po::variables_map const& config)
-{	
-	//Verify a port number was given
-	if (!config.count("port"))
+notify(po::variables_map& variables)
+{
+	try
 	{
-		std::cerr << "Error: No port number was set\n";
+		po::notify(variables);
+	}
+	catch (po::error const& ex)
+	{
+		// looks like a mandatory option is not configured
+		std::cerr << "Error: " << ex.what() << "\n"
+		          << "Alternatively, it can be configured via "
+		          << sadfs::sadcd::defaults::config_path << "\n";
 		std::exit(1);
 	}
-	
-	// Arguments needed for execve
-	auto chunk_argv = std::array<char* const, 4>
+}
+
+// Populates command-line args for sadcd and starts it
+[[noreturn]] void
+start_server(po::variables_map const& variables)
+{
+	using namespace std::string_literals;
+	// construct arguments to pass
+	auto args = std::array
 	{
-		std::string{"sadcd"}.data(), 
-		std::string{"--port"}.data(), 
-		std::to_string(config["port"].as<std::uint16_t>()).data(),
-		nullptr
+		"sadcd"s,
+		"--port"s,
+		std::to_string(variables["port"].as<std::uint16_t>())
 	};
 
-	execve(chunk_argv[0], chunk_argv.data(), nullptr);
+	// allocate space for pointers, including terminating nullptr
+	auto argv = std::array<char*, args.size()+1>{nullptr};
+
+	// construct argv from args
+	auto get_ptr = [](auto& str) { return str.data(); };
+	std::transform(args.begin(), args.end(), argv.begin(), get_ptr);
+
+	execvp(argv.at(0), argv.data());
+
+	// execvp returned -- something went wrong
+	std::cerr << "Error: failed to start server: "
+	          << std::strerror(errno) << "\n";
+	std::exit(errno);
 }
 
 } // unnamed namespace
@@ -144,11 +168,13 @@ main(int argc, char const** argv)
 	// read options not specified via the CLI
 	parse_config_file(variables, options);
 
+	// notify any handlers; po::notify throws
+	// if mandatory options are not configured
+	::notify(variables);
+
 	// perform bootstrapping and start sadcd
 	start_server(variables);
 
-	// start_server must not return since it is supposed to
-	// replace the program image with execve(2)
-	std::cerr << "Error: could not start server\n";
-	return 1;
+	// start_server will not return since it is supposed to
+	// replace the program image with execvp(3), or die trying
 }
