@@ -64,7 +64,7 @@ $(BIN)/%: mkdirs $(BUILD)/sadfsd/%.o
 $(BIN)/%: mkdirs $(BUILD)/sadmd/%.o
 	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $@
 
-$(BIN)/%: mkdirs $(BUILD)/sadcd/%.o
+$(BIN)/%: mkdirs $(BUILD)/sadcd/%.o $(COMMON_OBJ)
 	$(CXX) $(filter-out $<, $^) $(CXX_LIB) -o $@
 
 $(BUILD)/%.o: $(SRC)/%.cpp

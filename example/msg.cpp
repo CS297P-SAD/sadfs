@@ -17,7 +17,7 @@ main(int argc, char** argv)
 	auto sock = sadfs::socket(socket::domain::inet, socket::type::stream);
 	auto addr = sockaddr_in{};
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(6666);
+	addr.sin_port = htons(6667);
 	addr.sin_addr = {inet::constants::ip_localhost.value()};
 	if (connect(sock.descriptor(),
 	            reinterpret_cast<sockaddr const*>(&addr),
@@ -32,12 +32,14 @@ main(int argc, char** argv)
 		return -2;
 	}
 
+	auto len = 0;
 	auto buf = std::array<char, 128>{};
-	if (recv(sock.descriptor(), buf.data(), buf.size(), 0) == -1)
+	while ((len = recv(sock.descriptor(), buf.data(), buf.size() - 1, 0)) != -1)
 	{
-		return -3;
+		if (len == 0) break;
+		std::cout << buf.data() << std::endl;
+		buf.fill({});
 	}
-	std::cout << buf.data() << '\n';
 
 	return 0;
 }
