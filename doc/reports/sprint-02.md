@@ -12,7 +12,7 @@
 #### Planned
 | Items | Points |
 | :---: | :----: |
-|  10   |   NA   |
+|   9   |   NA   |
 #### Completed
 | Items | Points |
 | :---: | :----: |
@@ -25,8 +25,8 @@
   master, chunk server and file system daemons. Set up directory structure
   and Makefile, implemented a user facing CLI based bootstrap service that 
   forks socket listener process with the corresponding input parameters.
-  Used UNIX sockets to establish connection. Tested connection with an echo
-  server program.
+  We used Berkeley/BSD sockets to establish connections, and tested them
+  with an echo server program.
 
 * What went well?
   
@@ -40,8 +40,10 @@
   
 * What didn’t go well?
 
-  We found that a portion our code tested with GCC failed to compile on Apple
-  machine running CLANG compiler.
+  We faced a cross-platform compilation issue, where code written and tested 
+  on one software platform did not compile on two other platforms. We found out 
+  that this was because of differences in Linux's socket programming API, and
+  macOS's version of clang not supporting initialization with braced-init-list.
   We faced issue with squashing commits on Github.
   Shubham was not able to contribute sufficient time to the project because of
   interview preparation.
@@ -64,4 +66,3 @@
 | 7 | User Story | Daman      | Introduce Listener Class                              | Completed | NA |
 | 8 | Task       | Daman      | Implement socket and listener class without exception | Completed | NA |
 | 9 | User Story | Adam       | Chunk Server Establish New Connections                | In Progress | NA |
-|10 | User Story | Unassigned | Shutdown Daemons                                      | Unassigned | NA |
