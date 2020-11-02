@@ -1,20 +1,22 @@
 /* This gets compiled to the binary sadcd-bootstrap that,
  * as the name suggests, performs bootstrapping tasks required
  * to run sadcd -- the Chunk server daemon. As a last step,
- * it calls execve(2) to execute sadcd.
+ * it calls execvp(3) to execute sadcd.
  */
 
 // sadfs-specific includes
 #include <sadfs/sadcd/defaults.hpp>
+#include <sadfs/bootstrap/util.hpp>
 
 // standard includes
+#include <array>
+#include <cerrno>     // errno
 #include <cstdint>    // std::uint16_t
-#include <exception>
+#include <cstdlib>    // std::exit
+#include <cstring>    // std::strerror
 #include <iostream>
-#include <fstream>
 #include <string>
-#include <string_view>
- #include <unistd.h>  //execve(2)
+#include <unistd.h>   // execvp(3)
 
 // external includes
 #include <boost/program_options.hpp>
@@ -32,7 +34,7 @@ config_options()
 	// adds options that are configured in the config file,
 	// but can be overridden from the command-line
 	desc.add_options()
-		("port,p", po::value<std::uint16_t>(),
+		("port,p", po::value<std::uint16_t>()->required(),
 			"override configured port number on which "
 			"the server listens for incoming connections")
 		;
@@ -48,46 +50,6 @@ config_options()
 	return desc;
 }
 
-// parses command-line args and populates variables
-void
-parse_args(po::variables_map& variables,
-           int argc, char const** argv,
-           po::options_description const& options)
-{
-	po::store(po::parse_command_line(argc, argv, options),
-	          variables);
-	po::notify(variables);
-}
-
-// parses config file and populates variables
-void
-parse_config_file(po::variables_map& variables,
-                 po::options_description const& options)
-{
-	auto const filename = std::string_view(
-	                          variables["config"].as<std::string>());
-
-	auto file     = std::ifstream(filename.data());
-	if (!file.is_open())
-	{
-		std::cerr << "Error: " << filename << " does not exist\n";
-		std::exit(1);
-	}
-
-	try
-	{
-		po::store(po::parse_config_file(file, options), variables);
-	}
-	catch (std::exception const& ex)
-	{
-		std::cerr << "Error: failed to parse " << filename << '\n'
-			      << ex.what() << "\n";
-		std::exit(1);
-	}
-
-	po::notify(variables);
-}
-
 void
 display_help(po::options_description const& options)
 {
@@ -98,26 +60,31 @@ display_help(po::options_description const& options)
 }
 
 // Populates command-line args for sadcd and starts it
-void
-start_server(po::variables_map const& config)
-{	
-	//Verify a port number was given
-	if (!config.count("port"))
+[[noreturn]] void
+start_server(po::variables_map const& variables)
+{
+	using namespace std::string_literals;
+	// construct arguments to pass
+	auto args = std::array
 	{
-		std::cerr << "Error: No port number was set\n";
-		std::exit(1);
-	}
-	
-	// Arguments needed for execve
-	auto chunk_argv = std::array<char* const, 4>
-	{
-		std::string{"sadcd"}.data(), 
-		std::string{"--port"}.data(), 
-		std::to_string(config["port"].as<std::uint16_t>()).data(),
-		nullptr
+		"sadcd"s,
+		"--port"s,
+		std::to_string(variables["port"].as<std::uint16_t>())
 	};
 
-	execve(chunk_argv[0], chunk_argv.data(), nullptr);
+	// allocate space for pointers, including terminating nullptr
+	auto argv = std::array<char*, args.size()+1>{nullptr};
+
+	// construct argv from args
+	auto get_ptr = [](auto& str) { return str.data(); };
+	std::transform(args.begin(), args.end(), argv.begin(), get_ptr);
+
+	execvp(argv.at(0), argv.data());
+
+	// execvp returned -- something went wrong
+	std::cerr << "Error: failed to start server: "
+	          << std::strerror(errno) << "\n";
+	std::exit(errno);
 }
 
 } // unnamed namespace
@@ -131,7 +98,7 @@ main(int argc, char const** argv)
 
 	// boost doesn't overwrite parsed options. since we want command-line
 	// args to override options read from the config file, parse them first.
-	parse_args(variables, argc, argv, options);
+	sadfs::bootstrap::parse_args(variables, argc, argv, options);
 
 	// at this point, we can determine if we need to display the help/usage
 	// message. there's no need to read the config file from disk if so.
@@ -142,13 +109,15 @@ main(int argc, char const** argv)
 	}
 
 	// read options not specified via the CLI
-	parse_config_file(variables, options);
+	sadfs::bootstrap::parse_config_file(variables, options);
+
+	// verify that mandatory options have been configured
+	// po::notify throws if they are not
+	sadfs::bootstrap::verify(variables);
 
 	// perform bootstrapping and start sadcd
 	start_server(variables);
 
-	// start_server must not return since it is supposed to
-	// replace the program image with execve(2)
-	std::cerr << "Error: could not start server\n";
-	return 1;
+	// start_server will not return since it is supposed to
+	// replace the program image with execvp(3), or die trying
 }

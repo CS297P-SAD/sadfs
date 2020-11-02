@@ -57,7 +57,7 @@ process_message(sadfs::socket* sock)
 }
 
 int 
-main(int argc, char *argv[])
+main(int, char **)
 {
 
 	//Populate chunk_server with info from command line args
