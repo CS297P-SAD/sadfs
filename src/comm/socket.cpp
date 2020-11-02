@@ -1,7 +1,7 @@
 /* implementation of sadfs::socket */
 
 // sadfs-specific includes
-#include <sadfs/comm/socket.hpp>
+#include "socket.hpp"
 
 // standard includes
 #include <stdexcept>    // std::invalid_argument

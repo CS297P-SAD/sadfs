@@ -1,5 +1,5 @@
 /* example code for testing sadfs::inet::listener */
-#include <sadfs/comm/inet.hpp>
+#include <comm/inet.hpp>
 
 #include <array>
 #include <iostream>

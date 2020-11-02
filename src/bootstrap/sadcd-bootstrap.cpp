@@ -5,8 +5,8 @@
  */
 
 // sadfs-specific includes
-#include <sadfs/sadcd/defaults.hpp>
-#include <sadfs/bootstrap/util.hpp>
+#include "util.hpp"
+#include <sadcd/defaults.hpp>
 
 // standard includes
 #include <array>
