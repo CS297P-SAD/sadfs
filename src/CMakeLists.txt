@@ -10,8 +10,8 @@ set (COMMON_SOURCES comm/inet.cpp comm/socket.cpp)
 
 # declare dependencies for relevant targets
 target_sources (sadmd  PRIVATE ${COMMON_SOURCES})
-target_sources (sadcd  PRIVATE ${COMMON_SOURCES})
-target_sources (sadfsd PRIVATE ${COMMON_SOURCES})
+# target_sources (sadcd  PRIVATE ${COMMON_SOURCES})
+# target_sources (sadfsd PRIVATE ${COMMON_SOURCES})
 target_sources (echod  PRIVATE ${COMMON_SOURCES})
 target_sources (msg    PRIVATE ${COMMON_SOURCES})
 
