@@ -5,7 +5,7 @@
  */
 
 // sadfs-specific includes
-#include "util.hpp"
+#include <sadfs/bootstrap/util.hpp>
 #include <sadfs/sadmd/defaults.hpp>
 
 // standard includes
