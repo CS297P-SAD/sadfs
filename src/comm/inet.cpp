@@ -15,25 +15,7 @@
 namespace sadfs { namespace inet {
 
 ip_addr::
-ip_addr()
-{
-	addr_ = 0;
-}
-
-ip_addr::
 ip_addr(char const* ip)
-{
-	set(ip);
-}
-
-std::uint32_t ip_addr::
-value() const noexcept
-{
-	return addr_;
-}
-
-void ip_addr::
-set(char const* ip)
 {
 	auto tmp = in_addr{};
 	if (inet_aton(ip, &tmp) == 0)
@@ -43,6 +25,12 @@ set(char const* ip)
 		throw std::invalid_argument(err.str());
 	}
 	addr_ = tmp.s_addr;
+}
+
+std::uint32_t ip_addr::
+value() const noexcept
+{
+	return addr_;
 }
 
 namespace {

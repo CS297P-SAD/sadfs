@@ -3,51 +3,60 @@
  * port specified by the command line to handle incoming requests.
  */
 
+// sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
 
-#include <iostream>
+// standard includes
 #include <array>
-#include <unistd.h> // read/write
 #include <cstdint>  // std::uint16_t
+#include <iostream>
+#include <unistd.h> // read/write
 
-using namespace sadfs;
+namespace
+{
 
 // struct to hold info needed to set up a chunk server
-struct chunk_server_settings
+struct settings
 {
 	std::uint16_t port;
 	sadfs::inet::ip_addr ip;
-	void from_command_line(int, char**);
 };
 
-// sets struct variables based on command line arguments passed
-void chunk_server_settings::
-from_command_line(int argc, char *argv[])
+// returns settings based on command-line arguments
+settings
+read_command_line(int argc, char *argv[])
 {
+	auto port = 0;
+	auto ip = "";
 	for (auto i = 1; i < argc - 1; i ++)
 	{
 		auto arg = std::string{argv[i]};
 		if (arg.compare("--port") == 0)
 		{
 			i++;
-			this->port = static_cast<std::uint16_t>(std::stoi(std::string{argv[i]}));
+			port = std::stoi(std::string{argv[i]});
 		}
 		else if (arg.compare("--ipaddress") == 0)
 		{
 			i++;
-			this->ip.set(argv[i]);
+			ip = argv[i];
 		}
 	}
+
+	// TODO: verify that port fits in 16 bits in edge case that this program is
+	// started by some method other than sadcd-bootstrap
+	// should also double check that an ip and port number were in fact passed
+	return settings{static_cast<std::uint16_t>(port), ip};
 }
 
 // reads the message from a socket that just received some data
 std::string
-process_message(sadfs::socket* sock)
+process_message(sadfs::socket& sock)
 {
 	auto buf = std::array<char, 512>{};
 	auto len = 0;
 	auto result = std::string{};
-	while ((len = ::read(sock->descriptor(), buf.data(), buf.size())))
+	while ((len = ::read(sock.descriptor(), buf.data(), buf.size())))
 	{
 		if (len == -1)
 		{
@@ -55,7 +64,7 @@ process_message(sadfs::socket* sock)
 			std::cerr << std::strerror(errno) << std::endl;
 			std::exit(1);
 		}
-		if (::write(sock->descriptor(), buf.data(), len) == -1)
+		if (::write(sock.descriptor(), buf.data(), len) == -1)
 		{
 			std::cerr << "write error\n";
 			std::exit(1);
@@ -70,23 +79,24 @@ process_message(sadfs::socket* sock)
 	return result;
 }
 
+} // unnamed namespace
+
 int 
 main(int argc, char *argv[])
 {
 
 	// populate chunk_server from command line args
-	auto chunk_server = chunk_server_settings{};
-	chunk_server.from_command_line(argc, argv);
+	auto chunk_server = read_command_line(argc, argv);
 
 	// set up a listener for incoming messages
-	auto listener = inet::listener{chunk_server.ip, chunk_server.port};
+	auto listener = sadfs::inet::listener{chunk_server.ip, chunk_server.port};
 
 	while (true)
 	{
 		auto sock = listener.accept();
-		auto result = process_message(&sock);
+		auto result = process_message(sock);
 
-		std::cout << result << std::endl;
+		std::cout << result << "\n";
 		// perform some action based on result
 	}
 }
