@@ -32,7 +32,7 @@ endfunction()
 # first, find the boost_program_options library. this sets
 # the Boost_INCLUDE_DIRS and Boost_LIBRARIES variables
 find_package (Boost
-	1.67.0
+	1.57.0
 	REQUIRED
 	COMPONENTS program_options)
 
