@@ -1,8 +1,8 @@
 /* implementation of inet communication components */
 
 // sadfs-specific includes
-#include "inet.hpp"
-#include "defaults.hpp"
+#include <sadfs/comm/inet.hpp>
+#include <sadfs/comm/defaults.hpp>
 
 // standard includes
 #include <arpa/inet.h>  // inet_aton, inet_ntoa, htons, ntohs
