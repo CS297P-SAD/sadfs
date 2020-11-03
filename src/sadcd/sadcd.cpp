@@ -8,7 +8,6 @@
 
 // standard includes
 #include <array>
-#include <cstdint>  // std::uint16_t
 #include <iostream>
 #include <unistd.h> // read/write
 
@@ -18,7 +17,7 @@ namespace
 // struct to hold info needed to set up a chunk server
 struct settings
 {
-	std::uint16_t port;
+	sadfs::inet::port_no port;
 	sadfs::inet::ip_addr ip;
 };
 
@@ -85,11 +84,11 @@ int
 main(int argc, char *argv[])
 {
 
-	// populate chunk_server from command line args
-	auto chunk_server = read_command_line(argc, argv);
+	// populate server_settings from command line args
+	auto server_settings = read_command_line(argc, argv);
 
 	// set up a listener for incoming messages
-	auto listener = sadfs::inet::listener{chunk_server.ip, chunk_server.port};
+	auto listener = sadfs::inet::listener{server_settings.ip, server_settings.port};
 
 	while (true)
 	{
