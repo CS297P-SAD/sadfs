@@ -1,12 +1,12 @@
-/* This gets compiled to the binary sadmd-bootstrap that,
+/* This gets compiled to the binary sadcd-bootstrap that,
  * as the name suggests, performs bootstrapping tasks required
- * to run sadmd -- the Master server daemon. As a last step,
- * it calls execvp(3) to execute sadmd.
+ * to run sadcd -- the Chunk server daemon. As a last step,
+ * it calls execvp(3) to execute sadcd.
  */
 
 // sadfs-specific includes
-#include "util.hpp"
-#include <sadfs/sadmd/defaults.hpp>
+#include <sadfs/bootstrap/util.hpp>
+#include <sadfs/sadcd/defaults.hpp>
 
 // standard includes
 #include <array>
@@ -43,7 +43,7 @@ config_options()
 	desc.add_options()
 		("help,h", "display this message and exit")
 		("config,c", po::value<std::string>()->default_value(
-		                 sadfs::sadmd::defaults::config_path),
+		                 sadfs::sadcd::defaults::config_path),
 			"configuration file to use")
 		;
 
@@ -54,11 +54,12 @@ void
 display_help(po::options_description const& options)
 {
 	std::cout <<
-		"Usage: sadmd-bootstrap OPTIONS\n\n" <<
+		"Usage: sadcd-bootstrap OPTIONS\n\n" <<
 		"Options:\n" <<
 		options << '\n';
 }
 
+// Populates command-line args for sadcd and starts it
 [[noreturn]] void
 start_server(po::variables_map const& variables)
 {
@@ -66,7 +67,7 @@ start_server(po::variables_map const& variables)
 	// construct arguments to pass
 	auto args = std::array
 	{
-		"sadmd"s,
+		"sadcd"s,
 		"--port"s,
 		std::to_string(variables["port"].as<std::uint16_t>())
 	};
@@ -87,6 +88,7 @@ start_server(po::variables_map const& variables)
 }
 
 } // unnamed namespace
+
 
 int
 main(int argc, char const** argv)
@@ -113,7 +115,7 @@ main(int argc, char const** argv)
 	// po::notify throws if they are not
 	sadfs::bootstrap::verify(variables);
 
-	// perform bootstrapping and start sadmd
+	// perform bootstrapping and start sadcd
 	start_server(variables);
 
 	// start_server will not return since it is supposed to
