@@ -10,7 +10,7 @@ set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # we want all targets to be able to find headers
-include_directories (${CMAKE_SOURCE_DIR}/src)
+include_directories (${CMAKE_SOURCE_DIR}/include)
 
 # delegate config to sub-directories
 # dependent components must appear first
