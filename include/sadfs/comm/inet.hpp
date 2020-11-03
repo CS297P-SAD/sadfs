@@ -2,7 +2,7 @@
 #define SADFS_COMM_INET_HPP
 
 // sadfs-specific includes
-#include <sadfs/comm/socket.hpp>
+#include "socket.hpp"
 
 // standard includes
 #include <cstdint>

@@ -8,6 +8,7 @@
 
 // standard includes
 #include <array>
+#include <cstring>  // std::strerror
 #include <iostream>
 #include <unistd.h> // read/write
 

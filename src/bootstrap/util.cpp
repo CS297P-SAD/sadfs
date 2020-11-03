@@ -1,3 +1,4 @@
+/* utility functions for bootstrap binaries */
 // sadfs-specific includes
 #include <sadfs/bootstrap/util.hpp>
 
