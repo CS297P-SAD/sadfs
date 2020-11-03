@@ -14,7 +14,3 @@ target_sources (sadmd  PRIVATE ${COMMON_SOURCES})
 # target_sources (sadfsd PRIVATE ${COMMON_SOURCES})
 target_sources (echod  PRIVATE ${COMMON_SOURCES})
 target_sources (msg    PRIVATE ${COMMON_SOURCES})
-
-# expose header files for example programs
-target_include_directories (echod PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories (msg   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
