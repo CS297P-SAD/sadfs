@@ -16,4 +16,3 @@ include_directories (${CMAKE_SOURCE_DIR}/include)
 # dependent components must appear first
 add_subdirectory (example)
 add_subdirectory (src)
-# add_subdirectory (proto)
