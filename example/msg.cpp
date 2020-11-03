@@ -72,10 +72,10 @@ main(int argc, char** argv)
 		for (auto i = 0; i < recv_len; i++)
 		{
 			std::cout << buf[i];
-			buf[i] = {};
 		}
+		buf.fill({}); // clear buffer for next read
 	}
-	std::cout << '\n';
+	std::cout << "\n";
 
 	return 0;
 }
