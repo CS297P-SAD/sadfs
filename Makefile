@@ -61,7 +61,7 @@ $(BIN)/%: $(BUILD)/sadmd/%.o
 	@$(MKDIR) $(@D)
 	$(CXX) $^ $(CXX_LIB) -o $@
 
-$(BIN)/%: $(BUILD)/sadcd/%.o
+$(BIN)/%: $(BUILD)/sadcd/%.o $(COMMON_OBJ)
 	@$(MKDIR) $(@D)
 	$(CXX) $^ $(CXX_LIB) -o $@
 

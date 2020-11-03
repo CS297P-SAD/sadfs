@@ -1,3 +1,8 @@
+/* This creates the binary for the chunk server daemon, which should only be
+ * be started by the sadcd-bootstrap process. It opens up a listener on an ip
+ * and port specified by the command line to handle incoming requests.
+ */
+
 #include <sadfs/comm/inet.hpp>
 
 #include <iostream>
@@ -11,6 +16,7 @@ using namespace sadfs;
 struct chunk_server_settings
 {
 	std::uint16_t port;
+	sadfs::inet::ip_addr ip;
 	void from_command_line(int, char**);
 };
 
@@ -26,6 +32,11 @@ from_command_line(int argc, char *argv[])
 			i++;
 			this->port = static_cast<std::uint16_t>(std::stoi(std::string{argv[i]}));
 		}
+		else if (arg.compare("--ipaddress") == 0)
+		{
+			i++;
+			this->ip.set(argv[i]);
+		}
 	}
 }
 
@@ -36,7 +47,7 @@ process_message(sadfs::socket* sock)
 	auto buf = std::array<char, 512>{};
 	auto len = 0;
 	auto result = std::string{};
-	while ((len = ::read(sock->descriptor(), buf.data(), buf.size() - 1)))
+	while ((len = ::read(sock->descriptor(), buf.data(), buf.size())))
 	{
 		if (len == -1)
 		{
@@ -49,7 +60,10 @@ process_message(sadfs::socket* sock)
 			std::cerr << "write error\n";
 			std::exit(1);
 		}
-		result += buf.data();
+		for (auto i = 0; i < len; i++)
+		{
+			result += buf[i];
+		}
 		buf.fill({});
 	}
 
@@ -57,7 +71,7 @@ process_message(sadfs::socket* sock)
 }
 
 int 
-main(int, char **)
+main(int argc, char *argv[])
 {
 
 	//Populate chunk_server with info from command line args
@@ -65,7 +79,7 @@ main(int, char **)
 	chunk_server.from_command_line(argc, argv);
 
 	//Set up a listener for incoming messages
-	auto listener = inet::listener{inet::constants::ip_localhost, chunk_server.port};
+	auto listener = inet::listener{chunk_server.ip, chunk_server.port};
 
 	while (true)
 	{
