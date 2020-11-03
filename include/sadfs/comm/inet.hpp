@@ -21,9 +21,7 @@ public:
 	// an address in dotted-decimal fashion
 	// ex: "127.0.0.1"
 	ip_addr(char const* ip);
-	ip_addr();
 	std::uint32_t value() const noexcept;
-	void set(char const* ip);
 private:
 	std::uint32_t addr_;
 };
