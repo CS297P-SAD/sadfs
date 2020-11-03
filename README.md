@@ -10,13 +10,13 @@ $ cmake ..
 $ make
 ```
 
-## Execution
+## Run
 To run any of the daemons, run:
 ```
 $ PATH=$PWD/bin bin/{sadmd|sadcd|sadfsd}-bootstrap
 ```
 
-To see how to override any config parameters, run:
+To see how to override config parameters, run:
 ```
 $ ./bin/{sadmd|sadcd|sadfsd}-bootstrap {-h|--help}
 ```
