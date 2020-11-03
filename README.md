@@ -1,7 +1,7 @@
 # sadfs
 A simple distributed file system.
 
-## Build
+### Build
 To build the project, run:
 ```
 $ mkdir build
@@ -10,7 +10,7 @@ $ cmake ..
 $ make
 ```
 
-## Run
+### Run
 To run any of the daemons, run:
 ```
 $ PATH=$PWD/bin bin/{sadmd|sadcd|sadfsd}-bootstrap
