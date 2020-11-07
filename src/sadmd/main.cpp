@@ -51,8 +51,8 @@ read_command_line(int argc, char *argv[])
 int
 main(int argc, char** argv)
 {
-	// populate server_settings from command line args
-	auto server_settings = read_command_line(argc, argv);
+    // populate server_settings from command line args
+    auto server_settings = read_command_line(argc, argv);
 
     auto master = sadmd{server_settings.port, server_settings.ip};
     

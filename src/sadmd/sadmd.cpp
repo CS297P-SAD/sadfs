@@ -11,7 +11,6 @@
 #include <string>
 #include <unistd.h> // read/write
 
-// starts server by opening a listener
 void sadmd::
 start()
 {
@@ -27,7 +26,6 @@ start()
 	}
 }
 
-// reads the message from a socket that just received some data
 std::string sadmd::
 process_message(sadfs::socket& sock)
 {
