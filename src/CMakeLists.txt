@@ -5,6 +5,7 @@ set (COMMON_SOURCE_FILES
 
 # add main targets
 add_executable (sadmd
+	sadmd/main.cpp
 	sadmd/sadmd.cpp
 	${COMMON_SOURCE_FILES})
 add_executable (sadcd
