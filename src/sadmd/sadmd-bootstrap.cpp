@@ -38,6 +38,11 @@ config_options()
 			"override configured port number on which "
 			"the server listens for incoming connections")
 		;
+	desc.add_options()
+		("ipaddress,i", po::value<std::string>()->required(),
+			"override configured ip address on which "
+			"the server listens for incoming connections")
+		;
 
 	// adds options that can be passed only via the CLI
 	desc.add_options()
@@ -67,6 +72,8 @@ start_server(po::variables_map const& variables)
 	auto args = std::array
 	{
 		"sadmd"s,
+		"--ipaddress"s,
+		variables["ipaddress"].as<std::string>(),
 		"--port"s,
 		std::to_string(variables["port"].as<std::uint16_t>())
 	};

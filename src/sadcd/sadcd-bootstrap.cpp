@@ -40,7 +40,7 @@ config_options()
 		;
 	desc.add_options()
 		("ipaddress,i", po::value<std::string>()->required(),
-			"override configured ip number on which "
+			"override configured ip address on which "
 			"the server listens for incoming connections")
 		;
 
