@@ -43,7 +43,7 @@ read_command_line(int argc, char *argv[])
 	// TODO: verify that port fits in 16 bits in edge case that this program is
 	// started by some method other than sadcd-bootstrap
 	// should also double check that an ip and port number were in fact passed
-	return settings{static_cast<std::uint16_t>(port), std::string(ip).c_str()};
+	return settings{static_cast<std::uint16_t>(port), ip};
 }
 
 } // unnamed namespace
