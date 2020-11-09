@@ -15,8 +15,8 @@ namespace
 // struct to hold info needed to set up a server
 struct settings
 {
-	sadfs::inet::port_no port;
 	const char* ip;
+	sadfs::inet::port_no port;
 };
 
 // returns settings based on command-line arguments
@@ -41,9 +41,9 @@ read_command_line(int argc, char *argv[])
 	}
 
 	// TODO: verify that port fits in 16 bits in edge case that this program is
-	// started by some method other than sadcd-bootstrap
+	// started by some method other than sadmd-bootstrap
 	// should also double check that an ip and port number were in fact passed
-	return settings{static_cast<std::uint16_t>(port), ip};
+	return settings{ip, static_cast<std::uint16_t>(port)};
 }
 
 } // unnamed namespace
@@ -54,7 +54,7 @@ main(int argc, char** argv)
     // populate server_settings from command line args
     auto server_settings = read_command_line(argc, argv);
 
-    auto master = sadmd{server_settings.port, server_settings.ip};
+    auto master = sadmd{server_settings.ip, server_settings.port};
     
     master.start();
 

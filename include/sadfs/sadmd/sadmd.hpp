@@ -7,8 +7,8 @@
 class sadmd
 {
 public:
-    sadfs::inet::port_no port;
     sadfs::inet::ip_addr ip;
+    sadfs::inet::port_no port;
     // starts server by opening a listener
     void start();
 private:
