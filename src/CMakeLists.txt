@@ -9,6 +9,7 @@ add_executable (sadmd
 	sadmd/sadmd.cpp
 	${COMMON_SOURCE_FILES})
 add_executable (sadcd
+	sadcd/main.cpp
 	sadcd/sadcd.cpp
 	${COMMON_SOURCE_FILES})
 # add_executable (sadfsd
