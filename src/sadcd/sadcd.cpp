@@ -11,6 +11,8 @@
 #include <string>
 #include <unistd.h> // read/write
 
+namespace sadfs {
+
 void sadcd::
 start()
 {
@@ -55,3 +57,5 @@ process_message(sadfs::socket& sock)
 
 	return result;
 }
+
+} // sadfs namespace

@@ -25,7 +25,7 @@ main(int argc, char** argv)
 	auto addr = sockaddr_in{};
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(6666);
-	addr.sin_addr = {inet::constants::ip_localhost.value()};
+	addr.sin_addr = {inet::ip_addr{inet::constants::ip_localhost}.value()};
 	if (connect(sock.descriptor(),
 	            reinterpret_cast<sockaddr const*>(&addr),
 	            sizeof(addr)) == -1)

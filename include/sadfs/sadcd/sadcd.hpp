@@ -4,6 +4,8 @@
 
 #include <string>
 
+namespace sadfs {
+
 class sadcd
 {
 public:
@@ -15,5 +17,7 @@ private:
     // reads the message from a socket that just received some data
     std::string process_message(sadfs::socket&);
 };
+
+} // sadfs namespace
 
 #endif // SADFS_SADCD_SADCD_HPP

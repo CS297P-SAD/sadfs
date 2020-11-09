@@ -8,67 +8,117 @@
 #include <arpa/inet.h>  // inet_aton, inet_ntoa, htons, ntohs
 #include <cerrno>       // errno
 #include <netinet/in.h> // in_addr
-#include <sstream>      // std::stringstream
+#include <string>
 #include <system_error> // std::system_error, std::system_category
 #include <sys/socket.h> // bind, listen, accept
 
 namespace sadfs { namespace inet {
+using namespace std::string_literals;
 
-ip_addr::
-ip_addr(char const* ip)
+namespace {
+
+// lambda that formats error messages
+auto fmt_err = [](char const* msg, ip_addr const& ip, port_no const& port)
+{
+	return ""s // explicitly tell the compiler that we want a string
+	       + msg + inet_ntoa({ip.value()}) + ":"
+	       + std::to_string(ntohs(port.value()));
+};
+
+// verifies that an ip address in string format is valid,
+// and converts it to network byte-order
+std::uint32_t
+parse_ip_addr(char const* ip)
 {
 	auto tmp = in_addr{};
 	if (inet_aton(ip, &tmp) == 0)
 	{
-		auto err = std::stringstream{};
-		err << ip << " is malformed";
-		throw std::invalid_argument(err.str());
+		throw std::invalid_argument(ip + " is malformed"s);
 	}
-	addr_ = tmp.s_addr;
+	return tmp.s_addr;
+}
+
+// verifies that a port number is within bounds,
+// and converts it to network byte-order
+std::uint16_t
+parse_port_no(std::size_t port)
+{
+	if (port > std::numeric_limits<std::uint16_t>::max())
+	{
+		throw std::invalid_argument("invalid port number");
+	}
+	return htons(static_cast<std::uint16_t>(port));
+}
+
+} // unnamed namespace
+
+ip_addr::
+ip_addr(char const* ip) : value_(parse_ip_addr(ip))
+{
+	// do nothing
 }
 
 std::uint32_t ip_addr::
 value() const noexcept
 {
-	return addr_;
+	return value_;
 }
 
-namespace {
-
-// lambda that formats error messages
-auto fmt_err = [](char const* msg, ip_addr const& ip, port_no const port)
+port_no::
+port_no(std::size_t port) : value_(parse_port_no(port))
 {
-	auto err = std::stringstream{};
-	err << msg << inet_ntoa({ip.value()})
-	    << ":" << ntohs(port);
-	return err.str();
-};
+	// do nothing
+}
 
-} // unnamed namespace
+std::uint16_t port_no::
+value() const noexcept
+{
+	return value_;
+}
+
+network_host::
+network_host(char const* ip, std::size_t port) : ip_(ip), port_(port)
+{
+	// do nothing
+}
+
+ip_addr network_host::
+ip() const noexcept
+{
+	return ip_;
+}
+
+port_no network_host::
+port() const noexcept
+{
+	return port_;
+}
 
 listener::
-listener(ip_addr const& ip, port_no port)
-	: ip_(ip), port_(port),
+listener(network_host const& host)
+	: host_(host),
 	  socket_(socket::domain::inet, socket::type::stream)
 {
 	// bind to ip + port
+	auto const& ip = host_.ip();
+	auto const& port = host_.port();
 	auto addr = sockaddr_in{};
 	addr.sin_family = AF_INET;
-	addr.sin_port   = htons(port_);
-	addr.sin_addr   = {ip_.value()};
+	addr.sin_port   = port.value();
+	addr.sin_addr   = {ip.value()};
 	if (::bind(socket_.descriptor(),
 	           reinterpret_cast<sockaddr const*>(&addr),
 	           sizeof(addr)) == -1)
 	{
 		throw std::system_error(errno, std::system_category(),
-		          fmt_err("failed to bind socket to: ", ip_, port_));
+		          fmt_err("failed to bind socket to: ", ip, port));
 	}
 
 	// specify that connections will be accepted on socket
 	if (::listen(socket_.descriptor(), ::sadfs::defaults::somaxconn) == -1)
 	{
 		throw std::system_error(errno, std::system_category(),
-		          fmt_err("failed to listen on: ", ip_, port_));
+		          fmt_err("failed to listen on: ", ip, port));
 	}
 }
 
@@ -82,8 +132,10 @@ accept() const
 	                     &len);
 	if (desc == -1)
 	{
+		auto const& ip = host_.ip();
+		auto const& port = host_.port();
 		throw std::system_error(errno, std::system_category(),
-		          fmt_err("failed to accept a connection on: ", ip_, port_));
+		          fmt_err("failed to accept a connection on: ", ip, port));
 	}
 
 	return {socket_.comm_domain(), socket_.socket_type(), desc};
