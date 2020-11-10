@@ -41,6 +41,11 @@ class service
 {
 public:
 	service(char const* ip, int port);
+
+	// sets up a connection to the service
+	socket connect() const;
+
+	// accessors
 	ip_addr ip()   const noexcept;
 	port_no port() const noexcept;
 private:

@@ -52,6 +52,10 @@ parse_port_no(int port)
 
 } // unnamed namespace
 
+/* -------------------------------------------------------------
+ *                           ip_addr
+ * -------------------------------------------------------------
+ */
 ip_addr::
 ip_addr(char const* ip) : value_(parse_ip_addr(ip))
 {
@@ -64,6 +68,10 @@ value() const noexcept
 	return value_;
 }
 
+/* -------------------------------------------------------------
+ *                           port_no
+ * -------------------------------------------------------------
+ */
 port_no::
 port_no(int port) : value_(parse_port_no(port))
 {
@@ -76,6 +84,10 @@ value() const noexcept
 	return value_;
 }
 
+/* -------------------------------------------------------------
+ *                           service
+ * -------------------------------------------------------------
+ */
 service::
 service(char const* ip, int port) : ip_(ip), port_(port)
 {
@@ -94,6 +106,31 @@ port() const noexcept
 	return port_;
 }
 
+socket service::
+connect() const
+{
+	// create a socket
+	auto sock = socket{socket::domain::inet, socket::type::stream};
+	auto addr = sockaddr_in{};
+	addr.sin_family = AF_INET;
+	addr.sin_port   = port_.value();
+	addr.sin_addr   = {ip_.value()};
+
+	// connect to service using sock
+	if (::connect(sock.descriptor(),
+	              reinterpret_cast<sockaddr const*>(&addr),
+	              sizeof(addr)) == -1)
+	{
+		throw std::system_error(errno, std::system_category(),
+		          fmt_err("failed to connect to: ", ip_, port_));
+	}
+	return sock;
+}
+
+/* -------------------------------------------------------------
+ *                           listener
+ * -------------------------------------------------------------
+ */
 listener::
 listener(service const& s)
 	: service_(s),
