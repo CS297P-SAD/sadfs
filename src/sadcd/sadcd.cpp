@@ -9,9 +9,11 @@
 #include <cstring>  // std::strerror
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <unistd.h> // read/write
 
 namespace sadfs {
+using namespace std::string_view_literals;
 
 void sadcd::
 start()

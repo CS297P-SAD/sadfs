@@ -11,10 +11,18 @@
 #include <string>
 #include <unistd.h> // read/write
 
+namespace sadfs {
+
+sadmd::
+sadmd(char const* ip, int port) : service_(ip, port)
+{
+	// do nothing
+}
+
 void sadmd::
 start()
 {
-	auto listener = sadfs::inet::listener{ip, port};
+	auto listener = inet::listener{service_};
 
 	while (true)
 	{
@@ -27,7 +35,7 @@ start()
 }
 
 std::string sadmd::
-process_message(sadfs::socket& sock)
+process_message(sadfs::socket const& sock)
 {
 	auto buf = std::array<char, 512>{};
 	auto len = 0;
@@ -54,3 +62,5 @@ process_message(sadfs::socket& sock)
 
 	return result;
 }
+
+} // sadfs namespace

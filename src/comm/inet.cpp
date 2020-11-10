@@ -41,7 +41,7 @@ parse_ip_addr(char const* ip)
 // verifies that a port number is within bounds,
 // and converts it to network byte-order
 std::uint16_t
-parse_port_no(std::size_t port)
+parse_port_no(int port)
 {
 	if (port > std::numeric_limits<std::uint16_t>::max())
 	{
@@ -65,7 +65,7 @@ value() const noexcept
 }
 
 port_no::
-port_no(std::size_t port) : value_(parse_port_no(port))
+port_no(int port) : value_(parse_port_no(port))
 {
 	// do nothing
 }
@@ -76,32 +76,32 @@ value() const noexcept
 	return value_;
 }
 
-network_host::
-network_host(char const* ip, std::size_t port) : ip_(ip), port_(port)
+service::
+service(char const* ip, int port) : ip_(ip), port_(port)
 {
 	// do nothing
 }
 
-ip_addr network_host::
+ip_addr service::
 ip() const noexcept
 {
 	return ip_;
 }
 
-port_no network_host::
+port_no service::
 port() const noexcept
 {
 	return port_;
 }
 
 listener::
-listener(network_host const& host)
-	: host_(host),
+listener(service const& s)
+	: service_(s),
 	  socket_(socket::domain::inet, socket::type::stream)
 {
 	// bind to ip + port
-	auto const& ip = host_.ip();
-	auto const& port = host_.port();
+	auto const& ip = service_.ip();
+	auto const& port = service_.port();
 	auto addr = sockaddr_in{};
 	addr.sin_family = AF_INET;
 	addr.sin_port   = port.value();
@@ -132,8 +132,8 @@ accept() const
 	                     &len);
 	if (desc == -1)
 	{
-		auto const& ip = host_.ip();
-		auto const& port = host_.port();
+		auto const& ip = service_.ip();
+		auto const& port = service_.port();
 		throw std::system_error(errno, std::system_category(),
 		          fmt_err("failed to accept a connection on: ", ip, port));
 	}
