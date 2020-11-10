@@ -9,7 +9,7 @@ int
 main()
 {
 	using namespace sadfs;
-	auto listener = inet::listener{inet::constants::ip_localhost, 6666};
+	auto listener = inet::listener{{inet::constants::ip_localhost, 6666}};
 	auto buf = std::array<char, 64>{};
 
 	while (true)
