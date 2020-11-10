@@ -7,6 +7,7 @@
 // standard includes
 #include <arpa/inet.h>  // inet_aton, inet_ntoa, htons, ntohs
 #include <cerrno>       // errno
+#include <limits>       // std::numeric_limits
 #include <netinet/in.h> // in_addr
 #include <string>
 #include <system_error> // std::system_error, std::system_category
