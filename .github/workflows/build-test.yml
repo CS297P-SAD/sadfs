@@ -23,7 +23,7 @@ jobs:
       with:
         ref: ${{ github.ref }}
     - name: Install dependencies
-      run: apt update && apt install -y libprotobuf-dev libboost-program-options-dev
+      run: sudo apt update && sudo apt install -y libprotobuf-dev libboost-program-options-dev
     - name: Configure CMake
       run: cmake -B build/
     - name: Build
@@ -40,7 +40,7 @@ jobs:
       with:
         ref: ${{ github.ref }}
     - name: Install dependencies
-      run: apt update && apt install -y libprotobuf-dev libboost-program-options-dev
+      run: sudo apt update && sudo apt install -y libprotobuf-dev libboost-program-options-dev
     - name: Configure CMake
       run: cmake -B build/
     - name: Build
