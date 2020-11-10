@@ -10,7 +10,7 @@ namespace sadfs {
 class sadmd
 {
 public:
-	sadmd(char const*, int);
+	sadmd(char const* ip, int port);
 
 	// starts server
 	void start();

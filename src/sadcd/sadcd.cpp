@@ -1,24 +1,28 @@
 /* Code for the sadcd class */
 
 // sadfs-specific includes
-#include <sadfs/comm/inet.hpp>
 #include <sadfs/sadcd/sadcd.hpp>
+#include <sadfs/comm/inet.hpp>
 
 // standard includes
 #include <array>
 #include <cstring>  // std::strerror
 #include <iostream>
 #include <string>
-#include <string_view>
 #include <unistd.h> // read/write
 
 namespace sadfs {
-using namespace std::string_view_literals;
+
+sadcd::
+sadcd(char const* ip, int port) : service_(ip, port)
+{
+	// do nothing
+}
 
 void sadcd::
 start()
 {
-	auto listener = sadfs::inet::listener{ip, port};
+	auto listener = inet::listener{service_};
 
 	while (true)
 	{
@@ -32,7 +36,7 @@ start()
 
 // reads the message from a socket that just received some data
 std::string sadcd::
-process_message(sadfs::socket& sock)
+process_message(sadfs::socket const& sock)
 {
 	auto buf = std::array<char, 512>{};
 	auto len = 0;
