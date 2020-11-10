@@ -20,6 +20,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+      with:
+        ref: ${{ github.ref }}
     - name: Create build directory
       run: mkdir build/ && cd build/
     - name: Configure CMake
@@ -35,6 +37,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+      with:
+        ref: ${{ github.ref }}
     - name: Create build directory
       run: mkdir build/ && cd build/
     - name: Configure CMake
