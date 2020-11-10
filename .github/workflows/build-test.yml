@@ -1,0 +1,43 @@
+name: Build test
+
+on:
+  push: # run on every push
+    paths-ignore: # do not run when only these files are modified
+      - 'doc/**'
+  pull_request:
+    branches:
+      - master
+      - dev
+    paths-ignore: # do not run when only these files are modified
+      - 'doc/**'
+
+jobs:
+  build_ubuntu:
+    name: Build job on Ubuntu
+
+    runs-on: ubuntu-18.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Create build directory
+      run: mkdir build/ && cd build/
+    - name: Configure CMake
+      run: cmake ../
+    - name: Build
+      run: make
+        
+  build_osx:
+    name: Build job on MacOS
+
+    runs-on: macos-10.15
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Create build directory
+      run: mkdir build/ && cd build/
+    - name: Configure CMake
+      run: cmake ../
+    - name: Build
+      run: make
