@@ -26,7 +26,8 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y \
-        libprotobuf-dev libboost-program-options-dev make cmake
+        libprotobuf-dev libboost-program-options-dev protobuf-compiler \
+        make cmake
     - name: Configure CMake
       run: cmake -B build/
     - name: Upload Makefile
