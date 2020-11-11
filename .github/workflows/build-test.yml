@@ -43,9 +43,7 @@ jobs:
       with:
         ref: ${{ github.ref }}
     - name: Install dependencies
-      run: |
-        sudo brew install \
-        protobuf boost make cmake
+      run: brew install protobuf boost make cmake
     - name: Configure CMake
       run: cmake -B build/
     - name: Build
