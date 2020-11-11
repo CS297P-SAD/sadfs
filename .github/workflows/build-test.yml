@@ -29,11 +29,6 @@ jobs:
         libprotobuf-dev libboost-program-options-dev protobuf-compiler
     - name: Configure CMake
       run: cmake -B build/
-    - name: Upload Makefile
-      uses: actions/upload-artifact@v2
-      with:
-        name: makes
-        path: build/**/*.make
     - name: Build
       run: cd build/ && make
         
@@ -48,7 +43,7 @@ jobs:
       with:
         ref: ${{ github.ref }}
     - name: Install dependencies
-      run: brew install protobuf boost make cmake
+      run: brew install protobuf boost
     - name: Configure CMake
       run: cmake -B build/
     - name: Build
