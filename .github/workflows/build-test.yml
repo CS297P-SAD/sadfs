@@ -1,0 +1,50 @@
+name: Build test
+
+on:
+  push: # run on every push
+    paths-ignore: # do not run when only these files are modified
+      - 'doc/**'
+  pull_request:
+    branches:
+      - master
+      - dev
+    paths-ignore: # do not run when only these files are modified
+      - 'doc/**'
+
+jobs:
+  build_ubuntu:
+    name: Build job on Ubuntu
+
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.ref }}
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y \
+        libprotobuf-dev libboost-program-options-dev protobuf-compiler
+    - name: Run CMake
+      run: cmake -B build/
+    - name: Build
+      run: cd build/ && make
+        
+  build_osx:
+    name: Build job on MacOS
+
+    runs-on: macos-10.15
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.ref }}
+    - name: Install dependencies
+      run: brew install protobuf boost
+    - name: Run CMake
+      run: cmake -B build/
+    - name: Build
+      run: cd build/ && make
