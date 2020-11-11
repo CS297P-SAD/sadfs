@@ -15,7 +15,7 @@ jobs:
   build_ubuntu:
     name: Build job on Ubuntu
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-18.04
 
     steps:
     - name: Checkout
@@ -29,6 +29,11 @@ jobs:
         libprotobuf-dev libboost-program-options-dev make cmake
     - name: Configure CMake
       run: cmake -B build/
+    - name: Upload Makefile
+      uses: actions/upload-artifact@v2
+      with:
+        name: makes
+        path: build/**/*.make
     - name: Build
       run: cd build/ && make
         
