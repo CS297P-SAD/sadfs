@@ -15,7 +15,7 @@ jobs:
   build_ubuntu:
     name: Build job on Ubuntu
 
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
 
     steps:
     - name: Checkout
@@ -26,8 +26,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y \
-        libprotobuf-dev libboost-program-options-dev protobuf-compiler \
-        make cmake
+        libprotobuf-dev libboost-program-options-dev protobuf-compiler
     - name: Configure CMake
       run: cmake -B build/
     - name: Upload Makefile
