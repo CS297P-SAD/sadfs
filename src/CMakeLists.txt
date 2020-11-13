@@ -30,6 +30,8 @@ add_executable (sadmd
 	sadmd/main.cpp
 	sadmd/sadmd.cpp
 	${COMMON_SOURCE_FILES})
+target_link_libraries(sadmd
+	sqlite3)
 add_executable (sadcd
 	sadcd/main.cpp
 	sadcd/sadcd.cpp
