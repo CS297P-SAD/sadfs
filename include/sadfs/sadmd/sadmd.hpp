@@ -50,7 +50,7 @@ private:
 	// in memory representation of each file
 	std::unordered_map<std::string, file_info> files_;
 	// list of active chunk servers
-	std::vector<chunk_server_info> chunk_servers_;
+	std::unordered_map<unsigned int, chunk_server_info> chunk_servers_;
 	// map from chunkid to list of chunk servers
 	std::unordered_map<chunkid, std::vector<chunk_server_info*> > chunkids_;
 	// persistent/on disk copy of files_
