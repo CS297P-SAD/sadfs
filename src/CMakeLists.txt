@@ -63,6 +63,24 @@ foreach (TARGET sadmd sadcd) # sadfsd)
 		PRIVATE ${Boost_LIBRARIES})
 endforeach()
 
+# find fuse library. this sets the FUSE3_INCLUDE_DIRS and FUSE3_LIBRARIES
+# variables
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(FUSE3 REQUIRED fuse3)
+
+add_executable (sadfsd-bootstrap
+    bootstrap/util.cpp
+    sadfsd/sadfsd-bootstrap.cpp
+    sadfsd/sadfuse.cpp
+    ${COMMON_SOURCE_FILES})
+target_include_directories (sadfsd-bootstrap
+        PRIVATE ${Boost_INCLUDE_DIRS}
+    PRIVATE ${FUSE3_INCLUDE_DIRS})
+target_link_libraries (sadfsd-bootstrap
+        PRIVATE sadfs_protobuf
+        PRIVATE ${Boost_LIBRARIES}
+    PRIVATE ${FUSE3_LIBRARIES})
+
 # add source files for "example" targets
 target_sources (echod        PRIVATE ${COMMON_SOURCE_FILES})
 target_sources (msg          PRIVATE ${COMMON_SOURCE_FILES})
