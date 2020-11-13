@@ -11,13 +11,13 @@
 
 namespace sadfs {
 
-using chunkid = unsigned int;
+using chunkid = uint64_t;
 
 // all the information needed about a chunk server
 struct chunk_server_info{
 	inet::service service;
-	unsigned int total_space;
-	unsigned int used_space;
+	uint64_t total_space;
+	uint64_t used_space;
 	int ttl;
 };
 
@@ -50,7 +50,7 @@ private:
 	// in memory representation of each file
 	std::unordered_map<std::string, file_info> files_;
 	// list of active chunk servers
-	std::unordered_map<unsigned int, chunk_server_info> chunk_servers_;
+	std::unordered_map<uint64_t, chunk_server_info> chunk_servers_;
 	// map from chunkid to list of chunk servers
 	std::unordered_map<chunkid, std::vector<chunk_server_info*> > chunkids_;
 	// persistent/on disk copy of files_
