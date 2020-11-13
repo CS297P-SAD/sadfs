@@ -30,8 +30,6 @@ add_executable (sadmd
 	sadmd/main.cpp
 	sadmd/sadmd.cpp
 	${COMMON_SOURCE_FILES})
-target_link_libraries(sadmd
-	sqlite3)
 add_executable (sadcd
 	sadcd/main.cpp
 	sadcd/sadcd.cpp
@@ -39,6 +37,9 @@ add_executable (sadcd
 # add_executable (sadfsd
 #	sadfsd/sadfsd.cpp
 #	${COMMON_SOURCE_FILES})
+
+target_link_libraries(sadmd
+	sqlite3)
 
 # first, find the boost_program_options library. this sets
 # the Boost_INCLUDE_DIRS and Boost_LIBRARIES variables

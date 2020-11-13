@@ -15,18 +15,8 @@
 namespace sadfs {
 
 sadmd::
-sadmd(char const* ip, int port) : service_(ip, port)
+sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 {
-	sqlite3* db;
-
-	// open the sadmd database
-	auto chk = sqlite3_open("sadmd.db", &db);
-	if (chk)
-	{
-		std::cerr << "Error: Couldn't open database: ";
-		std::cerr << sqlite3_errmsg(db) << '\n';
-	}
-	files_db_ = db;
 
 	// make sure the files table exists
 	db_command("CREATE TABLE IF NOT EXISTS files (filename TEXT, chunkids TEXT);");
@@ -51,14 +41,17 @@ start()
 }
 
 void sadmd::
-create_file(std::string filename)
+create_file(std::string const& filename)
 {
-	auto info = file_info{false, time(0), };
 	if (!files_.count(filename))
 	{
-		files_.emplace(filename, info);
+		files_.emplace(filename, file_info{0, });
 	}
-	// Do nothing if file already exists
+	else
+	{
+		std::cerr << "Error: " << filename << ": file already exists\n";
+	}
+	
 }
 
 std::string sadmd::
@@ -91,10 +84,9 @@ process_message(sadfs::socket const& sock)
 }
 
 void sadmd::
-db_command(std::string stmt)
+db_command(std::string const& stmt) const noexcept
 {
-	auto chk = sqlite3_exec(files_db_, stmt.c_str(), NULL, NULL, NULL);
-	if (chk)
+	if (sqlite3_exec(files_db_, stmt.c_str(), NULL, NULL, NULL) != 0)
 	{
 		std::cerr << "Error running {" << stmt << "}: ";
 		std::cerr << sqlite3_errmsg(files_db_) << '\n';
@@ -107,8 +99,7 @@ load_files()
 	std::cout << "Files loaded:\n";
 	auto res = 0;
 	sqlite3_stmt* stmt;
-	auto chk = sqlite3_prepare_v2(files_db_, "SELECT * FROM files;", -1, &stmt, NULL);
-	if (chk)
+	if (sqlite3_prepare_v2(files_db_, "SELECT * FROM files;", -1, &stmt, NULL) != 0)
 	{
 			std::cerr << sqlite3_errmsg(files_db_) << '\n';
 	}
@@ -122,6 +113,21 @@ load_files()
 		//TODO: convert cids into a vector of ints and add to file_info object
 	}
 	sqlite3_finalize(stmt);
+}
+
+sqlite3* sadmd::
+open_db()
+{
+	sqlite3* db;
+
+	// open the sadmd database
+	if (sqlite3_open("sadmd.db", &db) != 0)
+	{
+		std::cerr << "Error: Couldn't open database: ";
+		std::cerr << sqlite3_errmsg(db) << '\n';
+		std::exit(1);
+	}
+	return db;
 }
 
 } // sadfs namespace
