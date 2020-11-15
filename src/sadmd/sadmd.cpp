@@ -12,12 +12,56 @@
 #include <sqlite3.h>
 #include <unistd.h> // read/write
 
+namespace {
+	sqlite3*
+	open_db()
+	{
+		sqlite3* db;
+
+		// open the sadmd database
+		if (sqlite3_open("sadmd.db", &db) != 0)
+		{
+			std::cerr << "Error: Couldn't open database: ";
+			std::cerr << sqlite3_errmsg(db) << '\n';
+			std::exit(1);
+		}
+		return db;
+	}
+	std::string
+	process_message(sadfs::socket const& sock)
+	{
+		auto buf = std::array<char, 512>{};
+		auto len = 0;
+		auto result = std::string{};
+		while ((len = ::read(sock.descriptor(), buf.data(), buf.size())))
+		{
+			if (len == -1)
+			{
+				std::cerr << "read error\n";
+				std::cerr << std::strerror(errno) << std::endl;
+				std::exit(1);
+			}
+			if (::write(sock.descriptor(), buf.data(), len) == -1)
+			{
+				std::cerr << "write error\n";
+				std::exit(1);
+			}
+			for (auto i = 0; i < len; i++)
+			{
+				result += buf[i];
+			}
+			buf.fill({});
+		}
+
+		return result;
+	}
+} // unnamed namespace
+
 namespace sadfs {
 
 sadmd::
 sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 {
-
 	// make sure the files table exists
 	db_command("CREATE TABLE IF NOT EXISTS files (filename TEXT, chunkids TEXT);");
 	// load files from the database to in-memory representation
@@ -36,7 +80,6 @@ start()
 
 		std::cout << result << "\n";
 		// perform some action based on result
-		// create_file(result);
 	}
 }
 
@@ -54,35 +97,6 @@ create_file(std::string const& filename)
 	
 }
 
-std::string sadmd::
-process_message(sadfs::socket const& sock)
-{
-	auto buf = std::array<char, 512>{};
-	auto len = 0;
-	auto result = std::string{};
-	while ((len = ::read(sock.descriptor(), buf.data(), buf.size())))
-	{
-		if (len == -1)
-		{
-			std::cerr << "read error\n";
-			std::cerr << std::strerror(errno) << std::endl;
-			std::exit(1);
-		}
-		if (::write(sock.descriptor(), buf.data(), len) == -1)
-		{
-			std::cerr << "write error\n";
-			std::exit(1);
-		}
-		for (auto i = 0; i < len; i++)
-		{
-			result += buf[i];
-		}
-		buf.fill({});
-	}
-
-	return result;
-}
-
 void sadmd::
 db_command(std::string const& stmt) const noexcept
 {
@@ -90,6 +104,7 @@ db_command(std::string const& stmt) const noexcept
 	{
 		std::cerr << "Error running {" << stmt << "}: ";
 		std::cerr << sqlite3_errmsg(files_db_) << '\n';
+		std::exit(1);
 	}
 }
 
@@ -101,33 +116,19 @@ load_files()
 	sqlite3_stmt* stmt;
 	if (sqlite3_prepare_v2(files_db_, "SELECT * FROM files;", -1, &stmt, NULL) != 0)
 	{
-			std::cerr << sqlite3_errmsg(files_db_) << '\n';
+		std::cerr << sqlite3_errmsg(files_db_) << '\n';
 	}
 
 	while ((res = sqlite3_step(stmt)) == SQLITE_ROW)
 	{
-		auto filename = std::string{reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0))};
+		auto filename = std::string{reinterpret_cast<const char*>(
+			sqlite3_column_text(stmt, 0))};
 		const unsigned char* cids = sqlite3_column_text(stmt, 1);
 		std::cout << filename << ": " << cids << '\n';
 		create_file(filename);
 		//TODO: convert cids into a vector of ints and add to file_info object
 	}
 	sqlite3_finalize(stmt);
-}
-
-sqlite3* sadmd::
-open_db()
-{
-	sqlite3* db;
-
-	// open the sadmd database
-	if (sqlite3_open("sadmd.db", &db) != 0)
-	{
-		std::cerr << "Error: Couldn't open database: ";
-		std::cerr << sqlite3_errmsg(db) << '\n';
-		std::exit(1);
-	}
-	return db;
 }
 
 } // sadfs namespace

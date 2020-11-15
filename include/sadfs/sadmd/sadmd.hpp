@@ -25,8 +25,6 @@ struct chunk_server_info{
 struct file_info{
 	int ttl;
 	std::vector<chunkid> chunkids;
-	// decides whether file is currently locked for writing
-	bool locked();
 };
 
 class sadmd
@@ -39,24 +37,20 @@ public:
 	// creates (the metadata for) a new file
 	void create_file(std::string const&);
 private:
-	// reads the message from a socket that just received some data
-	std::string process_message(sadfs::socket const&);
 	// loads file metadata from disk
 	void load_files();
 	// runs an sql statement on system_files_
 	void db_command(std::string const&) const noexcept;
 
-	const inet::service service_;
+	inet::service const service_;
 	// in memory representation of each file
 	std::unordered_map<std::string, file_info> files_;
-	// list of active chunk servers
-	std::unordered_map<uint64_t, chunk_server_info> chunk_servers_;
+	// metadata for each chunk server
+	std::unordered_map<uint64_t, chunk_server_info> chunk_server_metadata_;
 	// map from chunkid to list of chunk servers
-	std::unordered_map<chunkid, std::vector<chunk_server_info*> > chunkids_;
+	std::unordered_map<chunkid, std::vector<chunk_server_info*> > chunk_locations_;
 	// persistent/on disk copy of files_
 	sqlite3* const files_db_;
-	sqlite3* open_db();
-
 };
 
 } // sadfs namespace
