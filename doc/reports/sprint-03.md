@@ -32,7 +32,7 @@ This section should answer the following questions:
   automation to run build tests on Ubuntu and MacOS on every push, and
   pull request.
 
-* What went well?
+* What went well?  
   We started implementing FUSE support, deviating from our original
   plan of having client-side applications relink against our read/write
   API. This will make our file system easily accessible and testable.
@@ -42,12 +42,12 @@ This section should answer the following questions:
   test our code on different platforms, since all three team members work
   on different Operating Systems.
 
-* What didn't go well?
+* What didn't go well?  
   The transition to CMake, and setting up automation in GitHub were
   unplanned tasks, and set us back quite a bit, because of which we weren't
   able to implemented as many user stories as we needed.
 
-* What should go better?
+* What should go better?  
   We should have made the switch to CMake, and set up automated build tests
   the first time we faced those issues -- we should be more proactive in
   solving problems in a permanent fashion. We picked up user stories on
