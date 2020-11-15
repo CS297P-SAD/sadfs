@@ -1,16 +1,22 @@
 /* defines protocol buffers used by various processes */
 syntax = "proto3";
-package sadfs.comm;
+package sadfs.proto;
 
-message request {
-	enum request_type {
-		READ  = 0;
-		WRITE = 1;
-	}
+enum request_type {
+	READ = 0;
+	WRITE = 1;
+}
 
+message file_request {
 	request_type type     = 1;
 	uint64       sender   = 2;
 	string       filename = 3;
 	uint64       offset   = 4;
 	uint64       length   = 5;
+}
+
+message chunk_request {
+	request_type type     = 1;
+	uint64       sender   = 2;
+	uint64       chunk_id = 3;
 }
