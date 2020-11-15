@@ -50,3 +50,9 @@ enum msg_type {
 message msg_id {
 	msg_type type = 1;
 }
+
+message chunk_request {
+	request_type type     = 1;
+	uint64       sender   = 2;
+	uint64       chunk_id = 3;
+}
