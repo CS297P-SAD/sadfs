@@ -66,7 +66,11 @@ endforeach()
 # find fuse library. this sets the FUSE3_INCLUDE_DIRS and FUSE3_LIBRARIES
 # variables
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(FUSE3 REQUIRED fuse3)
+if (APPLE)
+    pkg_check_modules(FUSE3 REQUIRED osxfuse)
+else ()
+    pkg_check_modules(FUSE3 REQUIRED fuse3)
+endif()
 
 add_executable (sadfsd-bootstrap
     bootstrap/util.cpp
