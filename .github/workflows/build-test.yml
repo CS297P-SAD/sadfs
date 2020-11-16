@@ -26,23 +26,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y \
-        libprotobuf-dev libboost-program-options-dev protobuf-compiler
-		sudo python3 -m pip install pytest meson
-		wget https://github.com/ninja-build/ninja/releases/download/v1.10.1/ninja-linux.zip
-		unzip ninja-linux.zip
-		chmod 755 ninja
-		sudo chown root:root ninja
-		sudo mv -fv ninja /usr/local/bin
-		ninja --version
-		meson --version
-		wget https://github.com/libfuse/libfuse/releases/download/fuse-3.10.0/fuse-3.10.0.tar.gz
-		tar xzf fuse-3.10.0.tar.gz
-		cd fuse-3.10.0
-		mkdir build
-		cd build
-		meson ..
-		ninja
-		sudo ninja install
+        libprotobuf-dev libboost-program-options-dev protobuf-compiler libfuse3-dev
     - name: Run CMake
       run: cmake -B build/
     - name: Build
