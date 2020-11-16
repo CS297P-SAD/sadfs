@@ -26,7 +26,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y \
-        libprotobuf-dev libboost-program-options-dev protobuf-compiler libfuse3-3
+        libprotobuf-dev libboost-program-options-dev protobuf-compiler fuse3
     - name: Run CMake
       run: cmake -B build/
     - name: Build
