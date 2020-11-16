@@ -112,14 +112,13 @@ void sadmd::
 load_files()
 {
 	std::cout << "Files loaded:\n";
-	auto res = 0;
 	sqlite3_stmt* stmt;
 	if (sqlite3_prepare_v2(files_db_, "SELECT * FROM files;", -1, &stmt, NULL) != 0)
 	{
 		std::cerr << sqlite3_errmsg(files_db_) << '\n';
 	}
 
-	while ((res = sqlite3_step(stmt)) == SQLITE_ROW)
+	while (sqlite3_step(stmt) == SQLITE_ROW)
 	{
 		auto filename = std::string{reinterpret_cast<const char*>(
 			sqlite3_column_text(stmt, 0))};
