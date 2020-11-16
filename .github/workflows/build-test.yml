@@ -26,7 +26,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y \
-        libprotobuf-dev libboost-program-options-dev protobuf-compiler
+        libprotobuf-dev libboost-program-options-dev protobuf-compiler libfuse3-3
     - name: Run CMake
       run: cmake -B build/
     - name: Build
@@ -43,7 +43,9 @@ jobs:
       with:
         ref: ${{ github.ref }}
     - name: Install dependencies
-      run: brew install protobuf boost
+      run: |
+          brew install protobuf boost
+          brew cask install osxfuse
     - name: Run CMake
       run: cmake -B build/
     - name: Build
