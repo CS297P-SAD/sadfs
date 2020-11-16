@@ -16,8 +16,8 @@ using chunkid = uint64_t;
 // all the information needed about a chunk server
 struct chunk_server_info{
 	inet::service service;
-	uint64_t total_space;
-	uint64_t used_space;
+	uint64_t max_chunks;
+	uint64_t number_stored_chunks;
 	int ttl;
 };
 
