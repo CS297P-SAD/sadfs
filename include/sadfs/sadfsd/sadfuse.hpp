@@ -3,6 +3,7 @@
 #include <sadfs/comm/socket.hpp>
 
 #include <memory> // std::shared_ptr
+#include <cerrno> // ENOENT
 
 #ifndef FUSE_USE_VERSION
 #define FUSE_USE_VERSION 29
