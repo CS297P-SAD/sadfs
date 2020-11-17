@@ -17,7 +17,7 @@ using chunkid = uint64_t;
 struct chunk_server_info{
 	inet::service service;
 	uint64_t max_chunks;
-	uint64_t number_stored_chunks;
+	uint64_t chunk_count;
 	int ttl;
 };
 
