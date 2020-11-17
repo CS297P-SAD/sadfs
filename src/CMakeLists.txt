@@ -66,11 +66,7 @@ endforeach()
 # find fuse library. this sets the FUSE3_INCLUDE_DIRS and FUSE3_LIBRARIES
 # variables
 find_package(PkgConfig REQUIRED)
-if (APPLE)
-    pkg_check_modules(FUSE3 REQUIRED osxfuse)
-else ()
-    pkg_check_modules(FUSE3 REQUIRED fuse)
-endif()
+pkg_check_modules(FUSE REQUIRED fuse)
 
 add_executable (sadfsd-bootstrap
     bootstrap/util.cpp
@@ -78,12 +74,14 @@ add_executable (sadfsd-bootstrap
     sadfsd/sadfuse.cpp
     ${COMMON_SOURCE_FILES})
 target_include_directories (sadfsd-bootstrap
-        PRIVATE ${Boost_INCLUDE_DIRS}
-    PRIVATE ${FUSE3_INCLUDE_DIRS})
+    PRIVATE ${Boost_INCLUDE_DIRS}
+    PRIVATE ${FUSE_INCLUDE_DIRS})
 target_link_libraries (sadfsd-bootstrap
-        PRIVATE sadfs_protobuf
-        PRIVATE ${Boost_LIBRARIES}
-    PRIVATE ${FUSE3_LIBRARIES})
+    PRIVATE sadfs_protobuf
+    PRIVATE ${Boost_LIBRARIES}
+    PRIVATE ${FUSE_LIBRARIES})
+target_compile_options(sadfsd-bootstrap
+    PRIVATE ${FUSE_CFLAGS_OTHER})
 
 # add source files for "example" targets
 target_sources (echod        PRIVATE ${COMMON_SOURCE_FILES})
