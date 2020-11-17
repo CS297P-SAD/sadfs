@@ -67,7 +67,7 @@ endforeach()
 # variables
 find_package(PkgConfig REQUIRED)
 if (APPLE)
-    pkg_check_modules(FUSE3 REQUIRED fuse)
+    pkg_check_modules(FUSE3 REQUIRED osxfuse)
 else ()
     pkg_check_modules(FUSE3 REQUIRED fuse)
 endif()

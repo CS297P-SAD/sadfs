@@ -6,7 +6,7 @@
 #include <cerrno> // ENOENT
 
 #ifndef FUSE_USE_VERSION
-#define FUSE_USE_VERSION 29
+#define FUSE_USE_VERSION 26
 #endif
 #define _FILE_OFFSET_BITS 64
 #include <fuse.h>
