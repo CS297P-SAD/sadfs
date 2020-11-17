@@ -81,7 +81,7 @@ target_link_libraries (sadfsd-bootstrap
     PRIVATE ${Boost_LIBRARIES}
     PRIVATE ${FUSE_LIBRARIES})
 target_compile_options(sadfsd-bootstrap
-    PRIVATE ${FUSE_CFLAGS_OTHER})
+    PRIVATE ${FUSE_CFLAGS})
 
 # add source files for "example" targets
 target_sources (echod        PRIVATE ${COMMON_SOURCE_FILES})
