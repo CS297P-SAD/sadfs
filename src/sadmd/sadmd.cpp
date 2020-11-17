@@ -13,48 +13,49 @@
 #include <unistd.h> // read/write
 
 namespace {
-	sqlite3*
-	open_db()
-	{
-		sqlite3* db;
+sqlite3*
+open_db()
+{
+	sqlite3* db;
 
-		// open the sadmd database
-		if (sqlite3_open("sadmd.db", &db) != 0)
+	// open the sadmd database
+	if (sqlite3_open("sadmd.db", &db) != 0)
+	{
+		std::cerr << "Error: Couldn't open database: ";
+		std::cerr << sqlite3_errmsg(db) << '\n';
+		std::exit(1);
+	}
+	return db;
+}
+	
+std::string
+process_message(sadfs::socket const& sock)
+{
+	auto buf = std::array<char, 512>{};
+	auto len = 0;
+	auto result = std::string{};
+	while ((len = ::read(sock.descriptor(), buf.data(), buf.size())))
+	{
+		if (len == -1)
 		{
-			std::cerr << "Error: Couldn't open database: ";
-			std::cerr << sqlite3_errmsg(db) << '\n';
+			std::cerr << "read error\n";
+			std::cerr << std::strerror(errno) << std::endl;
 			std::exit(1);
 		}
-		return db;
-	}
-	std::string
-	process_message(sadfs::socket const& sock)
-	{
-		auto buf = std::array<char, 512>{};
-		auto len = 0;
-		auto result = std::string{};
-		while ((len = ::read(sock.descriptor(), buf.data(), buf.size())))
+		if (::write(sock.descriptor(), buf.data(), len) == -1)
 		{
-			if (len == -1)
-			{
-				std::cerr << "read error\n";
-				std::cerr << std::strerror(errno) << std::endl;
-				std::exit(1);
-			}
-			if (::write(sock.descriptor(), buf.data(), len) == -1)
-			{
-				std::cerr << "write error\n";
-				std::exit(1);
-			}
-			for (auto i = 0; i < len; i++)
-			{
-				result += buf[i];
-			}
-			buf.fill({});
+			std::cerr << "write error\n";
+			std::exit(1);
 		}
-
-		return result;
+		for (auto i = 0; i < len; i++)
+		{
+			result += buf[i];
+		}
+		buf.fill({});
 	}
+
+	return result;
+}
 } // unnamed namespace
 
 namespace sadfs {
