@@ -65,10 +65,11 @@ endforeach()
 
 # find fuse library. this sets the FUSE3_INCLUDE_DIRS and FUSE3_LIBRARIES
 # variables
-include(FindPkgConfig)
-pkg_search_module(FUSE REQUIRED fuse)
+#include(FindPkgConfig)
+find_package(PkgConfig REQUIRED)
+#pkg_search_module(FUSE REQUIRED fuse)
 #find_package(PkgConfig REQUIRED)
-#pkg_check_modules(FUSE REQUIRED fuse)
+pkg_check_modules(FUSE REQUIRED fuse)
 
 add_executable (sadfsd-bootstrap
     bootstrap/util.cpp
