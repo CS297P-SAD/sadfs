@@ -38,6 +38,9 @@ add_executable (sadcd
 #	sadfsd/sadfsd.cpp
 #	${COMMON_SOURCE_FILES})
 
+target_link_libraries(sadmd
+	sqlite3)
+
 # first, find the boost_program_options library. this sets
 # the Boost_INCLUDE_DIRS and Boost_LIBRARIES variables
 find_package (Boost
