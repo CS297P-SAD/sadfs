@@ -7,7 +7,17 @@
 `sadfs::open`   - opens a file for reading or writing  
 `sadfs::close`  - closes an opened file descriptor  
 `sadfs::read`   - reads data from an opened file  
-`sadfs::write`  - writes data to an opened file  
+`sadfs::write`  - writes data to an opened file 
+
+`sadfs::getattr` - get attributes
+`sadfs::mkdir` - make directory
+`sadfs::open` - open file
+`sadfs::read` - read file
+`sadfs::write` - write file
+`sadfs::opendir` - open directory
+`sadfs::readdir` - read directory
+`sadfs::create` - create file
+
 
 ## Specifics
 `sadfs::open` returns a file descriptor like open(2). Master server keeps  
@@ -100,7 +110,7 @@ file descriptors.
 # Tables stored on master:
 	https://www.man7.org/linux/man-pages/man2/stat.2.html for data types
 	
-	Directory Type File Content Table
+	Directory Content Table
 	{
 		Inode : {
 				char[64] Filename, ino_t Inode number;
@@ -120,12 +130,13 @@ file descriptors.
 		Inode : {
 				mode_t File type and mode (whether directory or file);
 				off_t Total size in bytes;
-				list of chunkids (not relevant if file type is directory);
+				list of chunkids (not relevant if filetype is directory);
 			}
+			
 		Inode : {
 				mode_t File type and mode (whether directory or file);
 				off_t Total size in bytes;
-				list of chunkids (not relevant if file type is directory);
+				list of chunkids (not relevant if filetype is directory);
 			}
 		...
 	}
