@@ -13,6 +13,7 @@
 #include <unistd.h> // read/write
 
 namespace {
+
 sqlite3*
 open_db()
 {
@@ -27,7 +28,7 @@ open_db()
 	}
 	return db;
 }
-	
+
 std::string
 process_message(sadfs::socket const& sock)
 {
@@ -93,7 +94,9 @@ create_file(std::string const& filename)
 	}
 	else
 	{
+		// TODO: give a more meaningful error message to the user
 		std::cerr << "Error: " << filename << ": file already exists\n";
+		std::exit(1);
 	}
 	
 }
@@ -117,6 +120,7 @@ load_files()
 	if (sqlite3_prepare_v2(files_db_, "SELECT * FROM files;", -1, &stmt, NULL) != 0)
 	{
 		std::cerr << sqlite3_errmsg(files_db_) << '\n';
+		std::exit(1);
 	}
 
 	while (sqlite3_step(stmt) == SQLITE_ROW)
