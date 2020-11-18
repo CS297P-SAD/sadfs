@@ -39,13 +39,20 @@ public:
 
 private:
 	// creates (the metadata for) a new file
-	void create_file(std::string const&);
+	void create_file(std::string const&, 
+		std::string const& existing_chunks = "");
 
 	// loads file metadata from disk
 	void load_files();
 
+	// copies in-memory files into database
+	void save_files() const noexcept;
+
 	// runs an sql statement on system_files_
-	void db_command(std::string const&) const noexcept;
+	void db_command(std::string const&) const;
+
+	// returns true if the database contains a file with the given name
+	bool db_contains(std::string const&) const;
 
 	inet::service const service_;
 	// in memory representation of each file
