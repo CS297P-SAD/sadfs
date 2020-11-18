@@ -98,6 +98,40 @@ file descriptors.
 * Chunk to master: active()
 
 # Tables stored on master:
+	https://www.man7.org/linux/man-pages/man2/stat.2.html for data types
+	
+	Directory Type File Content Table
+	{
+		Inode : {
+				char[64] Filename, ino_t Inode number;
+				char[64] Filename, ino_t Inode number;
+				...
+			}
+			
+		Inode : {
+				char[64] Filename, ino_t Inode number;
+				char[64] Filename, ino_t Inode number;
+				...
+			}
+		...
+	}
+	Metadata Content Table
+	{
+		Inode : {
+				mode_t File type and mode (whether directory or file);
+				off_t Total size in bytes;
+				list of chunkids (not relevant if file type is directory);
+			}
+		Inode : {
+				mode_t File type and mode (whether directory or file);
+				off_t Total size in bytes;
+				list of chunkids (not relevant if file type is directory);
+			}
+		...
+	}
+	
+				
+	
 	Files: (persistent)
 	filename, locked?, lockTTL, list of chunkids
 
