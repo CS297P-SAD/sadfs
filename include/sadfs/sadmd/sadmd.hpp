@@ -14,7 +14,8 @@ namespace sadfs {
 using chunkid = uint64_t;
 
 // all the information needed about a chunk server
-struct chunk_server_info{
+struct chunk_server_info
+{
 	inet::service service;
 	uint64_t max_chunks;
 	uint64_t chunk_count;
@@ -22,7 +23,8 @@ struct chunk_server_info{
 };
 
 // all the information needed about a file
-struct file_info{
+struct file_info
+{
 	int ttl;
 	std::vector<chunkid> chunkids;
 };
@@ -34,11 +36,14 @@ public:
 
 	// starts server
 	void start();
+
+private:
 	// creates (the metadata for) a new file
 	void create_file(std::string const&);
-private:
+
 	// loads file metadata from disk
 	void load_files();
+
 	// runs an sql statement on system_files_
 	void db_command(std::string const&) const noexcept;
 
