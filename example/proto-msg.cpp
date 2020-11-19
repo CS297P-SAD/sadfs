@@ -33,9 +33,24 @@ recv_file_req(gpio::ZeroCopyInputStream* in)
 	auto echoed_req = comm::msgs::file_request{};
 	if (!echoed_req.recv(in))
 	{
-		std::cerr << "error: wrong message length received\n";
-		std::exit(1);
-	}
+		auto req = comm::chunk_request
+		{
+			13,
+			comm::request_type::read,
+			78234
+		};
+		if (!req.send(sock))
+		{
+			std::cerr << "error: could not send message\n";
+			std::exit(1);
+		}
+
+		auto echoed_req = comm::chunk_request{};
+		if (!echoed_req.recv(sock))
+		{
+			std::cerr << "error: wrong message length received\n";
+			std::exit(1);
+		}
 
 	auto const& section = echoed_req.section();
 	std::cout << "Received echoed file request..."

@@ -133,6 +133,12 @@ sender() const noexcept
 	return protobuf_.sender();
 }
 
+std::size_t file_request::
+sender() const noexcept
+{
+	return protobuf_.sender();
+}
+
 file_section file_request::
 section() const noexcept
 {
