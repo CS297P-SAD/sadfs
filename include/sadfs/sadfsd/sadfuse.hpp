@@ -42,11 +42,11 @@ private:
     void load_operations();
     
     // get file attributes
-    static int getattr(const char* path, struct stat* stbuf);//, fuse_file_info* fi);
+    static int getattr(const char* path, struct stat* stbuf);
 
     // read directory
     static int readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t off,
-                fuse_file_info* fi);//, fuse_readdir_flags flags);
+                fuse_file_info* fi);
 
     // open a file
     static int open(const char* path, fuse_file_info* fi);

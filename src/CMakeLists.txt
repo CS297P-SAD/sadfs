@@ -65,10 +65,7 @@ endforeach()
 
 # find fuse library. this sets the FUSE3_INCLUDE_DIRS and FUSE3_LIBRARIES
 # variables
-#include(FindPkgConfig)
 find_package(PkgConfig REQUIRED)
-#pkg_search_module(FUSE REQUIRED fuse)
-#find_package(PkgConfig REQUIRED)
 pkg_check_modules(FUSE REQUIRED fuse)
 
 add_executable (sadfsd-bootstrap
@@ -78,13 +75,13 @@ add_executable (sadfsd-bootstrap
     ${COMMON_SOURCE_FILES})
 target_include_directories (sadfsd-bootstrap
     PRIVATE ${Boost_INCLUDE_DIRS}
-    SYSTEM PUBLIC ${FUSE_INCLUDE_DIRS})
+    SYSTEM PRIVATE ${FUSE_INCLUDE_DIRS})
 target_link_libraries (sadfsd-bootstrap
     PRIVATE sadfs_protobuf
     PRIVATE ${Boost_LIBRARIES}
-    PUBLIC ${FUSE_LINK_LIBRARIES})
+    PRIVATE ${FUSE_LINK_LIBRARIES})
 target_compile_options(sadfsd-bootstrap
-    PUBLIC ${FUSE_CFLAGS})
+    PRIVATE ${FUSE_CFLAGS})
 
 # add source files for "example" targets
 target_sources (echod        PRIVATE ${COMMON_SOURCE_FILES})

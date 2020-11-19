@@ -88,7 +88,7 @@ load_operations()
 }
 
 int sadfuse::
-getattr(const char* path, struct stat* stbuf)//, fuse_file_info* fi)
+getattr(const char* path, struct stat* stbuf)
 {
     // TODO
     return -ENOENT;
@@ -96,7 +96,7 @@ getattr(const char* path, struct stat* stbuf)//, fuse_file_info* fi)
 
 int sadfuse::
 readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t off,
-        fuse_file_info* fi)//, fuse_readdir_flags flags)
+        fuse_file_info* fi)
 {
     // TODO
     return -ENOENT;
