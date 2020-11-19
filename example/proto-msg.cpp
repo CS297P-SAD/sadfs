@@ -73,5 +73,29 @@ main(int argc, char** argv)
 			<< "\n";
 	}
 
+	{
+		auto id = comm::identification
+		{
+			comm::host_type::client,
+			13,
+		};
+		if (!id.send(sock))
+		{
+			std::cerr << "error: could not send message\n";
+			std::exit(1);
+		}
+
+		auto echoed_id = comm::identification{};
+		if (!echoed_id.recv(sock))
+		{
+			std::cerr << "error: wrong message length received\n";
+			std::exit(1);
+		}
+
+		std::cout << "\nReceived echoed host identification..."
+			<< "\nHost id: " << echoed_id.id()
+			<< "\n";
+	}
+
 	return 0;
 }

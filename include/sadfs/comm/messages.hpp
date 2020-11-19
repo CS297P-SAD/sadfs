@@ -19,13 +19,21 @@ struct file_section
 	std::size_t const length;
 };
 
-enum class io_type {
+enum class io_type
+{
 	read,
 	write
 };
 
-// base class for all requests
-class request_base
+enum class host_type
+{
+	client,
+	chunk_server,
+	master_server
+};
+
+// base class for all protobuf messages
+class protobuf_base
 {
 protected:
 	template <typename Protobuf>
@@ -35,7 +43,23 @@ protected:
 	bool recv(socket const&, Protobuf&) noexcept;
 };
 
-class file_request : protected request_base
+class identification : protected protobuf_base
+{
+public:
+	// constructor
+	identification() = default;
+	identification(host_type type, std::size_t id);
+
+	bool send(socket const&) const noexcept;
+	bool recv(socket const&) noexcept;
+
+	std::size_t id()   const noexcept;
+	host_type   type() const noexcept;
+private:
+	proto::identification protobuf_;
+};
+
+class file_request : protected protobuf_base
 {
 public:
 	// constructor
@@ -53,7 +77,7 @@ private:
 	proto::file_request protobuf_;
 };
 
-class chunk_request : protected request_base
+class chunk_request : protected protobuf_base
 {
 public:
 	// constructors
