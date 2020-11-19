@@ -13,26 +13,26 @@ namespace sadfs { namespace comm {
 
 namespace gpio = google::protobuf::io;
 namespace gputil = google::protobuf::util;
-using request_type_map = std::unordered_map<proto::request_type,
-                                            request_type>;
-using proto_request_type_map = std::unordered_map<request_type,
-                                            proto::request_type>;
+using io_type_map = std::unordered_map<proto::io_type,
+                                            io_type>;
+using proto_io_type_map = std::unordered_map<io_type,
+                                            proto::io_type>;
 
 namespace {
 // handy function aliases (pointers)
 auto const serialize = gputil::SerializeDelimitedToZeroCopyStream;
 auto const deserialize = gputil::ParseDelimitedFromZeroCopyStream;
 
-auto const proto_req_type_lookup = proto_request_type_map
+auto const proto_io_type_lookup = proto_io_type_map
 {
-	{request_type::read, proto::request_type::READ},
-	{request_type::write, proto::request_type::WRITE},
+	{io_type::read, proto::io_type::READ},
+	{io_type::write, proto::io_type::WRITE},
 };
 
-auto const req_type_lookup = request_type_map
+auto const io_type_lookup = io_type_map
 {
-	{proto::request_type::READ, request_type::read},
-	{proto::request_type::WRITE, request_type::write},
+	{proto::io_type::READ, io_type::read},
+	{proto::io_type::WRITE, io_type::write},
 };
 
 } // unnamed namespace
@@ -62,10 +62,10 @@ recv(socket const& sock, Protobuf& protobuf) noexcept
  * ========================================================
  */
 file_request::
-file_request(std::size_t sender, request_type req_type,
+file_request(std::size_t sender, io_type type,
              file_section const section)
 {
-	protobuf_.set_type(proto_req_type_lookup.at(req_type));
+	protobuf_.set_type(proto_io_type_lookup.at(type));
 	protobuf_.set_sender(sender);
 	protobuf_.set_filename(section.filename);
 	protobuf_.set_offset(section.offset);
@@ -101,10 +101,10 @@ section() const noexcept
 	};
 }
 
-request_type file_request::
+io_type file_request::
 type() const noexcept
 {
-	return req_type_lookup.at(protobuf_.type());
+	return io_type_lookup.at(protobuf_.type());
 }
 
 /* ========================================================
@@ -112,10 +112,10 @@ type() const noexcept
  * ========================================================
  */
 chunk_request::
-chunk_request(std::size_t sender, request_type req_type,
+chunk_request(std::size_t sender, io_type type,
               std::size_t chunk_id)
 {
-	protobuf_.set_type(proto_req_type_lookup.at(req_type));
+	protobuf_.set_type(proto_io_type_lookup.at(type));
 	protobuf_.set_sender(sender);
 	protobuf_.set_chunk_id(chunk_id);
 }
@@ -144,10 +144,10 @@ chunk_id() const noexcept
 	return protobuf_.chunk_id();
 }
 
-request_type chunk_request::
+io_type chunk_request::
 type() const noexcept
 {
-	return req_type_lookup.at(protobuf_.type());
+	return io_type_lookup.at(protobuf_.type());
 }
 
 } // namespace comm

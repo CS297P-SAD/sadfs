@@ -2,21 +2,48 @@
 syntax = "proto3";
 package sadfs.proto;
 
-enum request_type {
+// types of hosts in a network
+enum host_type {
+	CLIENT        = 0;
+	CHUNK_SERVER  = 1;
+	MASTER_SERVER = 2;
+}
+
+// identifies a host
+message indentification {
+	host_type type = 1;
+	uint64    uuid = 2;
+}
+
+enum io_type {
 	READ = 0;
 	WRITE = 1;
 }
 
+// request for file IO
 message file_request {
-	request_type type     = 1;
-	uint64       sender   = 2;
-	string       filename = 3;
-	uint64       offset   = 4;
-	uint64       length   = 5;
+	io_type type     = 1;
+	uint64  sender   = 2;
+	string  filename = 3;
+	uint64  offset   = 4;
+	uint64  length   = 5;
 }
 
+// request for a chunk
 message chunk_request {
-	request_type type     = 1;
-	uint64       sender   = 2;
-	uint64       chunk_id = 3;
+	io_type type     = 1;
+	uint64  sender   = 2;
+	uint64  chunk_id = 3;
+}
+
+// types of requests that are sent
+enum request_type {
+	FILE     = 0;
+	CHUNK    = 1;
+	METADATA = 2;
+}
+
+// identifies (an incoming) request
+message request_id {
+	request_type type = 1;
 }
