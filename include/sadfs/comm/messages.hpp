@@ -11,6 +11,7 @@
 
 namespace sadfs { namespace comm {
 
+// specifies a section of a file
 struct file_section
 {
 	std::string const filename;
@@ -23,7 +24,18 @@ enum class request_type {
 	write
 };
 
-class file_request
+// base class for all requests
+class request_base
+{
+protected:
+	template <typename Protobuf>
+	bool send(socket const&, Protobuf const&) const noexcept;
+
+	template <typename Protobuf>
+	bool recv(socket const&, Protobuf&) noexcept;
+};
+
+class file_request : protected request_base
 {
 public:
 	// constructor
@@ -41,7 +53,7 @@ private:
 	proto::file_request protobuf_;
 };
 
-class chunk_request
+class chunk_request : protected request_base
 {
 public:
 	// constructors

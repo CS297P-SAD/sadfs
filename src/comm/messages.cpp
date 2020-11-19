@@ -38,6 +38,26 @@ auto const req_type_lookup = request_type_map
 } // unnamed namespace
 
 /* ========================================================
+ *                       request_base
+ * ========================================================
+ */
+template <typename Protobuf>
+bool request_base::
+send(socket const& sock, Protobuf const& protobuf) const noexcept
+{
+	auto out = gpio::FileOutputStream(sock.descriptor());
+	return serialize(protobuf, &out);
+}
+
+template <typename Protobuf>
+bool request_base::
+recv(socket const& sock, Protobuf& protobuf) noexcept
+{
+	auto in = gpio::FileInputStream(sock.descriptor());
+	return deserialize(&protobuf, &in, nullptr);
+}
+
+/* ========================================================
  *                       file_request
  * ========================================================
  */
@@ -55,15 +75,13 @@ file_request(std::size_t sender, request_type req_type,
 bool file_request::
 send(socket const& sock) const noexcept
 {
-	auto out = gpio::FileOutputStream(sock.descriptor());
-	return serialize(protobuf_, &out);
+	return request_base::send(sock, protobuf_);
 }
 
 bool file_request::
 recv(socket const& sock) noexcept
 {
-	auto in = gpio::FileInputStream(sock.descriptor());
-	return deserialize(&protobuf_, &in, nullptr);
+	return request_base::recv(sock, protobuf_);
 }
 
 std::size_t file_request::
@@ -105,15 +123,13 @@ chunk_request(std::size_t sender, request_type req_type,
 bool chunk_request::
 send(socket const& sock) const noexcept
 {
-	auto out = gpio::FileOutputStream(sock.descriptor());
-	return serialize(protobuf_, &out);
+	return request_base::send(sock, protobuf_);
 }
 
 bool chunk_request::
 recv(socket const& sock) noexcept
 {
-	auto in = gpio::FileInputStream(sock.descriptor());
-	return deserialize(&protobuf_, &in, nullptr);
+	return request_base::recv(sock, protobuf_);
 }
 
 std::size_t chunk_request::
