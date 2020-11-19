@@ -10,9 +10,9 @@ enum host_type {
 }
 
 // identifies a host
-message indentification {
+message identification {
 	host_type type = 1;
-	uint64    uuid = 2;
+	uint64    id   = 2;
 }
 
 enum io_type {
