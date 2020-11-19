@@ -9,7 +9,7 @@
 #include <cstddef> // std::size_t
 #include <string>
 
-namespace sadfs { namespace comm {
+namespace sadfs { namespace comm { namespace msgs {
 
 // specifies a section of a file
 struct file_section
@@ -95,6 +95,7 @@ private:
 	proto::chunk_request protobuf_;
 };
 
+} // msgs namespace
 } // comm namespace
 } // sadfs namespace
 

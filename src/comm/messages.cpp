@@ -9,7 +9,7 @@
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/util/delimited_message_util.h>
 
-namespace sadfs { namespace comm {
+namespace sadfs { namespace comm { namespace msgs {
 
 namespace gpio = google::protobuf::io;
 namespace gputil = google::protobuf::util;
@@ -203,5 +203,6 @@ type() const noexcept
 	return host_type_lookup.at(protobuf_.type());
 }
 
+} // namespace msgs
 } // namespace comm
 } // namespace sadfs

@@ -19,10 +19,10 @@ main(int argc, char** argv)
 
 	auto sock = inet::service{inet::constants::ip_localhost, 6666}.connect();
 	{
-		auto req = comm::file_request
+		auto req = comm::msgs::file_request
 		{
 			13,
-			comm::io_type::read,
+			comm::msgs::io_type::read,
 			{"/mnt/a/file.dat", 0, 4096}
 		};
 		if (!req.send(sock))
@@ -31,7 +31,7 @@ main(int argc, char** argv)
 			std::exit(1);
 		}
 
-		auto echoed_req = comm::file_request{};
+		auto echoed_req = comm::msgs::file_request{};
 		if (!echoed_req.recv(sock))
 		{
 			std::cerr << "error: wrong message length received\n";
@@ -48,10 +48,10 @@ main(int argc, char** argv)
 	}
 
 	{
-		auto req = comm::chunk_request
+		auto req = comm::msgs::chunk_request
 		{
 			13,
-			comm::io_type::read,
+			comm::msgs::io_type::read,
 			78234
 		};
 		if (!req.send(sock))
@@ -60,7 +60,7 @@ main(int argc, char** argv)
 			std::exit(1);
 		}
 
-		auto echoed_req = comm::chunk_request{};
+		auto echoed_req = comm::msgs::chunk_request{};
 		if (!echoed_req.recv(sock))
 		{
 			std::cerr << "error: wrong message length received\n";
@@ -74,9 +74,9 @@ main(int argc, char** argv)
 	}
 
 	{
-		auto id = comm::identification
+		auto id = comm::msgs::identification
 		{
-			comm::host_type::client,
+			comm::msgs::host_type::client,
 			13,
 		};
 		if (!id.send(sock))
@@ -85,7 +85,7 @@ main(int argc, char** argv)
 			std::exit(1);
 		}
 
-		auto echoed_id = comm::identification{};
+		auto echoed_id = comm::msgs::identification{};
 		if (!echoed_id.recv(sock))
 		{
 			std::cerr << "error: wrong message length received\n";
