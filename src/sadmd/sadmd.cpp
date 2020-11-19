@@ -8,8 +8,6 @@
 #include <array>
 #include <cstring>  // std::strerror
 #include <iostream>
-#include <string>
-#include <sqlite3.h>
 #include <unistd.h> // read/write
 
 namespace {

@@ -42,9 +42,6 @@ add_executable (sadcd
 #	sadfsd/sadfsd.cpp
 #	${COMMON_SOURCE_FILES})
 
-target_link_libraries(sadmd
-	sqlite3)
-
 # first, find the boost_program_options library. this sets
 # the Boost_INCLUDE_DIRS and Boost_LIBRARIES variables
 find_package (Boost
@@ -68,6 +65,18 @@ foreach (TARGET sadmd sadcd) # sadfsd)
 		PRIVATE ${Boost_INCLUDE_DIRS})
 	target_link_libraries (${BOOTSTRAP_TARGET}
 		PRIVATE ${Boost_LIBRARIES})
+endforeach()
+
+# find the SQLite3 library. this sets
+# the SQLite3_INCLUDE_DIRS and SQLite3_LIBRARIES variables
+find_package (SQLite3
+	REQUIRED)
+
+foreach (TARGET sadmd) # sadcd
+	target_include_directories (${TARGET}
+		PRIVATE ${SQLite3_INCLUDE_DIRS})
+	target_link_libraries (${TARGET}
+		PRIVATE ${SQLite3_LIBRARIES})
 endforeach()
 
 # add source files for "example" targets
