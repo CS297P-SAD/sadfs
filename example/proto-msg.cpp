@@ -22,7 +22,7 @@ main(int argc, char** argv)
 		auto req = comm::file_request
 		{
 			13,
-			comm::request_type::read,
+			comm::io_type::read,
 			{"/mnt/a/file.dat", 0, 4096}
 		};
 		if (!req.send(sock))
@@ -51,7 +51,7 @@ main(int argc, char** argv)
 		auto req = comm::chunk_request
 		{
 			13,
-			comm::request_type::read,
+			comm::io_type::read,
 			78234
 		};
 		if (!req.send(sock))

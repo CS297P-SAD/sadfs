@@ -19,7 +19,7 @@ struct file_section
 	std::size_t const length;
 };
 
-enum class request_type {
+enum class io_type {
 	read,
 	write
 };
@@ -40,7 +40,7 @@ class file_request : protected request_base
 public:
 	// constructor
 	file_request() = default;
-	file_request(std::size_t sender, request_type req_type,
+	file_request(std::size_t sender, io_type type,
 	             file_section section);
 
 	bool send(socket const&) const noexcept;
@@ -48,7 +48,7 @@ public:
 
 	std::size_t  sender()  const noexcept;
 	file_section section() const noexcept;
-	request_type type()    const noexcept;
+	io_type      type()    const noexcept;
 private:
 	proto::file_request protobuf_;
 };
@@ -58,7 +58,7 @@ class chunk_request : protected request_base
 public:
 	// constructors
 	chunk_request() = default;
-	chunk_request(std::size_t sender, request_type req_type,
+	chunk_request(std::size_t sender, io_type type,
 	              std::size_t chunk_id);
 
 	bool send(socket const&) const noexcept;
@@ -66,7 +66,7 @@ public:
 
 	std::size_t  sender()   const noexcept;
 	std::size_t  chunk_id() const noexcept;
-	request_type type()     const noexcept;
+	io_type      type()     const noexcept;
 private:
 	proto::chunk_request protobuf_;
 };
