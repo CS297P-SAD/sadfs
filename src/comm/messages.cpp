@@ -99,11 +99,11 @@ recv(gpio::ZeroCopyInputStream* in, Protobuf& protobuf)
 } // unnamed namespace
 
 /* ========================================================
- *                       request_base
+ *                       protobuf_base
  * ========================================================
  */
 template <typename Protobuf>
-bool request_base::
+bool protobuf_base::
 send(socket const& sock, Protobuf const& protobuf) const noexcept
 {
 	auto out = gpio::FileOutputStream(sock.descriptor());
@@ -111,7 +111,7 @@ send(socket const& sock, Protobuf const& protobuf) const noexcept
 }
 
 template <typename Protobuf>
-bool request_base::
+bool protobuf_base::
 recv(socket const& sock, Protobuf& protobuf) noexcept
 {
 	auto in = gpio::FileInputStream(sock.descriptor());
