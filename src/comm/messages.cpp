@@ -17,6 +17,10 @@ using io_type_map = std::unordered_map<proto::io_type,
                                             io_type>;
 using proto_io_type_map = std::unordered_map<io_type,
                                             proto::io_type>;
+using host_type_map = std::unordered_map<proto::host_type,
+                                            host_type>;
+using proto_host_type_map = std::unordered_map<host_type,
+                                            proto::host_type>;
 
 namespace {
 // handy function aliases (pointers)
@@ -35,14 +39,28 @@ auto const io_type_lookup = io_type_map
 	{proto::io_type::WRITE, io_type::write},
 };
 
+auto const proto_host_type_lookup = proto_host_type_map
+{
+	{host_type::client,        proto::host_type::CLIENT},
+	{host_type::chunk_server,  proto::host_type::CHUNK_SERVER},
+	{host_type::master_server, proto::host_type::MASTER_SERVER},
+};
+
+auto const host_type_lookup = host_type_map
+{
+	{proto::host_type::CLIENT,        host_type::client},
+	{proto::host_type::CHUNK_SERVER,  host_type::chunk_server},
+	{proto::host_type::MASTER_SERVER, host_type::master_server},
+};
+
 } // unnamed namespace
 
 /* ========================================================
- *                       request_base
+ *                       protobuf_base
  * ========================================================
  */
 template <typename Protobuf>
-bool request_base::
+bool protobuf_base::
 send(socket const& sock, Protobuf const& protobuf) const noexcept
 {
 	auto out = gpio::FileOutputStream(sock.descriptor());
@@ -50,7 +68,7 @@ send(socket const& sock, Protobuf const& protobuf) const noexcept
 }
 
 template <typename Protobuf>
-bool request_base::
+bool protobuf_base::
 recv(socket const& sock, Protobuf& protobuf) noexcept
 {
 	auto in = gpio::FileInputStream(sock.descriptor());
@@ -75,13 +93,13 @@ file_request(std::size_t sender, io_type type,
 bool file_request::
 send(socket const& sock) const noexcept
 {
-	return request_base::send(sock, protobuf_);
+	return protobuf_base::send(sock, protobuf_);
 }
 
 bool file_request::
 recv(socket const& sock) noexcept
 {
-	return request_base::recv(sock, protobuf_);
+	return protobuf_base::recv(sock, protobuf_);
 }
 
 std::size_t file_request::
@@ -123,13 +141,13 @@ chunk_request(std::size_t sender, io_type type,
 bool chunk_request::
 send(socket const& sock) const noexcept
 {
-	return request_base::send(sock, protobuf_);
+	return protobuf_base::send(sock, protobuf_);
 }
 
 bool chunk_request::
 recv(socket const& sock) noexcept
 {
-	return request_base::recv(sock, protobuf_);
+	return protobuf_base::recv(sock, protobuf_);
 }
 
 std::size_t chunk_request::
@@ -148,6 +166,41 @@ io_type chunk_request::
 type() const noexcept
 {
 	return io_type_lookup.at(protobuf_.type());
+}
+
+/* ========================================================
+ *                      identification
+ * ========================================================
+ */
+identification::
+identification(host_type type, std::size_t id)
+{
+	protobuf_.set_type(proto_host_type_lookup.at(type));
+	protobuf_.set_id(id);
+}
+
+bool identification::
+send(socket const& sock) const noexcept
+{
+	return protobuf_base::send(sock, protobuf_);
+}
+
+bool identification::
+recv(socket const& sock) noexcept
+{
+	return protobuf_base::recv(sock, protobuf_);
+}
+
+std::size_t identification::
+id() const noexcept
+{
+	return protobuf_.id();
+}
+
+host_type identification::
+type() const noexcept
+{
+	return host_type_lookup.at(protobuf_.type());
 }
 
 } // namespace comm
