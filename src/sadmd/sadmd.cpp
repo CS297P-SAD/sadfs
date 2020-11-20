@@ -145,7 +145,7 @@ create_file(std::string const& filename, std::string const& existing_chunks)
 {
 	if (!files_.count(filename))
 	{
-		auto info = file_info{0, };
+		auto info = file_info{};
 		parse_chunkid_str(info.chunkids, existing_chunks);
 		files_.emplace(filename, info);
 	}
