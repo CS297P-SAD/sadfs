@@ -18,7 +18,7 @@ recv_id_msg(gpio::ZeroCopyInputStream* in)
 	auto echoed_id = comm::msgs::identification{};
 	if (!echoed_id.recv(in))
 	{
-		std::cerr << "error: wrong message length received\n";
+		std::cerr << "error: could not receive id msg\n";
 		std::exit(1);
 	}
 
@@ -33,24 +33,9 @@ recv_file_req(gpio::ZeroCopyInputStream* in)
 	auto echoed_req = comm::msgs::file_request{};
 	if (!echoed_req.recv(in))
 	{
-		auto req = comm::chunk_request
-		{
-			13,
-			comm::request_type::read,
-			78234
-		};
-		if (!req.send(sock))
-		{
-			std::cerr << "error: could not send message\n";
-			std::exit(1);
-		}
-
-		auto echoed_req = comm::chunk_request{};
-		if (!echoed_req.recv(sock))
-		{
-			std::cerr << "error: wrong message length received\n";
-			std::exit(1);
-		}
+		std::cerr << "error: could not receive file request\n";
+		std::exit(1);
+	}
 
 	auto const& section = echoed_req.section();
 	std::cout << "Received echoed file request..."
@@ -67,7 +52,7 @@ recv_chunk_req(gpio::ZeroCopyInputStream* in)
 	auto echoed_req = comm::msgs::chunk_request{};
 	if (!echoed_req.recv(in))
 	{
-		std::cerr << "error: wrong message length received\n";
+		std::cerr << "error: could not receive chunk request\n";
 		std::exit(1);
 	}
 

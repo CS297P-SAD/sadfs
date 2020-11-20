@@ -98,27 +98,6 @@ recv(gpio::ZeroCopyInputStream* in, Protobuf& protobuf)
 } // unnamed namespace
 
 /* ========================================================
- *                     helper functions
- * ========================================================
- */
-template <typename Protobuf>
-bool
-send(gpio::ZeroCopyOutputStream* out, Protobuf const& protobuf,
-     proto::msg_id const& id)
-{
-	return serialize(id, out) && serialize(protobuf, out);
-}
-
-template <typename Protobuf>
-bool
-recv(gpio::ZeroCopyInputStream* in, Protobuf& protobuf)
-{
-	return deserialize(&protobuf, in, nullptr);
-}
-
-} // unnamed namespace
-
-/* ========================================================
  *                       file_request
  * ========================================================
  */
@@ -145,12 +124,6 @@ bool file_request::
 recv(gpio::ZeroCopyInputStream* in) noexcept
 {
 	return msgs::recv(in, protobuf_);
-}
-
-std::size_t file_request::
-sender() const noexcept
-{
-	return protobuf_.sender();
 }
 
 std::size_t file_request::

@@ -50,22 +50,3 @@ enum msg_type {
 message msg_id {
 	msg_type type = 1;
 }
-
-// request for a chunk
-message chunk_request {
-	io_type type     = 1;
-	uint64  sender   = 2;
-	uint64  chunk_id = 3;
-}
-
-// types of requests that are sent
-enum request_type {
-	FILE     = 0;
-	CHUNK    = 1;
-	METADATA = 2;
-}
-
-// identifies (an incoming) request
-message msg_id {
-	msg_type type = 1;
-}
