@@ -90,7 +90,7 @@ int
 main(int argc, char** argv)
 {
 	auto sock = inet::service{inet::constants::ip_localhost, 6666}.connect();
-	auto in = gpio::FileInputStream(sock.descriptor());
+	auto out = gpio::FileOutputStream(sock.descriptor());
 	{
 		auto req = comm::msgs::file_request
 		{
@@ -98,7 +98,7 @@ main(int argc, char** argv)
 			comm::msgs::io_type::read,
 			{"/mnt/a/file.dat", 0, 4096}
 		};
-		if (!req.send(sock))
+		if (!req.send(&out))
 		{
 			std::cerr << "error: could not send message\n";
 			std::exit(1);
@@ -111,7 +111,7 @@ main(int argc, char** argv)
 			comm::msgs::io_type::read,
 			78234
 		};
-		if (!req.send(sock))
+		if (!req.send(&out))
 		{
 			std::cerr << "error: could not send message\n";
 			std::exit(1);
@@ -123,12 +123,14 @@ main(int argc, char** argv)
 			comm::msgs::host_type::client,
 			13,
 		};
-		if (!id.send(sock))
+		if (!id.send(&out))
 		{
 			std::cerr << "error: could not send message\n";
 			std::exit(1);
 		}
 	}
+	out.Flush();
+	auto in = gpio::FileInputStream(sock.descriptor());
 	recv_msg(&in);
 	recv_msg(&in);
 	recv_msg(&in);
