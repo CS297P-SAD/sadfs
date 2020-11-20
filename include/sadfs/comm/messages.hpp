@@ -53,7 +53,7 @@ public:
 	virtual bool recv(gpio::ZeroCopyInputStream*) noexcept = 0;
 };
 
-class identification : public protobuf_base
+class identification final : public protobuf_base
 {
 public:
 	// constructor
@@ -69,7 +69,7 @@ private:
 	proto::identification protobuf_;
 };
 
-class file_request : public protobuf_base
+class file_request final : public protobuf_base
 {
 public:
 	// constructor
@@ -87,7 +87,7 @@ private:
 	proto::file_request protobuf_;
 };
 
-class chunk_request : public protobuf_base
+class chunk_request final : public protobuf_base
 {
 public:
 	// constructors
@@ -105,7 +105,7 @@ private:
 	proto::chunk_request protobuf_;
 };
 
-class msg_id : private protobuf_base
+class msg_id final : private protobuf_base
 {
 public:
 	// constructors
