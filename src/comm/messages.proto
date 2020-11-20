@@ -66,6 +66,6 @@ enum request_type {
 }
 
 // identifies (an incoming) request
-message request_id {
-	request_type type = 1;
+message msg_id {
+	msg_type type = 1;
 }

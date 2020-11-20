@@ -104,18 +104,18 @@ recv(gpio::ZeroCopyInputStream* in, Protobuf& protobuf)
  */
 template <typename Protobuf>
 bool protobuf_base::
-send(socket const& sock, Protobuf const& protobuf) const noexcept
+send(socket const& sock, Protobuf const& protobuf,
+     proto::msg_id const& id) const noexcept
 {
 	auto out = gpio::FileOutputStream(sock.descriptor());
-	return serialize(protobuf, &out);
+	return serialize(id, &out) && serialize(protobuf, &out);
 }
 
 template <typename Protobuf>
 bool protobuf_base::
-recv(socket const& sock, Protobuf& protobuf) noexcept
+recv(gpio::ZeroCopyInputStream* in, Protobuf& protobuf) noexcept
 {
-	auto in = gpio::FileInputStream(sock.descriptor());
-	return deserialize(&protobuf, &in, nullptr);
+	return deserialize(&protobuf, in, nullptr);
 }
 
 /* ========================================================
