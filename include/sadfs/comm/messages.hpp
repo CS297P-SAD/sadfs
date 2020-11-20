@@ -9,7 +9,7 @@
 #include <cstddef> // std::size_t
 #include <string>
 
-#include <google/protobuf/io/zero_copy_stream_impl.h>
+#include <google/protobuf/io/zero_copy_stream.h>
 
 namespace sadfs { namespace comm { namespace msgs {
 namespace gpio = google::protobuf::io;
