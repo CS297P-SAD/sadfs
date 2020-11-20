@@ -14,6 +14,9 @@
 #include <sstream>  // std::osstream
 #include <unistd.h> // read/write
 
+#define FILENAME_COL 0
+#define CHUNKID_STR_COL 1
+
 namespace {
 
 sqlite3*
@@ -153,7 +156,7 @@ create_file(std::string const& filename, std::string const& existing_chunks)
 void sadmd::
 db_command(std::string const& stmt) const
 {
-	if (sqlite3_exec(files_db_, stmt.c_str(), NULL, NULL, NULL) != 0)
+	if (sqlite3_exec(files_db_, stmt.c_str(), nullptr, nullptr, nullptr) != 0)
 	{
 		std::cerr << "Error running {" << stmt << "}: ";
 		std::cerr << sqlite3_errmsg(files_db_) << '\n';
@@ -169,7 +172,7 @@ db_contains(std::string const& filename) const
 	auto cmd = std::string{"SELECT * FROM files WHERE filename='" + filename +
 		"';"};
 
-	if (sqlite3_prepare_v2(files_db_, cmd.c_str(), -1, &stmt, NULL) != 0)
+	if (sqlite3_prepare_v2(files_db_, cmd.c_str(), -1, &stmt, nullptr) != 0)
 	{
 		std::cerr << sqlite3_errmsg(files_db_) << '\n';
 		std::exit(1);
@@ -184,7 +187,7 @@ void sadmd::
 load_files()
 {
 	sqlite3_stmt* stmt;
-	if (sqlite3_prepare_v2(files_db_, "SELECT * FROM files;", -1, &stmt, NULL) != 0)
+	if (sqlite3_prepare_v2(files_db_, "SELECT * FROM files;", -1, &stmt, nullptr) != 0)
 	{
 		std::cerr << sqlite3_errmsg(files_db_) << '\n';
 		std::exit(1);
@@ -193,9 +196,9 @@ load_files()
 	while (sqlite3_step(stmt) == SQLITE_ROW)
 	{
 		auto filename = std::string{reinterpret_cast<const char*>(
-			sqlite3_column_text(stmt, 0))};
+			sqlite3_column_text(stmt, FILENAME_COL))};
 		auto cids = std::string{reinterpret_cast<const char*>(
-			sqlite3_column_text(stmt, 1))};
+			sqlite3_column_text(stmt, CHUNKID_STR_COL))};
 		create_file(filename, cids);
 	}
 	sqlite3_finalize(stmt);
