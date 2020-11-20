@@ -9,7 +9,10 @@
 #include <cstddef> // std::size_t
 #include <string>
 
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+
 namespace sadfs { namespace comm { namespace msgs {
+namespace gpio = google::protobuf::io;
 
 // specifies a section of a file
 struct file_section
@@ -22,14 +25,24 @@ struct file_section
 enum class io_type
 {
 	read,
-	write
+	write,
 };
 
 enum class host_type
 {
+	unknown_host_type,
 	client,
 	chunk_server,
-	master_server
+	master_server,
+};
+
+enum class msg_type
+{
+	unknown_msg_type,
+	id,
+	file,
+	chunk,
+	metadata,
 };
 
 // base class for all protobuf messages
@@ -37,10 +50,11 @@ class protobuf_base
 {
 protected:
 	template <typename Protobuf>
-	bool send(socket const&, Protobuf const&) const noexcept;
+	bool send(socket const&, Protobuf const&,
+	          proto::msg_id const&) const noexcept;
 
 	template <typename Protobuf>
-	bool recv(socket const&, Protobuf&) noexcept;
+	bool recv(gpio::ZeroCopyInputStream*, Protobuf&) noexcept;
 };
 
 class identification : protected protobuf_base
@@ -51,7 +65,7 @@ public:
 	identification(host_type type, std::size_t id);
 
 	bool send(socket const&) const noexcept;
-	bool recv(socket const&) noexcept;
+	bool recv(gpio::ZeroCopyInputStream*) noexcept;
 
 	std::size_t id()   const noexcept;
 	host_type   type() const noexcept;
@@ -68,7 +82,7 @@ public:
 	             file_section section);
 
 	bool send(socket const&) const noexcept;
-	bool recv(socket const&) noexcept;
+	bool recv(gpio::ZeroCopyInputStream*) noexcept;
 
 	std::size_t  sender()  const noexcept;
 	file_section section() const noexcept;
@@ -86,13 +100,26 @@ public:
 	              std::size_t chunk_id);
 
 	bool send(socket const&) const noexcept;
-	bool recv(socket const&) noexcept;
+	bool recv(gpio::ZeroCopyInputStream*) noexcept;
 
 	std::size_t  sender()   const noexcept;
 	std::size_t  chunk_id() const noexcept;
 	io_type      type()     const noexcept;
 private:
 	proto::chunk_request protobuf_;
+};
+
+class msg_id : protected protobuf_base
+{
+public:
+	// constructors
+	msg_id() = default;
+
+	bool recv(gpio::ZeroCopyInputStream*) noexcept;
+
+	msg_type type() const noexcept;
+private:
+	proto::msg_id protobuf_;
 };
 
 } // msgs namespace

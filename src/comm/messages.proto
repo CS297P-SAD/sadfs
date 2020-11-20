@@ -4,9 +4,10 @@ package sadfs.proto;
 
 // types of hosts in a network
 enum host_type {
-	CLIENT        = 0;
-	CHUNK_SERVER  = 1;
-	MASTER_SERVER = 2;
+	UNKNOWN_HOST_TYPE = 0;
+	CLIENT            = 1;
+	CHUNK_SERVER      = 2;
+	MASTER_SERVER     = 3;
 }
 
 // identifies a host
@@ -37,13 +38,15 @@ message chunk_request {
 }
 
 // types of requests that are sent
-enum request_type {
-	FILE     = 0;
-	CHUNK    = 1;
-	METADATA = 2;
+enum msg_type {
+	UNKNOWN_MSG_TYPE = 0;
+	ID                   = 1;
+	FILE                 = 2;
+	CHUNK                = 3;
+	METADATA             = 4;
 }
 
 // identifies (an incoming) request
-message request_id {
-	request_type type = 1;
+message msg_id {
+	msg_type type = 1;
 }
