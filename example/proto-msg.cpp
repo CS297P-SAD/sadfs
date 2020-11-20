@@ -129,6 +129,7 @@ main(int argc, char** argv)
 			std::exit(1);
 		}
 	}
+	// the messages are likely still in the output stream's buffer
 	out.Flush();
 	auto in = gpio::FileInputStream(sock.descriptor());
 	recv_msg(&in);
