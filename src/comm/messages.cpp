@@ -21,6 +21,10 @@ using host_type_map = std::unordered_map<proto::host_type,
                                             host_type>;
 using proto_host_type_map = std::unordered_map<host_type,
                                             proto::host_type>;
+using msg_type_map = std::unordered_map<proto::msg_type,
+                                        msg_type>;
+using proto_msg_type_map = std::unordered_map<msg_type,
+                                            proto::msg_type>;
 
 namespace {
 // handy function aliases (pointers)
@@ -41,6 +45,7 @@ auto const io_type_lookup = io_type_map
 
 auto const proto_host_type_lookup = proto_host_type_map
 {
+	{host_type::unknown_host_type, proto::host_type::UNKNOWN_HOST_TYPE},
 	{host_type::client,        proto::host_type::CLIENT},
 	{host_type::chunk_server,  proto::host_type::CHUNK_SERVER},
 	{host_type::master_server, proto::host_type::MASTER_SERVER},
@@ -48,9 +53,28 @@ auto const proto_host_type_lookup = proto_host_type_map
 
 auto const host_type_lookup = host_type_map
 {
+	{proto::host_type::UNKNOWN_HOST_TYPE, host_type::unknown_host_type},
 	{proto::host_type::CLIENT,        host_type::client},
 	{proto::host_type::CHUNK_SERVER,  host_type::chunk_server},
 	{proto::host_type::MASTER_SERVER, host_type::master_server},
+};
+
+auto const proto_msg_type_lookup = proto_msg_type_map
+{
+	{msg_type::unknown_msg_type, proto::msg_type::UNKNOWN_MSG_TYPE},
+	{msg_type::id,       proto::msg_type::ID},
+	{msg_type::file,     proto::msg_type::FILE},
+	{msg_type::chunk,    proto::msg_type::CHUNK},
+	{msg_type::metadata, proto::msg_type::METADATA},
+};
+
+auto const msg_type_lookup = msg_type_map
+{
+	{proto::msg_type::UNKNOWN_MSG_TYPE, msg_type::unknown_msg_type},
+	{proto::msg_type::ID,       msg_type::id},
+	{proto::msg_type::FILE,     msg_type::file},
+	{proto::msg_type::CHUNK,    msg_type::chunk},
+	{proto::msg_type::METADATA, msg_type::metadata},
 };
 
 } // unnamed namespace
@@ -61,18 +85,18 @@ auto const host_type_lookup = host_type_map
  */
 template <typename Protobuf>
 bool protobuf_base::
-send(socket const& sock, Protobuf const& protobuf) const noexcept
+send(socket const& sock, Protobuf const& protobuf,
+     proto::msg_id const& id) const noexcept
 {
 	auto out = gpio::FileOutputStream(sock.descriptor());
-	return serialize(protobuf, &out);
+	return serialize(id, &out) && serialize(protobuf, &out);
 }
 
 template <typename Protobuf>
 bool protobuf_base::
-recv(socket const& sock, Protobuf& protobuf) noexcept
+recv(gpio::ZeroCopyInputStream* in, Protobuf& protobuf) noexcept
 {
-	auto in = gpio::FileInputStream(sock.descriptor());
-	return deserialize(&protobuf, &in, nullptr);
+	return deserialize(&protobuf, in, nullptr);
 }
 
 /* ========================================================
@@ -93,13 +117,15 @@ file_request(std::size_t sender, io_type type,
 bool file_request::
 send(socket const& sock) const noexcept
 {
-	return protobuf_base::send(sock, protobuf_);
+	auto id = proto::msg_id{};
+	id.set_type(proto::msg_type::FILE);
+	return protobuf_base::send(sock, protobuf_, id);
 }
 
 bool file_request::
-recv(socket const& sock) noexcept
+recv(gpio::ZeroCopyInputStream* in) noexcept
 {
-	return protobuf_base::recv(sock, protobuf_);
+	return protobuf_base::recv(in, protobuf_);
 }
 
 std::size_t file_request::
@@ -141,13 +167,15 @@ chunk_request(std::size_t sender, io_type type,
 bool chunk_request::
 send(socket const& sock) const noexcept
 {
-	return protobuf_base::send(sock, protobuf_);
+	auto id = proto::msg_id{};
+	id.set_type(proto::msg_type::CHUNK);
+	return protobuf_base::send(sock, protobuf_, id);
 }
 
 bool chunk_request::
-recv(socket const& sock) noexcept
+recv(gpio::ZeroCopyInputStream* in) noexcept
 {
-	return protobuf_base::recv(sock, protobuf_);
+	return protobuf_base::recv(in, protobuf_);
 }
 
 std::size_t chunk_request::
@@ -182,13 +210,15 @@ identification(host_type type, std::size_t id)
 bool identification::
 send(socket const& sock) const noexcept
 {
-	return protobuf_base::send(sock, protobuf_);
+	auto id = proto::msg_id{};
+	id.set_type(proto::msg_type::ID);
+	return protobuf_base::send(sock, protobuf_, id);
 }
 
 bool identification::
-recv(socket const& sock) noexcept
+recv(gpio::ZeroCopyInputStream* in) noexcept
 {
-	return protobuf_base::recv(sock, protobuf_);
+	return protobuf_base::recv(in, protobuf_);
 }
 
 std::size_t identification::
@@ -201,6 +231,22 @@ host_type identification::
 type() const noexcept
 {
 	return host_type_lookup.at(protobuf_.type());
+}
+
+/* ========================================================
+ *                          msg_id
+ * ========================================================
+ */
+bool msg_id::
+recv(gpio::ZeroCopyInputStream* in) noexcept
+{
+	return protobuf_base::recv(in, protobuf_);
+}
+
+msg_type msg_id::
+type() const noexcept
+{
+	return msg_type_lookup.at(protobuf_.type());
 }
 
 } // namespace msgs
