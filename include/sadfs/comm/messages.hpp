@@ -48,23 +48,19 @@ enum class msg_type
 // base class for all protobuf messages
 class protobuf_base
 {
-protected:
-	template <typename Protobuf>
-	bool send(socket const&, Protobuf const&,
-	          proto::msg_id const&) const noexcept;
-
-	template <typename Protobuf>
-	bool recv(gpio::ZeroCopyInputStream*, Protobuf&) noexcept;
+public:
+	virtual bool send(gpio::ZeroCopyOutputStream*) const noexcept = 0;
+	virtual bool recv(gpio::ZeroCopyInputStream*) noexcept = 0;
 };
 
-class identification : protected protobuf_base
+class identification : public protobuf_base
 {
 public:
 	// constructor
 	identification() = default;
 	identification(host_type type, std::size_t id);
 
-	bool send(socket const&) const noexcept;
+	bool send(gpio::ZeroCopyOutputStream*) const noexcept;
 	bool recv(gpio::ZeroCopyInputStream*) noexcept;
 
 	std::size_t id()   const noexcept;
@@ -73,7 +69,7 @@ private:
 	proto::identification protobuf_;
 };
 
-class file_request : protected protobuf_base
+class file_request : public protobuf_base
 {
 public:
 	// constructor
@@ -81,7 +77,7 @@ public:
 	file_request(std::size_t sender, io_type type,
 	             file_section section);
 
-	bool send(socket const&) const noexcept;
+	bool send(gpio::ZeroCopyOutputStream*) const noexcept;
 	bool recv(gpio::ZeroCopyInputStream*) noexcept;
 
 	std::size_t  sender()  const noexcept;
@@ -91,7 +87,7 @@ private:
 	proto::file_request protobuf_;
 };
 
-class chunk_request : protected protobuf_base
+class chunk_request : public protobuf_base
 {
 public:
 	// constructors
@@ -99,7 +95,7 @@ public:
 	chunk_request(std::size_t sender, io_type type,
 	              std::size_t chunk_id);
 
-	bool send(socket const&) const noexcept;
+	bool send(gpio::ZeroCopyOutputStream*) const noexcept;
 	bool recv(gpio::ZeroCopyInputStream*) noexcept;
 
 	std::size_t  sender()   const noexcept;
@@ -109,7 +105,7 @@ private:
 	proto::chunk_request protobuf_;
 };
 
-class msg_id : protected protobuf_base
+class msg_id : private protobuf_base
 {
 public:
 	// constructors
@@ -119,6 +115,9 @@ public:
 
 	msg_type type() const noexcept;
 private:
+	// this function must never be called
+	bool send(gpio::ZeroCopyOutputStream*) const noexcept;
+
 	proto::msg_id protobuf_;
 };
 
