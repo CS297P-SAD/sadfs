@@ -99,24 +99,25 @@ recv(gpio::ZeroCopyInputStream* in, Protobuf& protobuf)
 } // unnamed namespace
 
 /* ========================================================
- *                       protobuf_base
+ *                     helper functions
  * ========================================================
  */
 template <typename Protobuf>
-bool protobuf_base::
-send(socket const& sock, Protobuf const& protobuf,
-     proto::msg_id const& id) const noexcept
+bool
+send(gpio::ZeroCopyOutputStream* out, Protobuf const& protobuf,
+     proto::msg_id const& id)
 {
-	auto out = gpio::FileOutputStream(sock.descriptor());
-	return serialize(id, &out) && serialize(protobuf, &out);
+	return serialize(id, out) && serialize(protobuf, out);
 }
 
 template <typename Protobuf>
-bool protobuf_base::
-recv(gpio::ZeroCopyInputStream* in, Protobuf& protobuf) noexcept
+bool
+recv(gpio::ZeroCopyInputStream* in, Protobuf& protobuf)
 {
 	return deserialize(&protobuf, in, nullptr);
 }
+
+} // unnamed namespace
 
 /* ========================================================
  *                       file_request
