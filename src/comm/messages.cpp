@@ -6,7 +6,6 @@
 #include <unordered_map>
 
 // external includes
-#include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/util/delimited_message_util.h>
 
 namespace sadfs { namespace comm { namespace msgs {
