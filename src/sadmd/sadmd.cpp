@@ -14,10 +14,15 @@
 #include <sstream>  // std::osstream
 #include <unistd.h> // read/write
 
-#define FILENAME_COL 0
-#define CHUNKID_STR_COL 1
-
 namespace {
+
+namespace constants {
+
+// columns in our SQLite database
+constexpr auto filename_col = 0;
+constexpr auto chunkid_str_col = 1;
+
+} // (local) constants namespace
 
 sqlite3*
 open_db()
@@ -196,9 +201,9 @@ load_files()
 	while (sqlite3_step(stmt) == SQLITE_ROW)
 	{
 		auto filename = std::string{reinterpret_cast<const char*>(
-			sqlite3_column_text(stmt, FILENAME_COL))};
+			sqlite3_column_text(stmt, constants::filename_col))};
 		auto cids = std::string{reinterpret_cast<const char*>(
-			sqlite3_column_text(stmt, CHUNKID_STR_COL))};
+			sqlite3_column_text(stmt, constants::chunkid_str_col))};
 		create_file(filename, cids);
 	}
 	sqlite3_finalize(stmt);
