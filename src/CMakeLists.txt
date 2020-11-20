@@ -1,6 +1,7 @@
 # src/CMakeLists.txt
 
 # compile protobuf files into a library
+add_compile_options( -ggdb )
 find_package (Protobuf REQUIRED)
 protobuf_generate_cpp (PROTO_SOURCE_FILES PROTO_HEADER_FILES
 	comm/messages.proto)
