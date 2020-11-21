@@ -92,17 +92,14 @@ main(int argc, char const** argv)
 	// po::notify throws if they are not
 	sadfs::bootstrap::verify(variables);
 
-    // store reference to the singleton sadfuse object
-    sadfs::sadfuse& sadfuse = sadfs::sadfuse::instance();
-
-    // establish connection with master
-    sadfuse.set_master_connection(
+    // create object of sadfuse class
+    auto sadfuse = sadfs::sadfuse{
             variables["ipaddress"].as<std::string>().data(),
-            variables["port"].as<std::uint16_t>());
-    
+            variables["port"].as<std::uint16_t>()};
+
     // since the first argument is skipped by fuse_main, it is initialized as
     // empty string
-    std::array<std::string, 2> fuse_args = std::array
+    auto fuse_args = std::array
 	{
         std::string(),
 		variables["mountpoint"].as<std::string>()
@@ -116,7 +113,7 @@ main(int argc, char const** argv)
 	std::transform(fuse_args.begin(), fuse_args.end(), fuse_argv.begin(),
                    get_ptr);
 
-    int status = sadfuse.run(fuse_args.size(), fuse_argv.data());
+    auto status = sadfuse.run(fuse_args.size(), fuse_argv.data());
 
     return status;
 }
