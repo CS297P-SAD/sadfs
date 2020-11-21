@@ -47,14 +47,12 @@ find_package (Boost
 
 # then, do the following for every main daemon target
 # 1. add a corresponding bootstrap target
-# 2. mark it as a dependency of the main target
-# 3. inform CMake of dependency on protobuf headers
+# 2. inform CMake of dependency on protobuf headers
 # 3. inform CMake of any external dependencies
-foreach (TARGET sadmd sadcd) # sadfsd)
+foreach (TARGET sadmd sadcd sadfsd)
 	set (BOOTSTRAP_TARGET ${TARGET}-bootstrap)
 	add_executable (${BOOTSTRAP_TARGET}
 		${TARGET}/${BOOTSTRAP_TARGET}.cpp bootstrap/util.cpp)
-	add_dependencies (${TARGET} ${BOOTSTRAP_TARGET})
 	target_link_libraries (${BOOTSTRAP_TARGET}
 		PRIVATE sadfs_protobuf)
 	target_include_directories (${BOOTSTRAP_TARGET}
@@ -63,22 +61,21 @@ foreach (TARGET sadmd sadcd) # sadfsd)
 		PRIVATE ${Boost_LIBRARIES})
 endforeach()
 
+# mark as a dependency of the main target
+add_dependencies (sadmd sadmd-bootstrap)
+add_dependencies (sadcd sadcd-bootstrap)
+target_sources (sadfsd-bootstrap
+    PRIVATE sadfsd/sadfuse.cpp
+    PRIVATE ${COMMON_SOURCE_FILES})
+
 # find fuse library. this sets the FUSE3_INCLUDE_DIRS and FUSE3_LIBRARIES
 # variables
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FUSE REQUIRED fuse)
 
-add_executable (sadfsd-bootstrap
-    bootstrap/util.cpp
-    sadfsd/sadfsd-bootstrap.cpp
-    sadfsd/sadfuse.cpp
-    ${COMMON_SOURCE_FILES})
 target_include_directories (sadfsd-bootstrap
-    PRIVATE ${Boost_INCLUDE_DIRS}
     SYSTEM PRIVATE ${FUSE_INCLUDE_DIRS})
 target_link_libraries (sadfsd-bootstrap
-    PRIVATE sadfs_protobuf
-    PRIVATE ${Boost_LIBRARIES}
     PRIVATE ${FUSE_LINK_LIBRARIES})
 target_compile_options(sadfsd-bootstrap
     PRIVATE ${FUSE_CFLAGS})
