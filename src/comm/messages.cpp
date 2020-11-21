@@ -85,6 +85,9 @@ bool
 send(gpio::ZeroCopyOutputStream* out, Protobuf const& protobuf,
      proto::msg_id const& id)
 {
+	// serialise the msg_id first, followed by the protobuf
+	// this way the receiver can figure out what type of a
+	// message is being sent and receive it accordingly
 	return serialize(id, out) && serialize(protobuf, out);
 }
 
