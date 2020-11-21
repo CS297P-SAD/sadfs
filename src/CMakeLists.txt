@@ -13,15 +13,19 @@ target_include_directories (sadfs_protobuf PUBLIC
 	${PROTO_INCLUDE_DIR})
 target_link_libraries (sadfs_protobuf
 	${Protobuf_LIBRARIES})
-# copy *.pb.h into PROTO_INCLUDE_DIR after the library is built
+# copy *.pb.h into PROTO_INCLUDE_DIR before the library is built
 # so that they can actually be #include-d
-set (PROTO_HEADER_FILES_DIR ${PROTO_INCLUDE_DIR}/sadfs/comm)
-add_custom_command (TARGET sadfs_protobuf POST_BUILD
+set (PROTO_HEADER_FILES_DIR ${PROTO_INCLUDE_DIR}sadfs/proto/)
+add_custom_target (sadfs_protobuf_includes
+	DEPENDS ${PROTO_HEADER_FILES}
 	COMMAND ${CMAKE_COMMAND} -E
-	make_directory ${PROTO_HEADER_FILES_DIR})
-add_custom_command (TARGET sadfs_protobuf POST_BUILD
+	make_directory ${PROTO_HEADER_FILES_DIR}
 	COMMAND ${CMAKE_COMMAND} -E
 	copy ${PROTO_HEADER_FILES} ${PROTO_HEADER_FILES_DIR})
+add_dependencies (sadfs_protobuf sadfs_protobuf_includes)
+# add sadfs's protobuf abstraction component(s)
+target_sources (sadfs_protobuf PRIVATE
+	comm/messages.cpp)
 
 # common components that almost all targets depend on
 set (COMMON_SOURCE_FILES
@@ -39,9 +43,6 @@ add_executable (sadcd
 #	sadfsd/sadfsd.cpp
 #	${COMMON_SOURCE_FILES})
 
-target_link_libraries(sadmd
-	sqlite3)
-
 # first, find the boost_program_options library. this sets
 # the Boost_INCLUDE_DIRS and Boost_LIBRARIES variables
 find_package (Boost
@@ -53,7 +54,7 @@ find_package (Boost
 # 1. add a corresponding bootstrap target
 # 2. mark it as a dependency of the main target
 # 3. inform CMake of dependency on protobuf headers
-# 3. inform CMake of any external dependencies
+# 4. inform CMake of any external dependencies
 foreach (TARGET sadmd sadcd) # sadfsd)
 	set (BOOTSTRAP_TARGET ${TARGET}-bootstrap)
 	add_executable (${BOOTSTRAP_TARGET}
@@ -65,6 +66,18 @@ foreach (TARGET sadmd sadcd) # sadfsd)
 		PRIVATE ${Boost_INCLUDE_DIRS})
 	target_link_libraries (${BOOTSTRAP_TARGET}
 		PRIVATE ${Boost_LIBRARIES})
+endforeach()
+
+# find the SQLite3 library. this sets
+# the SQLite3_INCLUDE_DIRS and SQLite3_LIBRARIES variables
+find_package (SQLite3
+	REQUIRED)
+
+foreach (TARGET sadmd) # sadcd
+	target_include_directories (${TARGET}
+		PRIVATE ${SQLite3_INCLUDE_DIRS})
+	target_link_libraries (${TARGET}
+		PRIVATE ${SQLite3_LIBRARIES})
 endforeach()
 
 # add source files for "example" targets

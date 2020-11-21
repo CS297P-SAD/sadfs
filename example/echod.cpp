@@ -23,14 +23,14 @@ main()
 			if (len == -1)
 			{
 				std::cerr << "read error\n";
-				std::exit(1);
+				return 1;
 			}
 			std::cout << "received:    " << len << " byte(s)\n";
 
 			if (len != ::write(sock.descriptor(), buf.data(), len))
 			{
 				std::cerr << "write error\n";
-				std::exit(1);
+				return 1;
 			}
 			std::cout << "echoed back: " << len << " byte(s)\n";
 			buf.fill({}); // clear buffer

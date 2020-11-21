@@ -9,8 +9,6 @@
 #include <cstring>  // std::strerror
 #include <iostream>
 #include <iterator>
-#include <string>
-#include <sqlite3.h>
 #include <sstream>  // std::osstream
 #include <unistd.h> // read/write
 
