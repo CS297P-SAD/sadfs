@@ -4,7 +4,8 @@
 add_compile_options( -ggdb )
 find_package (Protobuf REQUIRED)
 protobuf_generate_cpp (PROTO_SOURCE_FILES PROTO_HEADER_FILES
-	comm/messages.proto)
+	comm/messages.proto
+	comm/internal.proto)
 add_library (sadfs_protobuf STATIC ${PROTO_SOURCE_FILES})
 # directory containing all *.pb.h so they can be included
 set (PROTO_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/)
@@ -60,8 +61,7 @@ foreach (TARGET sadmd sadcd) # sadfsd)
 	add_executable (${BOOTSTRAP_TARGET}
 		${TARGET}/${BOOTSTRAP_TARGET}.cpp bootstrap/util.cpp)
 	add_dependencies (${TARGET} ${BOOTSTRAP_TARGET})
-	target_link_libraries (${BOOTSTRAP_TARGET}
-		PRIVATE sadfs_protobuf)
+	target_link_libraries (${TARGET} PRIVATE sadfs_protobuf)
 	target_include_directories (${BOOTSTRAP_TARGET}
 		PRIVATE ${Boost_INCLUDE_DIRS})
 	target_link_libraries (${BOOTSTRAP_TARGET}
