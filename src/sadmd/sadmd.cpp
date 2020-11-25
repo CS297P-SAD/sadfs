@@ -248,7 +248,7 @@ save_files() const noexcept
 
 bool sadmd::
 add_server_to_network(serverid uuid, char const* ip, int port, 
-							uint64_t available_chunks)
+			uint64_t available_chunks)
 {
 	if (chunk_server_metadata_.count(uuid))
 	{
@@ -257,7 +257,6 @@ add_server_to_network(serverid uuid, char const* ip, int port,
 			<< " which is already on the network\n";
 		return false;
 	}
-	auto service = inet::service(ip, port);
 	chunk_server_metadata_.emplace(
 		uuid,
 		chunk_server_info{
