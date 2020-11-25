@@ -115,7 +115,7 @@ process_message(sadfs::socket const& sock)
 namespace sadfs {
 
 namespace time{
-nanosec
+ticks
 in_1_min()
 {
 	using namespace std::literals;
@@ -123,7 +123,7 @@ in_1_min()
 	return (std::chrono::steady_clock::now() + 1min).time_since_epoch().count();
 }
 
-nanosec 
+ticks 
 current()
 {
 	return std::chrono::steady_clock::now().time_since_epoch().count();
