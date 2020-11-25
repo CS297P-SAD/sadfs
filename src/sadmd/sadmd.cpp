@@ -57,13 +57,23 @@ void
 deserialize(std::vector<uint64_t>& chunkids, 
 	std::string const& existing_chunks)
 {
-	auto chunkid_pb = sadfs::proto::internal::chunkids{};
-	// parse string into protobuf object
-	chunkid_pb.ParseFromString(existing_chunks);
-	// copy protobuf object into vector
-	for (auto i = 0; i < chunkid_pb.chunkid_size(); i++)
+	if (existing_chunks.size() == 0)
 	{
-		chunkids.push_back(chunkid_pb.chunkid(i));
+		// do nothing if string is empty
+		return;
+	}
+	// parse string into protobuf object
+	auto chunkid_pb = sadfs::proto::internal::chunkids{};
+	chunkid_pb.ParseFromString(existing_chunks);
+	
+	// clear chunkids, and allocate enough space for contents
+	chunkids.clear();
+	chunkids.reserve(chunkid_pb.chunkid_size());
+	
+	// copy items from protobuf object into vector
+	for (auto id : chunkid_pb.chunkid())
+	{
+		chunkids.push_back(id);
 	}
 }
 
@@ -129,10 +139,7 @@ create_file(std::string const& filename, std::string const& existing_chunks)
 	if (!files_.count(filename))
 	{
 		auto info = file_info{};
-		if (existing_chunks.size() > 0)
-		{
-			deserialize(info.chunkids, existing_chunks);
-		}
+		deserialize(info.chunkids, existing_chunks);
 		files_.emplace(filename, info);
 	}
 	else
