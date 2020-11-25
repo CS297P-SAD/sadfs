@@ -114,6 +114,22 @@ process_message(sadfs::socket const& sock)
 
 namespace sadfs {
 
+namespace time{
+nanosec
+in_1_min()
+{
+	using namespace std::literals;
+
+	return (std::chrono::steady_clock::now() + 1min).time_since_epoch().count();
+}
+
+nanosec 
+current()
+{
+	return std::chrono::steady_clock::now().time_since_epoch().count();
+}
+} // time namespace
+
 sadmd::
 sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 {
@@ -230,4 +246,46 @@ save_files() const noexcept
 	}
 }
 
+bool sadmd::
+add_server_to_network(serverid uuid, char const* ip, int port, 
+							uint64_t available_chunks)
+{
+	if (chunk_server_metadata_.count(uuid))
+	{
+		std::cerr << "Error: attempt to add server "
+			<< uuid
+			<< " which is already on the network\n";
+		return false;
+	}
+	auto service = inet::service(ip, port);
+	chunk_server_metadata_.emplace(
+		uuid,
+		chunk_server_info{
+			inet::service(ip, port),
+			available_chunks,
+			0, // chunk count is zero to start
+			time::in_1_min()
+		}
+	);
+	return true;
+}
+	
+void sadmd::
+remove_server_from_network(serverid id)
+{
+	chunk_server_metadata_.erase(id);
+}
+
+void sadmd::
+register_server_heartbeat(serverid id)
+{
+	auto server = &chunk_server_metadata_.at(id);
+	server->ttl = time::in_1_min();
+}
+
+bool sadmd::
+is_active(serverid id)
+{
+	return (chunk_server_metadata_.at(id).ttl) > time::current();
+}
 } // sadfs namespace
