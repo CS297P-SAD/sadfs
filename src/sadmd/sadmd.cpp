@@ -271,20 +271,20 @@ add_server_to_network(serverid uuid, char const* ip, int port,
 }
 	
 void sadmd::
-remove_server_from_network(serverid id)
+remove_server_from_network(serverid id) noexcept
 {
 	chunk_server_metadata_.erase(id);
 }
 
 void sadmd::
-register_server_heartbeat(serverid id)
+register_server_heartbeat(serverid id) noexcept
 {
 	auto server = &chunk_server_metadata_.at(id);
 	server->ttl = time::in_1_min();
 }
 
 bool sadmd::
-is_active(serverid id)
+is_active(serverid id) const noexcept
 {
 	return (chunk_server_metadata_.at(id).ttl) > time::current();
 }
