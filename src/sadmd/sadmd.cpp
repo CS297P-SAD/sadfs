@@ -278,8 +278,14 @@ remove_server_from_network(serverid id) noexcept
 void sadmd::
 register_server_heartbeat(serverid id) noexcept
 {
-	auto server = &chunk_server_metadata_.at(id);
-	server->ttl = time::in_1_min();
+	if (!chunk_server_metadata_.count(id))
+	{
+		std::cerr << "Error: received heartbeat from server "
+			<< id
+			<< " which is not on the network\n";
+		return;
+	}
+	chunk_server_metadata_.at(id).ttl = time::in_1_min();
 }
 
 bool sadmd::
