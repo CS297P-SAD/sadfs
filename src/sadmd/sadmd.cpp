@@ -57,6 +57,11 @@ void
 deserialize(std::vector<uint64_t>& chunkids, 
 	std::string const& existing_chunks)
 {
+	if (existing_chunks.size() == 0)
+	{
+		// do nothing if string is empty
+		return;
+	}
 	// parse string into protobuf object
 	auto chunkid_pb = sadfs::proto::internal::chunkids{};
 	chunkid_pb.ParseFromString(existing_chunks);
