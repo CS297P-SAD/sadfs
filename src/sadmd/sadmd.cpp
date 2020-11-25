@@ -3,6 +3,7 @@
 // sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/sadmd/sadmd.hpp>
+#include <sadfs/proto/internal.pb.h>
 
 // standard includes
 #include <array>
@@ -38,47 +39,41 @@ open_db()
 }
 
 std::string
-chunkid_str(std::vector<uint64_t>& chunkids) noexcept
+serialize(std::vector<uint64_t>& chunkids) noexcept
 {
-	std::ostringstream oss; 
-	
-	if (!chunkids.empty())
-	{
-		// copy vector with comma separators
-		std::copy(chunkids.begin(), chunkids.end() - 1, 
-			std::ostream_iterator<uint64_t>(oss, ", "));
-		// add last separately to avoid trailing comma
-		oss << chunkids.back();
-	}
+	auto chunkid_pb = sadfs::proto::internal::chunkids{};
+	auto chunkid_str = std::string{};
 
-	return oss.str(); 
+	for (auto chunkid : chunkids)
+	{
+		chunkid_pb.add_chunkid(chunkid);
+	}
+	chunkid_pb.SerializeToString(&chunkid_str);
+
+	return chunkid_str;
 }
 
 void
-parse_chunkid_str(std::vector<uint64_t>& chunkids, 
-	std::string const& existing_chunks) noexcept
+deserialize(std::vector<uint64_t>& chunkids, 
+	std::string const& existing_chunks)
 {
-	// index of the next (comma delimited) substring of existing_chunks
-	auto front = 0;
-	// length of the substring
-	auto len = 0;
-	
-	while (front < existing_chunks.size())
+	if (existing_chunks.size() == 0)
 	{
-		len = existing_chunks.find(',', front) - front; 
-		if (len > -1)
-		{
-			// add an integer representation of the substring
-			chunkids.push_back(std::stoi(existing_chunks.substr(front, len)));
-			front += len + 1;
-		}
-		else
-		{
-			// the rest of the string is the last chunkid
-			chunkids.push_back(std::stoi(existing_chunks.substr(
-				front, existing_chunks.size())));
-			break;
-		}
+		// do nothing if string is empty
+		return;
+	}
+	// parse string into protobuf object
+	auto chunkid_pb = sadfs::proto::internal::chunkids{};
+	chunkid_pb.ParseFromString(existing_chunks);
+	
+	// clear chunkids, and allocate enough space for contents
+	chunkids.clear();
+	chunkids.reserve(chunkid_pb.chunkid_size());
+	
+	// copy items from protobuf object into vector
+	for (auto id : chunkid_pb.chunkid())
+	{
+		chunkids.push_back(id);
 	}
 }
 
@@ -144,7 +139,7 @@ create_file(std::string const& filename, std::string const& existing_chunks)
 	if (!files_.count(filename))
 	{
 		auto info = file_info{};
-		parse_chunkid_str(info.chunkids, existing_chunks);
+		deserialize(info.chunkids, existing_chunks);
 		files_.emplace(filename, info);
 	}
 	else
@@ -214,7 +209,7 @@ save_files() const noexcept
 	{
 		auto sql_command = std::string{};
 		auto filename = std::string{file.first};
-		auto chunkids = chunkid_str(file.second.chunkids);
+		auto chunkids = serialize(file.second.chunkids);
 
 		if(db_contains(file.first))
 		{
