@@ -257,7 +257,6 @@ add_server_to_network(serverid uuid, char const* ip, int port,
 			<< " which is already on the network\n";
 		return false;
 	}
-	auto service = inet::service(ip, port);
 	chunk_server_metadata_.emplace(
 		uuid,
 		chunk_server_info{
