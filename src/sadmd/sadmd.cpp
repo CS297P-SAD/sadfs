@@ -41,12 +41,12 @@ open_db()
 std::string
 serialize(std::vector<uint64_t>& chunkids) noexcept
 {
-	auto chunkid_pb = sadfs::proto::internal::chunkids{};
+	auto chunkid_pb = sadfs::proto::internal::chunkid_container{};
 	auto chunkid_str = std::string{};
 
 	for (auto chunkid : chunkids)
 	{
-		chunkid_pb.add_chunkid(chunkid);
+		chunkid_pb.add_chunkids(chunkid);
 	}
 	chunkid_pb.SerializeToString(&chunkid_str);
 
@@ -63,15 +63,15 @@ deserialize(std::vector<uint64_t>& chunkids,
 		return;
 	}
 	// parse string into protobuf object
-	auto chunkid_pb = sadfs::proto::internal::chunkids{};
+	auto chunkid_pb = sadfs::proto::internal::chunkid_container{};
 	chunkid_pb.ParseFromString(existing_chunks);
 	
 	// clear chunkids, and allocate enough space for contents
 	chunkids.clear();
-	chunkids.reserve(chunkid_pb.chunkid_size());
+	chunkids.reserve(chunkid_pb.chunkids_size());
 	
 	// copy items from protobuf object into vector
-	for (auto id : chunkid_pb.chunkid())
+	for (auto id : chunkid_pb.chunkids())
 	{
 		chunkids.push_back(id);
 	}
