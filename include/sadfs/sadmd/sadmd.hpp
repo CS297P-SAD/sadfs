@@ -13,7 +13,7 @@ namespace sadfs {
 
 using chunkid = uint64_t;
 using serverid = uint64_t;
-using tick = std::chrono::steady_clock::rep;
+using time_point = std::chrono::steady_clock::rep;
 
 // all the information needed about a chunk server
 struct chunk_server_info
@@ -21,7 +21,7 @@ struct chunk_server_info
 	inet::service service;
 	uint64_t max_chunks;
 	uint64_t chunk_count;
-	tick ttl;
+	time_point ttl;
 };
 
 // all the information needed about a file

@@ -116,17 +116,19 @@ namespace sadfs {
 
 namespace time{
 
-tick
-in(std::chrono::minutes delta) noexcept
+using namespace std::literals;
+constexpr auto default_server_ttl = 1min;
+
+time_point
+in(std::chrono::minutes delta = default_server_ttl) noexcept
 {
 	return (std::chrono::steady_clock::now() + delta).time_since_epoch().count();
 }
 
-tick 
+time_point 
 current() noexcept
 {
 	// the current time is the tick zero minutes in the future
-	using namespace std::literals;
 	return in(0min);
 }
 } // time namespace
@@ -265,7 +267,7 @@ add_server_to_network(serverid uuid, char const* ip, int port,
 			inet::service(ip, port),
 			available_chunks,
 			0, // chunk count is zero to start
-			time::in(1min)
+			time::in()
 		}
 	);
 	return true;
@@ -287,8 +289,8 @@ register_server_heartbeat(serverid id) noexcept
 			<< " which is not on the network\n";
 		return;
 	}
-	using namespace std::literals;
-	chunk_server_metadata_.at(id).ttl = time::in(1min);
+	// use the default value
+	chunk_server_metadata_.at(id).ttl = time::in();
 }
 
 bool sadmd::
