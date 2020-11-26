@@ -115,18 +115,19 @@ process_message(sadfs::socket const& sock)
 namespace sadfs {
 
 namespace time{
-ticks
-in_1_min()
-{
-	using namespace std::literals;
 
-	return (std::chrono::steady_clock::now() + 1min).time_since_epoch().count();
+tick
+future_tick(std::chrono::minutes delta) noexcept
+{
+	return (std::chrono::steady_clock::now() + delta).time_since_epoch().count();
 }
 
-ticks 
-current()
+tick 
+current() noexcept
 {
-	return std::chrono::steady_clock::now().time_since_epoch().count();
+	// the current time is the tick zero minutes in the future
+	using namespace std::literals;
+	return future_tick(0min);
 }
 } // time namespace
 
@@ -257,13 +258,14 @@ add_server_to_network(serverid uuid, char const* ip, int port,
 			<< " which is already on the network\n";
 		return false;
 	}
+	using namespace std::literals;
 	chunk_server_metadata_.emplace(
 		uuid,
 		chunk_server_info{
 			inet::service(ip, port),
 			available_chunks,
 			0, // chunk count is zero to start
-			time::in_1_min()
+			time::future_tick(1min)
 		}
 	);
 	return true;
@@ -285,12 +287,20 @@ register_server_heartbeat(serverid id) noexcept
 			<< " which is not on the network\n";
 		return;
 	}
-	chunk_server_metadata_.at(id).ttl = time::in_1_min();
+	using namespace std::literals;
+	chunk_server_metadata_.at(id).ttl = time::future_tick(1min);
 }
 
 bool sadmd::
 is_active(serverid id) const noexcept
 {
+	if (!chunk_server_metadata_.count(id))
+	{
+		std::cerr << "Error: query for status of server "
+			<< id
+			<< " which is not on the network\n";
+		return false;
+	}
 	return (chunk_server_metadata_.at(id).ttl) > time::current();
 }
 } // sadfs namespace
