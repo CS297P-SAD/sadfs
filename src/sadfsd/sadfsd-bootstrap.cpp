@@ -5,7 +5,7 @@
 // sadfs-specific includes
 #include <sadfs/bootstrap/util.hpp>
 #include <sadfs/sadfsd/defaults.hpp>
-#include <sadfs/sadfsd/sadfuse.hpp>
+#include <sadfs/sadfsd/sadfilesys.hpp>
 
 // standard includes
 #include <array>
@@ -92,28 +92,30 @@ main(int argc, char const** argv)
 	// po::notify throws if they are not
 	sadfs::bootstrap::verify(variables);
 
-    // create object of sadfuse class
-    auto sadfuse = sadfs::sadfuse{
-            variables["ipaddress"].as<std::string>().data(),
+    // create object of sadfilesys class
+    auto sadfilesys = sadfs::sadfilesys{
+            variables["ipaddress"].as<std::string>().c_str(),
             variables["port"].as<std::uint16_t>()};
 
     // since the first argument is skipped by fuse_main, it is initialized as
     // empty string
-    auto fuse_args = std::array
+    auto filesys_args = std::array
 	{
         std::string(),
 		variables["mountpoint"].as<std::string>()
 	};
 
 	// allocate space for pointers, including terminating nullptr
-	auto fuse_argv = std::array<char*, fuse_args.size() + 1>{nullptr};
+	auto filesys_argv = std::array<char*, filesys_args.size() + 1>{nullptr};
 
-	// construct fuse_argv from fuse_args
+	// construct filesys_argv from filesys_args
 	auto get_ptr = [](auto& str) { return str.data(); };
-	std::transform(fuse_args.begin(), fuse_args.end(), fuse_argv.begin(),
+	std::transform(filesys_args.begin(),
+                   filesys_args.end(),
+                   filesys_argv.begin(),
                    get_ptr);
 
-    auto status = sadfuse.run(fuse_args.size(), fuse_argv.data());
+    auto status = sadfilesys.run(filesys_args.size(), filesys_argv.data());
 
     return status;
 }

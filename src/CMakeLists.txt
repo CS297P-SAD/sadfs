@@ -65,10 +65,10 @@ endforeach()
 add_dependencies (sadmd sadmd-bootstrap)
 add_dependencies (sadcd sadcd-bootstrap)
 target_sources (sadfsd-bootstrap
-    PRIVATE sadfsd/sadfuse.cpp
+    PRIVATE sadfsd/sadfilesys.cpp
     PRIVATE ${COMMON_SOURCE_FILES})
 
-# find fuse library. this sets the FUSE3_INCLUDE_DIRS and FUSE3_LIBRARIES
+# find fuse library. this sets the FUSE_INCLUDE_DIRS and FUSE_LIBRARIES
 # variables
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FUSE REQUIRED fuse)
