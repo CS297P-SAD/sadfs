@@ -2,17 +2,68 @@
 #define SADFS_COMM_MESSAGES_HPP
 
 // sadfs-specific includes
-#include <sadfs/comm/socket.hpp>
-#include <sadfs/proto/messages.pb.h>
+#include <sadfs/comm/io.hpp>
+#include <sadfs/proto/chunk.pb.h>
+#include <sadfs/proto/master.pb.h>
 
 // standard includes
 #include <cstddef> // std::size_t
 #include <string>
 
-#include <google/protobuf/io/zero_copy_stream.h>
+namespace sadfs { namespace msgs {
 
-namespace sadfs { namespace comm { namespace msgs {
-namespace gpio = google::protobuf::io;
+enum class io_type
+{
+	unknown,
+	read,
+	write,
+};
+
+// uniquely identifies a host
+struct host_id
+{
+	std::size_t uuid;
+};
+
+// ========================================================
+//              interfaces to program against
+// ========================================================
+namespace master {
+
+// enumerates types of raw messages
+enum class msg_type
+{
+	unknown,
+	file_request,
+};
+
+class control_message
+{
+public:
+	control_message() = default;
+	control_message(host_id);
+
+	bool send(comm::io::connection const& conn) const noexcept;
+	bool recv(comm::io::connection const& conn)       noexcept;
+
+	msg_type type() const noexcept;
+private:
+	proto::master::control_message pb_;
+
+	// provide extract and embed functions access to private members
+	template <typename RawMsg>
+	friend bool extract(RawMsg&, control_message&);
+
+	template <typename RawMsg>
+	friend bool embed(RawMsg&, control_message&);
+};
+
+// extract/embed function declarations
+template <typename RawMsg>
+bool extract(RawMsg&, control_message&);
+
+template <typename RawMsg>
+bool embed(RawMsg&, control_message&);
 
 // specifies a section of a file
 struct file_section
@@ -22,107 +73,87 @@ struct file_section
 	std::size_t const length;
 };
 
-enum class io_type
+class file_request
 {
-	read,
-	write,
+public:
+	file_request() = default;
+	file_request(io_type, file_section const&);
+
+	io_type      type()    const;
+	file_section section() const;
+	bool         is_set()  const noexcept;
+	
+	inline static msg_type msg_type{msg_type::file_request};
+private:
+	using protobuf = proto::master::file_request;
+	std::unique_ptr<protobuf> pb_ptr_{};
+
+	// allow extract and embed functions access to private members
+	friend bool extract<file_request>(file_request&, control_message&);
+	friend bool embed<file_request>(file_request&, control_message&);
 };
 
-enum class host_type
-{
-	unknown_host_type,
-	client,
-	chunk_server,
-	master_server,
-};
+} // master namespace
+
+namespace chunk {
 
 enum class msg_type
 {
-	unknown_msg_type,
-	id,
-	file,
-	chunk,
-	metadata,
+	chunk_request,
+	unknown,
 };
 
-// base class for all protobuf messages
-class protobuf_base
+class control_message
 {
 public:
-	virtual bool send(gpio::ZeroCopyOutputStream*) const noexcept = 0;
-	virtual bool recv(gpio::ZeroCopyInputStream*) noexcept = 0;
-};
+	control_message() = default;
+	control_message(host_id);
 
-class identification final : public protobuf_base
-{
-public:
-	// constructor
-	identification() = default;
-	identification(host_type type, std::size_t id);
+	bool send(comm::io::connection const& conn) const noexcept;
+	bool recv(comm::io::connection const& conn)       noexcept;
 
-	bool send(gpio::ZeroCopyOutputStream*) const noexcept;
-	bool recv(gpio::ZeroCopyInputStream*) noexcept;
-
-	std::size_t id()   const noexcept;
-	host_type   type() const noexcept;
+	msg_type type() const noexcept;
 private:
-	proto::identification protobuf_;
+	proto::chunk::control_message pb_;
+
+	// provide extract and embed functions access to private members
+	template <typename RawMsg>
+	friend bool extract(RawMsg&, control_message&);
+
+	template <typename RawMsg>
+	friend bool embed(RawMsg&, control_message&);
 };
 
-class file_request final : public protobuf_base
-{
-public:
-	// constructor
-	file_request() = default;
-	file_request(std::size_t sender, io_type type,
-	             file_section section);
+// extract/embed function declarations
+template <typename RawMsg>
+bool extract(RawMsg&, control_message&);
 
-	bool send(gpio::ZeroCopyOutputStream*) const noexcept;
-	bool recv(gpio::ZeroCopyInputStream*) noexcept;
+template <typename RawMsg>
+bool embed(RawMsg&, control_message&);
 
-	std::size_t  sender()  const noexcept;
-	file_section section() const noexcept;
-	io_type      type()    const noexcept;
-private:
-	proto::file_request protobuf_;
-};
-
-class chunk_request final : public protobuf_base
+class chunk_request
 {
 public:
 	// constructors
 	chunk_request() = default;
-	chunk_request(std::size_t sender, io_type type,
-	              std::size_t chunk_id);
+	chunk_request(io_type, std::size_t);
 
-	bool send(gpio::ZeroCopyOutputStream*) const noexcept;
-	bool recv(gpio::ZeroCopyInputStream*) noexcept;
+	io_type      type()     const;
+	std::size_t  chunk_id() const;
+	bool         is_set()  const noexcept;
 
-	std::size_t  sender()   const noexcept;
-	std::size_t  chunk_id() const noexcept;
-	io_type      type()     const noexcept;
+	inline static msg_type msg_type{msg_type::chunk_request};
 private:
-	proto::chunk_request protobuf_;
+	using protobuf = proto::chunk::chunk_request;
+	std::unique_ptr<protobuf> pb_ptr_{};
+
+	// allow extract and embed functions access to private members
+	friend bool extract<chunk_request>(chunk_request&, control_message&);
+	friend bool embed<chunk_request>(chunk_request&, control_message&);
 };
 
-class msg_id final : private protobuf_base
-{
-public:
-	// constructors
-	msg_id() = default;
-
-	bool recv(gpio::ZeroCopyInputStream*) noexcept;
-
-	msg_type type() const noexcept;
-private:
-	// this function must never be called
-	bool send(gpio::ZeroCopyOutputStream*) const noexcept;
-
-	proto::msg_id protobuf_;
-};
-
+} // chunk namespace
 } // msgs namespace
-} // comm namespace
 } // sadfs namespace
 
 #endif // SADFS_COMM_MESSAGES_HPP
