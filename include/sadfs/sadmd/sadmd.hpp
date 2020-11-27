@@ -59,7 +59,7 @@ private:
 	// functions for maintaining chunk servers 
 
 	// returns true on success
-	bool add_server_to_network(serverid, char const*, int, uint64_t);
+	bool add_server_to_network(serverid, char const*, int, uint64_t, uint64_t);
 	void remove_server_from_network(serverid) noexcept;
 	void register_server_heartbeat(serverid) noexcept;
 	bool is_active(serverid) const noexcept;

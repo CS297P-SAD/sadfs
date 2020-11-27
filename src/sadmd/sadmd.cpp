@@ -252,7 +252,7 @@ save_files() const noexcept
 
 bool sadmd::
 add_server_to_network(serverid uuid, char const* ip, int port, 
-			uint64_t available_chunks)
+					  uint64_t max_chunks, uint64_t chunk_count)
 {
 	if (chunk_server_metadata_.count(uuid))
 	{
@@ -265,8 +265,8 @@ add_server_to_network(serverid uuid, char const* ip, int port,
 		uuid,
 		chunk_server_info{
 			inet::service(ip, port),
-			available_chunks,
-			0, // chunk count is zero to start
+			max_chunks,
+			chunk_count,
 			time::future(time::server_ttl)
 		}
 	);
