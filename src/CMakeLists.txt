@@ -1,11 +1,11 @@
 # src/CMakeLists.txt
 
 # compile protobuf files into a library
-add_compile_options( -ggdb )
 find_package (Protobuf REQUIRED)
 protobuf_generate_cpp (PROTO_SOURCE_FILES PROTO_HEADER_FILES
-	comm/messages.proto
-	comm/internal.proto)
+	proto/common.proto
+	proto/master.proto
+	proto/chunk.proto)
 add_library (sadfs_protobuf STATIC ${PROTO_SOURCE_FILES})
 # directory containing all *.pb.h so they can be included
 set (PROTO_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/)
@@ -26,7 +26,8 @@ add_custom_target (sadfs_protobuf_includes
 add_dependencies (sadfs_protobuf sadfs_protobuf_includes)
 # add sadfs's protobuf abstraction component(s)
 target_sources (sadfs_protobuf PRIVATE
-	comm/messages.cpp)
+	comm/messages.cpp
+	comm/io.cpp)
 
 # common components that almost all targets depend on
 set (COMMON_SOURCE_FILES
