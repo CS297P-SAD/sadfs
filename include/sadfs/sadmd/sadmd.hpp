@@ -12,6 +12,8 @@
 namespace sadfs {
 
 using chunkid = uint64_t;
+using serverid = uint64_t;
+using time_point = std::chrono::steady_clock::rep;
 
 // all the information needed about a chunk server
 struct chunk_server_info
@@ -19,7 +21,7 @@ struct chunk_server_info
 	comm::service service;
 	uint64_t max_chunks;
 	uint64_t chunk_count;
-	int ttl;
+	time_point expiration_point;
 };
 
 // all the information needed about a file
@@ -54,11 +56,19 @@ private:
 	// returns true if the database contains a file with the given name
 	bool db_contains(std::string const&) const;
 
+	// functions for maintaining chunk servers 
+
+	// returns true on success
+	bool add_server_to_network(serverid, char const*, int, uint64_t, uint64_t);
+	void remove_server_from_network(serverid) noexcept;
+	void register_server_heartbeat(serverid) noexcept;
+	bool is_active(serverid) const noexcept;
+
 	comm::service const service_;
 	// in memory representation of each file
 	std::unordered_map<std::string, file_info> files_;
 	// metadata for each chunk server
-	std::unordered_map<uint64_t, chunk_server_info> chunk_server_metadata_;
+	std::unordered_map<serverid, chunk_server_info> chunk_server_metadata_;
 	// map from chunkid to list of chunk servers
 	std::unordered_map<chunkid, std::vector<chunk_server_info*> > chunk_locations_;
 	// persistent/on disk copy of files_

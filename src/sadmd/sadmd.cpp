@@ -3,6 +3,7 @@
 // sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/sadmd/sadmd.hpp>
+#include <sadfs/proto/internal.pb.h>
 
 // standard includes
 #include <array>
@@ -39,47 +40,41 @@ open_db()
 }
 
 std::string
-chunkid_str(std::vector<uint64_t>& chunkids) noexcept
+serialize(std::vector<uint64_t>& chunkids) noexcept
 {
-	std::ostringstream oss; 
-	
-	if (!chunkids.empty())
-	{
-		// copy vector with comma separators
-		std::copy(chunkids.begin(), chunkids.end() - 1, 
-			std::ostream_iterator<uint64_t>(oss, ", "));
-		// add last separately to avoid trailing comma
-		oss << chunkids.back();
-	}
+	auto chunkid_pb = sadfs::proto::internal::chunkid_container{};
+	auto chunkid_str = std::string{};
 
-	return oss.str(); 
+	for (auto chunkid : chunkids)
+	{
+		chunkid_pb.add_chunkids(chunkid);
+	}
+	chunkid_pb.SerializeToString(&chunkid_str);
+
+	return chunkid_str;
 }
 
 void
-parse_chunkid_str(std::vector<uint64_t>& chunkids, 
-	std::string const& existing_chunks) noexcept
+deserialize(std::vector<uint64_t>& chunkids, 
+	std::string const& existing_chunks)
 {
-	// index of the next (comma delimited) substring of existing_chunks
-	auto front = 0;
-	// length of the substring
-	auto len = 0;
-	
-	while (front < existing_chunks.size())
+	if (existing_chunks.size() == 0)
 	{
-		len = existing_chunks.find(',', front) - front; 
-		if (len > -1)
-		{
-			// add an integer representation of the substring
-			chunkids.push_back(std::stoi(existing_chunks.substr(front, len)));
-			front += len + 1;
-		}
-		else
-		{
-			// the rest of the string is the last chunkid
-			chunkids.push_back(std::stoi(existing_chunks.substr(
-				front, existing_chunks.size())));
-			break;
-		}
+		// do nothing if string is empty
+		return;
+	}
+	// parse string into protobuf object
+	auto chunkid_pb = sadfs::proto::internal::chunkid_container{};
+	chunkid_pb.ParseFromString(existing_chunks);
+	
+	// clear chunkids, and allocate enough space for contents
+	chunkids.clear();
+	chunkids.reserve(chunkid_pb.chunkids_size());
+	
+	// copy items from protobuf object into vector
+	for (auto id : chunkid_pb.chunkids())
+	{
+		chunkids.push_back(id);
 	}
 }
 
@@ -114,6 +109,26 @@ process_message(comm::socket const& sock)
 
 } // unnamed namespace
 
+namespace time{
+
+using namespace std::literals;
+constexpr auto server_ttl = 1min;
+constexpr auto file_ttl = 1min;
+
+time_point
+from_now(std::chrono::minutes delta) noexcept
+{
+	return (std::chrono::steady_clock::now() + delta).time_since_epoch().count();
+}
+
+time_point 
+now() noexcept
+{
+	// the time point zero minutes from now is, you guessed it, now
+	return from_now(0min);
+}
+} // time namespace
+
 sadmd::
 sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 {
@@ -144,7 +159,7 @@ create_file(std::string const& filename, std::string const& existing_chunks)
 	if (!files_.count(filename))
 	{
 		auto info = file_info{};
-		parse_chunkid_str(info.chunkids, existing_chunks);
+		deserialize(info.chunkids, existing_chunks);
 		files_.emplace(filename, info);
 	}
 	else
@@ -214,7 +229,7 @@ save_files() const noexcept
 	{
 		auto sql_command = std::string{};
 		auto filename = std::string{file.first};
-		auto chunkids = chunkid_str(file.second.chunkids);
+		auto chunkids = serialize(file.second.chunkids);
 
 		if(db_contains(file.first))
 		{
@@ -230,4 +245,59 @@ save_files() const noexcept
 	}
 }
 
+bool sadmd::
+add_server_to_network(serverid uuid, char const* ip, int port, 
+					  uint64_t max_chunks, uint64_t chunk_count)
+{
+	if (chunk_server_metadata_.count(uuid))
+	{
+		std::cerr << "Error: attempt to add server "
+			<< uuid
+			<< " which is already on the network\n";
+		return false;
+	}
+	chunk_server_metadata_.emplace(
+		uuid,
+		chunk_server_info{
+			inet::service(ip, port),
+			max_chunks,
+			chunk_count,
+			time::from_now(time::server_ttl)
+		}
+	);
+	return true;
+}
+	
+void sadmd::
+remove_server_from_network(serverid id) noexcept
+{
+	chunk_server_metadata_.erase(id);
+}
+
+void sadmd::
+register_server_heartbeat(serverid id) noexcept
+{
+	if (!chunk_server_metadata_.count(id))
+	{
+		std::cerr << "Error: received heartbeat from server "
+			<< id
+			<< " which is not on the network\n";
+		return;
+	}
+	// use the default value
+	chunk_server_metadata_.at(id).expiration_point = time::from_now(time::server_ttl);
+}
+
+bool sadmd::
+is_active(serverid id) const noexcept
+{
+	if (!chunk_server_metadata_.count(id))
+	{
+		std::cerr << "Error: query for status of server "
+			<< id
+			<< " which is not on the network\n";
+		return false;
+	}
+	return (chunk_server_metadata_.at(id).expiration_point) > time::now();
+}
 } // sadfs namespace
