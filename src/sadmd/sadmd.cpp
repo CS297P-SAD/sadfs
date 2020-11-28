@@ -259,7 +259,7 @@ add_server_to_network(serverid uuid, char const* ip, int port,
 	chunk_server_metadata_.emplace(
 		uuid,
 		chunk_server_info{
-			inet::service(ip, port),
+			comm::service(ip, port),
 			max_chunks,
 			chunk_count,
 			time::from_now(time::server_ttl)

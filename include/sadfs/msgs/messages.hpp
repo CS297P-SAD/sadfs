@@ -51,7 +51,7 @@ public:
 	io_type      type()    const;
 	file_section section() const;
 	
-	inline static msg_type msg_type{msg_type::file_request};
+	inline static master::msg_type msg_type{master::msg_type::file_request};
 private:
 	proto::master::file_request protobuf_{};
 
@@ -86,7 +86,7 @@ public:
 	std::size_t  chunk_id() const;
 	bool         is_set()  const noexcept;
 
-	inline static msg_type msg_type{msg_type::chunk_request};
+	inline static chunk::msg_type msg_type{chunk::msg_type::chunk_request};
 private:
 	proto::chunk::chunk_request protobuf_{};
 
