@@ -109,6 +109,26 @@ process_message(sadfs::socket const& sock)
 
 namespace sadfs {
 
+namespace time{
+
+using namespace std::literals;
+constexpr auto server_ttl = 1min;
+constexpr auto file_ttl = 1min;
+
+time_point
+from_now(std::chrono::minutes delta) noexcept
+{
+	return (std::chrono::steady_clock::now() + delta).time_since_epoch().count();
+}
+
+time_point 
+now() noexcept
+{
+	// the time point zero minutes from now is, you guessed it, now
+	return from_now(0min);
+}
+} // time namespace
+
 sadmd::
 sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 {
@@ -225,4 +245,59 @@ save_files() const noexcept
 	}
 }
 
+bool sadmd::
+add_server_to_network(serverid uuid, char const* ip, int port, 
+					  uint64_t max_chunks, uint64_t chunk_count)
+{
+	if (chunk_server_metadata_.count(uuid))
+	{
+		std::cerr << "Error: attempt to add server "
+			<< uuid
+			<< " which is already on the network\n";
+		return false;
+	}
+	chunk_server_metadata_.emplace(
+		uuid,
+		chunk_server_info{
+			inet::service(ip, port),
+			max_chunks,
+			chunk_count,
+			time::from_now(time::server_ttl)
+		}
+	);
+	return true;
+}
+	
+void sadmd::
+remove_server_from_network(serverid id) noexcept
+{
+	chunk_server_metadata_.erase(id);
+}
+
+void sadmd::
+register_server_heartbeat(serverid id) noexcept
+{
+	if (!chunk_server_metadata_.count(id))
+	{
+		std::cerr << "Error: received heartbeat from server "
+			<< id
+			<< " which is not on the network\n";
+		return;
+	}
+	// use the default value
+	chunk_server_metadata_.at(id).expiration_point = time::from_now(time::server_ttl);
+}
+
+bool sadmd::
+is_active(serverid id) const noexcept
+{
+	if (!chunk_server_metadata_.count(id))
+	{
+		std::cerr << "Error: query for status of server "
+			<< id
+			<< " which is not on the network\n";
+		return false;
+	}
+	return (chunk_server_metadata_.at(id).expiration_point) > time::now();
+}
 } // sadfs namespace
