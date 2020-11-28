@@ -16,7 +16,7 @@ using chunkid = uint64_t;
 // all the information needed about a chunk server
 struct chunk_server_info
 {
-	inet::service service;
+	comm::service service;
 	uint64_t max_chunks;
 	uint64_t chunk_count;
 	int ttl;
@@ -54,7 +54,7 @@ private:
 	// returns true if the database contains a file with the given name
 	bool db_contains(std::string const&) const;
 
-	inet::service const service_;
+	comm::service const service_;
 	// in memory representation of each file
 	std::unordered_map<std::string, file_info> files_;
 	// metadata for each chunk server

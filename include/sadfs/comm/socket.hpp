@@ -1,7 +1,7 @@
 #ifndef SADFS_SOCKET_HPP
 #define SADFS_SOCKET_HPP
 
-namespace sadfs {
+namespace sadfs { namespace comm {
 
 class socket
 {
@@ -16,8 +16,14 @@ public:
 	// does not create a new socket
 	socket(domain const, type const, int const) noexcept;
 
+	// support move operations
 	socket(socket&&) noexcept;
+	socket& operator=(socket&&) noexcept;
+
+	// sockets must not be copied
 	socket(socket const&) = delete;
+	socket& operator=(socket const&) = delete;
+
 	~socket() noexcept;
 
 	// accessors
@@ -31,6 +37,7 @@ private:
 	int    descriptor_;
 };
 
-} // sadfs
+} // comm namespace
+} // sadfs namespace
 
 #endif // SADFS_SOCKET_HPP
