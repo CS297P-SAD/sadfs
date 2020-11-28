@@ -30,6 +30,9 @@ private:
     // assign file system operation function pointers to the corresponding
     // file system operation definitions
     void load_operations();
+
+    // returns static pointer to object of this class
+    static sadfilesys* this_();
     
     // get file attributes
     static int getattr(char const* path, struct stat* stbuf);
@@ -47,7 +50,7 @@ private:
 
     static fuse_operations operations_;
     
-    static std::shared_ptr<inet::service> master_service_;
+    inet::service master_service_;
 };
 
 } // sadfs namespace;

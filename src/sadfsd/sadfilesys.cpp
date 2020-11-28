@@ -10,9 +10,8 @@
 namespace sadfs {
 
 sadfilesys::
-sadfilesys(char const* ip, int port)
+sadfilesys(char const* ip, int port) : master_service_(ip, port)
 {
-    master_service_ = std::make_shared<inet::service>(inet::service(ip, port));
     load_operations();
 }
 
@@ -25,7 +24,11 @@ run(int argc, char** argv)
 
 fuse_operations sadfilesys::operations_;
 
-std::shared_ptr<inet::service> sadfilesys::master_service_ = nullptr;
+sadfilesys* sadfilesys::
+this_()
+{
+    return static_cast<sadfilesys*>(fuse_get_context()->private_data);
+}
 
 void sadfilesys::
 load_operations()
@@ -84,6 +87,7 @@ readdir(char const* path, void* buf, fuse_fill_dir_t filler, off_t off,
         fuse_file_info* fi)
 {
     // TODO
+    this_()->master_service_.connect();
     return -ENOENT;
 }
 
