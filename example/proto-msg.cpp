@@ -104,18 +104,19 @@ main(int argc, char** argv)
 		comm::service{comm::constants::ip_localhost, 6666}.connect()
 	};
 
-	// send file_request
-	auto m_serializer = msgs::master::serializer{};
+	auto serializer = msgs::master::serializer{};
+
 	std::cout << "[master]: contacting server...\n";
-	m_serializer.serialize(fr, ch);
+	serializer.serialize(fr, ch);
 	std::cout << "[master]: sent file_request\n";
+	std::cout << "[master]: received file_request back\n";
 
 	// send chunk_request
 	auto c_serializer = msgs::chunk::serializer{};
 	std::cout << "\n";
 	std::cout << "[chunk]: contacting server...\n";
-	c_serializer.serialize(cr, ch);
 	std::cout << "[chunk]: sent chunk_request\n";
+	std::cout << "[chunk]: received chunk_request back\n";
 
 	return 0;
 }
