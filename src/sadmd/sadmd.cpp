@@ -121,16 +121,16 @@ constexpr auto server_ttl = 1min;
 constexpr auto file_ttl = 1min;
 
 time_point
-future(std::chrono::minutes delta) noexcept
+from_now(std::chrono::minutes delta) noexcept
 {
 	return (std::chrono::steady_clock::now() + delta).time_since_epoch().count();
 }
 
 time_point 
-current() noexcept
+now() noexcept
 {
-	// the current time is the tick zero minutes in the future
-	return future(0min);
+	// the time point zero minutes from now is, you guessed it, now
+	return from_now(0min);
 }
 } // time namespace
 
@@ -267,7 +267,7 @@ add_server_to_network(serverid uuid, char const* ip, int port,
 			inet::service(ip, port),
 			max_chunks,
 			chunk_count,
-			time::future(time::server_ttl)
+			time::from_now(time::server_ttl)
 		}
 	);
 	return true;
@@ -290,7 +290,7 @@ register_server_heartbeat(serverid id) noexcept
 		return;
 	}
 	// use the default value
-	chunk_server_metadata_.at(id).expiration_point = time::future(time::server_ttl);
+	chunk_server_metadata_.at(id).expiration_point = time::from_now(time::server_ttl);
 }
 
 bool sadmd::
@@ -303,6 +303,6 @@ is_active(serverid id) const noexcept
 			<< " which is not on the network\n";
 		return false;
 	}
-	return (chunk_server_metadata_.at(id).expiration_point) > time::current();
+	return (chunk_server_metadata_.at(id).expiration_point) > time::now();
 }
 } // sadfs namespace
