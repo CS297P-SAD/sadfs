@@ -22,7 +22,7 @@ sadcd(char const* ip, int port) : service_(ip, port)
 void sadcd::
 start()
 {
-	auto listener = inet::listener{service_};
+	auto listener = comm::listener{service_};
 
 	while (true)
 	{
@@ -36,7 +36,7 @@ start()
 
 // reads the message from a socket that just received some data
 std::string sadcd::
-process_message(sadfs::socket const& sock)
+process_message(comm::socket const& sock)
 {
 	auto buf = std::array<char, 512>{};
 	auto len = 0;

@@ -16,9 +16,9 @@ public:
 	void start();
 private:
 	// reads the message from a socket that just received some data
-	std::string process_message(sadfs::socket const&);
+	std::string process_message(comm::socket const&);
 
-	inet::service const service_;
+	comm::service const service_;
 };
 
 } // sadfs namespace

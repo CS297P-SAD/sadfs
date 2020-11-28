@@ -1,7 +1,8 @@
 /* example code for testing sending of protobuf message */
 #include <sadfs/comm/inet.hpp>
-#include <sadfs/comm/io.hpp>
-#include <sadfs/comm/messages.hpp>
+#include <sadfs/msgs/channel.hpp>
+#include <sadfs/msgs/messages.hpp>
+#include <sadfs/msgs/serializers.hpp>
 
 #include <iostream>
 
@@ -86,51 +87,34 @@ recv_msg(comm::connection const& conn)
 int
 main(int argc, char** argv)
 {
-	using namespace sadfs::comm;
 	auto fr = msgs::master::file_request
 	{
 		msgs::io_type::read,
 		{"/mnt/a/file.dat", 0, 4096}
 	};
-	auto mm = msgs::master::control_message{{13}};
 
 	auto cr = msgs::chunk::chunk_request
 	{
 		msgs::io_type::read,
 		78234
 	};
-	auto cm = msgs::chunk::control_message{{13}};
 
-	auto conn = io::connection
+	auto ch = msgs::channel
 	{
-		// inet::service{inet::constants::ip_localhost, 6666}.connect()
-		inet::service{"10.0.0.220", 6666}.connect()
+		comm::service{comm::constants::ip_localhost, 6666}.connect()
 	};
 
+	auto serializer = msgs::master::serializer{};
+
 	std::cout << "[master]: contacting server...\n";
-	std::cout << "[master]: file_request::is_set(): " << fr.is_set() << "\n";
-	msgs::master::embed(fr, mm);
-	mm.send(conn);
+	serializer.serialize(fr, ch);
 	std::cout << "[master]: sent file_request\n";
-	std::cout << "[master]: file_request::is_set(): " << fr.is_set() << "\n";
-	conn.flush();
-	mm.recv(conn);
 	std::cout << "[master]: received file_request back\n";
-	msgs::master::extract(fr, mm);
-	std::cout << "[master]: file_request::is_set(): " << fr.is_set() << "\n";
 
 	std::cout << "\n";
 	std::cout << "[chunk]: contacting server...\n";
-	std::cout << "[chunk]: chunk_request::is_set(): " << cr.is_set() << "\n";
-	msgs::chunk::embed(cr, cm);
-	cm.send(conn);
 	std::cout << "[chunk]: sent chunk_request\n";
-	std::cout << "[chunk]: chunk_request::is_set(): " << cr.is_set() << "\n";
-	conn.flush();
-	cm.recv(conn);
 	std::cout << "[chunk]: received chunk_request back\n";
-	msgs::chunk::extract(cr, cm);
-	std::cout << "[chunk]: chunk_request::is_set(): " << fr.is_set() << "\n";
 
 	return 0;
 }

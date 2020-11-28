@@ -13,8 +13,9 @@
 #include <sstream>  // std::osstream
 #include <unistd.h> // read/write
 
-namespace {
+namespace sadfs {
 
+namespace {
 namespace constants {
 
 // columns in our SQLite database
@@ -78,7 +79,7 @@ deserialize(std::vector<uint64_t>& chunkids,
 }
 
 std::string
-process_message(sadfs::socket const& sock)
+process_message(comm::socket const& sock)
 {
 	auto buf = std::array<char, 512>{};
 	auto len = 0;
@@ -105,9 +106,8 @@ process_message(sadfs::socket const& sock)
 
 	return result;
 }
-} // unnamed namespace
 
-namespace sadfs {
+} // unnamed namespace
 
 namespace time{
 
@@ -141,7 +141,7 @@ sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 void sadmd::
 start()
 {
-	auto listener = inet::listener{service_};
+	auto listener = comm::listener{service_};
 
 	while (true)
 	{
