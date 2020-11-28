@@ -5,7 +5,8 @@ find_package (Protobuf REQUIRED)
 protobuf_generate_cpp (PROTO_SOURCE_FILES PROTO_HEADER_FILES
 	proto/common.proto
 	proto/master.proto
-	proto/chunk.proto)
+	proto/chunk.proto
+	proto/internal.proto)
 add_library (sadfs_protobuf STATIC ${PROTO_SOURCE_FILES})
 # directory containing all *.pb.h so they can be included
 set (PROTO_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/)
@@ -24,14 +25,12 @@ add_custom_target (sadfs_protobuf_includes
 	COMMAND ${CMAKE_COMMAND} -E
 	copy ${PROTO_HEADER_FILES} ${PROTO_HEADER_FILES_DIR})
 add_dependencies (sadfs_protobuf sadfs_protobuf_includes)
-# add sadfs's protobuf abstraction component(s)
-target_sources (sadfs_protobuf PRIVATE
-	comm/messages.cpp
-	comm/io.cpp)
 
 # common components that almost all targets depend on
 set (COMMON_SOURCE_FILES
-	comm/inet.cpp comm/socket.cpp)
+	comm/inet.cpp comm/socket.cpp
+	msgs/messages.cpp msgs/serializers.cpp
+	msgs/channel.cpp)
 # add main targets
 add_executable (sadmd
 	sadmd/main.cpp
@@ -103,8 +102,8 @@ foreach (TARGET sadmd) # sadcd
 endforeach()
 
 # add source files for "example" targets
-target_sources (echod        PRIVATE ${COMMON_SOURCE_FILES})
-target_sources (msg          PRIVATE ${COMMON_SOURCE_FILES})
-target_sources (proto-msg    PRIVATE ${COMMON_SOURCE_FILES})
+target_sources (echod     PRIVATE comm/inet.cpp comm/socket.cpp)
+target_sources (msg       PRIVATE comm/inet.cpp comm/socket.cpp)
+target_sources (proto-msg PRIVATE ${COMMON_SOURCE_FILES})
 target_link_libraries (proto-msg PRIVATE sadfs_protobuf)
 target_include_directories (uuid PRIVATE ${Boost_INCLUDE_DIRS})
