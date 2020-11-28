@@ -35,17 +35,17 @@ private:
     static sadfilesys* this_();
     
     // get file attributes
-    static int getattr(char const* path, struct stat* stbuf);
+    int getattr(char const* path, struct stat* stbuf);
 
     // read directory
-    static int readdir(char const* path, void* buf, fuse_fill_dir_t filler, off_t off,
+    int readdir(char const* path, void* buf, fuse_fill_dir_t filler, off_t off,
                 fuse_file_info* fi);
 
     // open a file
-    static int open(char const* path, fuse_file_info* fi);
+    int open(char const* path, fuse_file_info* fi);
 
     // read data from an open file
-    static int read(char const* path, char* buf, size_t size, off_t offset,
+    int read(char const* path, char* buf, size_t size, off_t offset,
              fuse_file_info* fi);
 
     static fuse_operations operations_;
