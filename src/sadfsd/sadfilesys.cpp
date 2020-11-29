@@ -4,9 +4,6 @@
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/sadfsd/sadfilesys.hpp>
 
-// standard includes
-#include <cstring> // memset()
-
 namespace sadfs {
 
 sadfilesys::
@@ -16,13 +13,10 @@ sadfilesys(char const* ip, int port) : master_service_(ip, port)
 }
 
 int sadfilesys::
-run(int argc, char** argv)
+bootstrap(int argc, char** argv)
 {
     return ::fuse_main(argc, argv, &operations_, this);
 }
-
-
-fuse_operations sadfilesys::operations_;
 
 sadfilesys* sadfilesys::
 this_()
@@ -104,7 +98,6 @@ readdir(char const* path, void* buf, fuse_fill_dir_t filler, off_t off,
         fuse_file_info* fi)
 {
     // TODO
-    master_service_.connect();
     return -ENOENT;
 }
 

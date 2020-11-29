@@ -2,7 +2,6 @@
 #define SADFS_SADFSD_SADFILESYS_HPP
 #include <sadfs/comm/inet.hpp>
 
-#include <memory> // std::shared_ptr
 #include <cerrno> // ENOENT
 
 #ifndef FUSE_USE_VERSION
@@ -24,14 +23,15 @@ public:
     sadfilesys(char const* ip, int port);
 
     // starts fuse_main()
-    int run(int argc, char** argv);
+    int bootstrap(int argc, char** argv);
 
 private:
     // assign file system operation function pointers to the corresponding
     // file system operation definitions
     void load_operations();
 
-    // returns static pointer to object of this class
+    // retrieves instance of this class with the help of fuse_get_context() and
+    // returns a static pointer to it
     static sadfilesys* this_();
     
     // get file attributes
@@ -48,7 +48,7 @@ private:
     int read(char const* path, char* buf, size_t size, off_t offset,
              fuse_file_info* fi);
 
-    static fuse_operations operations_;
+    fuse_operations operations_;
     
     inet::service master_service_;
 };

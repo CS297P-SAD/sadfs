@@ -93,17 +93,19 @@ main(int argc, char const** argv)
 	sadfs::bootstrap::verify(variables);
 
     // create object of sadfilesys class
-    auto sadfilesys = sadfs::sadfilesys{
-            variables["ipaddress"].as<std::string>().c_str(),
-            variables["port"].as<std::uint16_t>()};
+    auto sadfilesys = sadfs::sadfilesys
+    {
+        variables["ipaddress"].as<std::string>().c_str(),
+        variables["port"].as<std::uint16_t>()
+    };
 
     // since the first argument is skipped by fuse_main, it is initialized as
     // empty string
     auto filesys_args = std::array
-	{
+    {
         std::string(),
-		variables["mountpoint"].as<std::string>()
-	};
+        variables["mountpoint"].as<std::string>()
+    };
 
 	// allocate space for pointers, including terminating nullptr
 	auto filesys_argv = std::array<char*, filesys_args.size() + 1>{nullptr};
@@ -115,7 +117,8 @@ main(int argc, char const** argv)
                    filesys_argv.begin(),
                    get_ptr);
 
-    auto status = sadfilesys.run(filesys_args.size(), filesys_argv.data());
+    auto status = sadfilesys.bootstrap(filesys_args.size(),
+                                       filesys_argv.data());
 
     return status;
 }
