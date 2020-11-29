@@ -46,12 +46,12 @@ class file_request
 {
 public:
 	file_request() = default;
-	file_request(io_type, file_section const&);
+	file_request(msgs::io_type, file_section const&);
 
-	io_type      type()    const;
-	file_section section() const;
+	msgs::io_type io_type() const;
+	file_section  section() const;
 	
-	inline static master::msg_type msg_type{master::msg_type::file_request};
+	inline static msg_type type{msg_type::file_request};
 private:
 	proto::master::file_request protobuf_{};
 
@@ -80,13 +80,12 @@ class chunk_request
 public:
 	// constructors
 	chunk_request() = default;
-	chunk_request(io_type, std::size_t);
+	chunk_request(msgs::io_type, std::size_t);
 
-	io_type      type()     const;
-	std::size_t  chunk_id() const;
-	bool         is_set()  const noexcept;
+	msgs::io_type io_type()  const;
+	std::size_t   chunk_id() const;
 
-	inline static chunk::msg_type msg_type{chunk::msg_type::chunk_request};
+	inline static msg_type type{msg_type::chunk_request};
 private:
 	proto::chunk::chunk_request protobuf_{};
 

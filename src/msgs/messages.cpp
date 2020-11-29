@@ -52,7 +52,7 @@ auto const msg_type_lookup = msg_type_map
  * ========================================================
  */
 file_request::
-file_request(io_type type, file_section const& section)
+file_request(msgs::io_type type, file_section const& section)
 {
 	protobuf_.set_type(proto_io_type_lookup.at(type));
 	protobuf_.set_filename(section.filename);
@@ -72,7 +72,7 @@ section() const
 }
 
 io_type file_request::
-type() const
+io_type() const
 {
 	return io_type_lookup.at(protobuf_.type());
 }
@@ -93,7 +93,7 @@ embed(file_request const& req, control_message& cm)
 bool
 extract(file_request& req, control_message const& cm)
 {
-	if (msg_type_lookup.at(cm.msg_case()) != file_request::msg_type)
+	if (msg_type_lookup.at(cm.msg_case()) != file_request::type)
 	{
 		// cannot extract a msg that doesn't exist
 		return false;
@@ -129,7 +129,7 @@ auto const msg_type_lookup = msg_type_map
  * ========================================================
  */
 chunk_request::
-chunk_request(io_type type, std::size_t chunk_id)
+chunk_request(msgs::io_type type, std::size_t chunk_id)
 {
 	protobuf_.set_type(proto_io_type_lookup.at(type));
 	protobuf_.set_chunk_id(chunk_id);
@@ -142,7 +142,7 @@ chunk_id() const
 }
 
 io_type chunk_request::
-type() const
+io_type() const
 {
 	return io_type_lookup.at(protobuf_.type());
 }
@@ -163,7 +163,7 @@ embed(chunk_request const& req, control_message& cm)
 bool
 extract(chunk_request& req, control_message const& cm)
 {
-	if (msg_type_lookup.at(cm.msg_case()) != chunk_request::msg_type)
+	if (msg_type_lookup.at(cm.msg_case()) != chunk_request::type)
 	{
 		// cannot extract a msg that doesn't exist
 		return false;
