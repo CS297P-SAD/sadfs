@@ -28,8 +28,8 @@ add_dependencies (sadfs_protobuf sadfs_protobuf_includes)
 # common components that almost all targets depend on
 set (COMMON_SOURCE_FILES
 	comm/inet.cpp comm/socket.cpp
-	msgs/messages.cpp msgs/serializers.cpp
-	msgs/channel.cpp)
+	msgs/messages.cpp msgs/channel.cpp)
+
 # add main targets
 add_executable (sadmd
 	sadmd/main.cpp
