@@ -51,7 +51,7 @@ This section should answer the following questions:
   control messages was short-sighted. Our code review process is slower than
   we want it to be.
 
-* **What should go better?**
+* **What should go better?**  
   Our velocity needs to improve, and we should figure out a way to get pull
   requests through the door at a much quicker pace.
 
