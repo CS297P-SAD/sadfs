@@ -43,7 +43,7 @@ This section should answer the following questions:
   message framework will make adding further control messages easy and less
   error-prone.
 
-* **What didn’t go well?**  
+* **What didn't go well?**  
   According to the road map we came up with, we should have progressed further
   than we did. Spending more time on designing the control message framework
   would have saved us a few days' effort that went into the re-implementation.
