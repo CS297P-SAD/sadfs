@@ -89,7 +89,7 @@ recv_msg(gpio::ZeroCopyInputStream* in)
 int
 main(int argc, char** argv)
 {
-	auto sock = inet::service{inet::constants::ip_localhost, 6666}.connect();
+	auto sock = comm::service{comm::constants::ip_localhost, 6666}.connect();
 	auto out = gpio::FileOutputStream(sock.descriptor());
 	{
 		auto req = comm::msgs::file_request
