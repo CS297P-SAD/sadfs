@@ -2,87 +2,34 @@
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/messages.hpp>
+#include <sadfs/msgs/deserializers.hpp>
 #include <sadfs/msgs/serializers.hpp>
 
 #include <iostream>
 
 using namespace sadfs;
-
-/*
-void
-recv_id_msg(comm::connection const& conn)
-{
-	auto echoed_id = comm::msgs::identification{};
-	if (!echoed_id.recv(conn))
-	{
-		std::cerr << "error: could not receive id msg\n";
-		std::exit(1);
-	}
-
-	std::cout << "\nReceived echoed host identification..."
-		<< "\nHost id: " << echoed_id.id()
-		<< "\n";
-}
+constexpr auto delim = std::string_view{"******************************\n"};
 
 void
-recv_file_req(comm::connection const& conn)
+print_file_req(msgs::master::file_request const& req)
 {
-	auto echoed_req = comm::msgs::file_request{};
-	if (!echoed_req.recv(conn))
-	{
-		std::cerr << "error: could not receive file request\n";
-		std::exit(1);
-	}
-
-	auto const& section = echoed_req.section();
-	std::cout << "Received echoed file request..."
-		<< "\nSender id: " << echoed_req.sender()
+	auto const& section = req.section();
+	std::cout << delim
+		<< "File Request:"
 		<< "\nFilename:  " << section.filename
 		<< "\nOffset:    " << section.offset
 		<< "\nLength:    " << section.length
-		<< "\n";
+		<< "\n" << delim << "\n";
 }
 
 void
-recv_chunk_req(comm::connection const& conn)
+print_chunk_req(msgs::chunk::chunk_request const& req)
 {
-	auto echoed_req = comm::msgs::chunk_request{};
-	if (!echoed_req.recv(conn))
-	{
-		std::cerr << "error: could not receive chunk request\n";
-		std::exit(1);
-	}
-
-	std::cout << "\nReceived echoed chunk request..."
-		<< "\nSender id: " << echoed_req.sender()
-		<< "\nChunk ID:  " << echoed_req.chunk_id()
-		<< "\n";
+	std::cout << delim
+		<< "Chunk Request:"
+		<< "\nChunk ID:  " << req.chunk_id()
+		<< "\n" << delim << "\n";
 }
-
-void
-recv_msg(comm::connection const& conn)
-{
-	auto mid = comm::msgs::msg_id{};
-	if (!mid.recv(conn))
-	{
-		std::cerr << "error: could not receive message ID\n";
-		std::exit(1);
-	}
-	switch (mid.type())
-	{
-		case comm::msgs::msg_type::file:
-			recv_file_req(conn);
-			break;
-		case comm::msgs::msg_type::chunk:
-			recv_chunk_req(conn);
-			break;
-		case comm::msgs::msg_type::id:
-		default:
-			recv_id_msg(conn);
-			break;
-	}
-}
-*/
 
 int
 main(int argc, char** argv)
@@ -92,30 +39,62 @@ main(int argc, char** argv)
 		msgs::io_type::read,
 		{"/mnt/a/file.dat", 0, 4096}
 	};
+	print_file_req(fr);
 
 	auto cr = msgs::chunk::chunk_request
 	{
 		msgs::io_type::read,
 		78234
 	};
+	print_chunk_req(cr);
 
-	auto ch = msgs::channel
+	auto establish_conn = []() -> msgs::channel
 	{
-		comm::service{comm::constants::ip_localhost, 6666}.connect()
+		using namespace comm;
+		auto&& echod = service{constants::ip_localhost, 6666};
+		try
+		{
+			return msgs::channel{echod.connect()};
+		}
+		catch (std::system_error ex)
+		{
+			std::cerr << "[error]: failed to connect to echo server\n"
+			          << ex.what() << "\n";
+			std::exit(1);
+		}
+	};
+	auto info = [](auto const& msg)
+	{
+		std::cout << "[INFO]: " << msg << "\n";
 	};
 
+	auto ch = establish_conn();
+	info("connection established with the echo server");
+
 	// send file_request
-	auto m_serializer = msgs::master::serializer{};
-	std::cout << "[master]: contacting server...\n";
-	m_serializer.serialize(fr, ch);
-	std::cout << "[master]: sent file_request\n";
+	msgs::master::serializer{}.serialize(fr, ch);
+	info("sent file request");
 
 	// send chunk_request
-	auto c_serializer = msgs::chunk::serializer{};
+	msgs::chunk::serializer{}.serialize(cr, ch);
+	info("sent chunk request");
+
+	// to make sure that the serialized msgs are sent,
+	// flush the channel
+	ch.flush();
+
 	std::cout << "\n";
-	std::cout << "[chunk]: contacting server...\n";
-	c_serializer.serialize(cr, ch);
-	std::cout << "[chunk]: sent chunk_request\n";
+	// receive file_request
+	auto new_fr = msgs::master::file_request{};
+	msgs::master::deserializer{}.deserialize(new_fr, ch);
+	info("received file request");
+	print_file_req(new_fr);
+
+	// receive chunk_request
+	auto new_cr = msgs::chunk::chunk_request{};
+	msgs::chunk::deserializer{}.deserialize(new_cr, ch);
+	info("received chunk request");
+	print_chunk_req(new_cr);
 
 	return 0;
 }
