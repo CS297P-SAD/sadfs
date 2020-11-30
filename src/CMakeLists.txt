@@ -40,9 +40,6 @@ add_executable (sadcd
 	sadcd/main.cpp
 	sadcd/sadcd.cpp
 	${COMMON_SOURCE_FILES})
-# add_executable (sadfsd
-#	sadfsd/sadfsd.cpp
-#	${COMMON_SOURCE_FILES})
 
 # first, find the boost_program_options library. this sets
 # the Boost_INCLUDE_DIRS and Boost_LIBRARIES variables
@@ -53,20 +50,44 @@ find_package (Boost
 
 # then, do the following for every main daemon target
 # 1. add a corresponding bootstrap target
-# 2. mark it as a dependency of the main target
-# 3. inform CMake of dependency on protobuf headers
-# 4. inform CMake of any external dependencies
-foreach (TARGET sadmd sadcd) # sadfsd)
+# 2. inform CMake of dependency on protobuf headers
+# 3. inform CMake of any external dependencies
+foreach (TARGET sadmd sadcd sadfsd)
 	set (BOOTSTRAP_TARGET ${TARGET}-bootstrap)
 	add_executable (${BOOTSTRAP_TARGET}
 		${TARGET}/${BOOTSTRAP_TARGET}.cpp bootstrap/util.cpp)
-	add_dependencies (${TARGET} ${BOOTSTRAP_TARGET})
-	target_link_libraries (${TARGET} PRIVATE sadfs_protobuf)
+	target_link_libraries (${BOOTSTRAP_TARGET}
+		PRIVATE sadfs_protobuf)
 	target_include_directories (${BOOTSTRAP_TARGET}
 		PRIVATE ${Boost_INCLUDE_DIRS})
 	target_link_libraries (${BOOTSTRAP_TARGET}
 		PRIVATE ${Boost_LIBRARIES})
 endforeach()
+
+# for sadmd and sadcd, do the following
+# 1. mark their bootstrap targets as dependencies
+# 2. mark sadfs_protobuf as a dependency
+foreach(TARGET sadmd sadcd)
+	add_dependencies (${TARGET} ${TARGET}-bootstrap)
+	target_link_libraries (${TARGET} PRIVATE sadfs_protobuf)
+endforeach()
+
+# source files for sadfsd-bootstrap
+target_sources (sadfsd-bootstrap
+    PRIVATE sadfsd/sadfilesys.cpp
+    PRIVATE ${COMMON_SOURCE_FILES})
+
+# find fuse library. this sets the FUSE_INCLUDE_DIRS and FUSE_LIBRARIES
+# variables
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(FUSE REQUIRED fuse)
+
+target_include_directories (sadfsd-bootstrap
+    SYSTEM PRIVATE ${FUSE_INCLUDE_DIRS})
+target_link_libraries (sadfsd-bootstrap
+    PRIVATE ${FUSE_LINK_LIBRARIES})
+target_compile_options(sadfsd-bootstrap
+    PRIVATE ${FUSE_CFLAGS})
 
 # find the SQLite3 library. this sets
 # the SQLite3_INCLUDE_DIRS and SQLite3_LIBRARIES variables
