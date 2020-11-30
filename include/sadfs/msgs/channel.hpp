@@ -27,7 +27,7 @@ public:
 	// accepts a deserializer, and provides it
 	// access to the underlying input stream
 	template <typename Deserializer>
-	bool accept_deserializer(Deserializer const&) const noexcept;
+	bool accept_deserializer(Deserializer&) const noexcept;
 
 	// flushes the output buffer
 	void flush() const noexcept;
@@ -58,7 +58,7 @@ accept_serializer(Serializer const& serializer) const noexcept
 
 template <typename Deserializer>
 bool channel::
-accept_deserializer(Deserializer const& deserializer) const noexcept
+accept_deserializer(Deserializer& deserializer) const noexcept
 {
 	return deserializer.deserialize(istream_.get());
 }
