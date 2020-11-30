@@ -10,6 +10,16 @@ $ cmake ..
 $ make
 ```
 
+To debug with GDB, replace `cmake ..` above with:
+```
+$ cmake -DCMAKE_CONFIG_TYPE=Debug ..
+```
+
+To avoid typing this each time `cmake` is run:
+```
+$ alias cmake='cmake -DCMAKE_CONFIG_TYPE=Debug'
+```
+
 ### Run
 To run any of the daemons, run:
 ```

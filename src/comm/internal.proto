@@ -1,0 +1,6 @@
+syntax = "proto3";
+package sadfs.proto.internal;
+
+message chunkid_container {
+    repeated uint64 chunkids = 1;
+}

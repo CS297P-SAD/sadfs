@@ -1,9 +1,11 @@
 # src/CMakeLists.txt
 
 # compile protobuf files into a library
+add_compile_options( -ggdb )
 find_package (Protobuf REQUIRED)
 protobuf_generate_cpp (PROTO_SOURCE_FILES PROTO_HEADER_FILES
-	comm/messages.proto)
+	comm/messages.proto
+	comm/internal.proto)
 add_library (sadfs_protobuf STATIC ${PROTO_SOURCE_FILES})
 # directory containing all *.pb.h so they can be included
 set (PROTO_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/)
@@ -12,15 +14,19 @@ target_include_directories (sadfs_protobuf PUBLIC
 	${PROTO_INCLUDE_DIR})
 target_link_libraries (sadfs_protobuf
 	${Protobuf_LIBRARIES})
-# copy *.pb.h into PROTO_INCLUDE_DIR after the library is built
+# copy *.pb.h into PROTO_INCLUDE_DIR before the library is built
 # so that they can actually be #include-d
-set (PROTO_HEADER_FILES_DIR ${PROTO_INCLUDE_DIR}/sadfs/comm)
-add_custom_command (TARGET sadfs_protobuf POST_BUILD
+set (PROTO_HEADER_FILES_DIR ${PROTO_INCLUDE_DIR}sadfs/proto/)
+add_custom_target (sadfs_protobuf_includes
+	DEPENDS ${PROTO_HEADER_FILES}
 	COMMAND ${CMAKE_COMMAND} -E
-	make_directory ${PROTO_HEADER_FILES_DIR})
-add_custom_command (TARGET sadfs_protobuf POST_BUILD
+	make_directory ${PROTO_HEADER_FILES_DIR}
 	COMMAND ${CMAKE_COMMAND} -E
 	copy ${PROTO_HEADER_FILES} ${PROTO_HEADER_FILES_DIR})
+add_dependencies (sadfs_protobuf sadfs_protobuf_includes)
+# add sadfs's protobuf abstraction component(s)
+target_sources (sadfs_protobuf PRIVATE
+	comm/messages.cpp)
 
 # common components that almost all targets depend on
 set (COMMON_SOURCE_FILES
@@ -79,6 +85,18 @@ target_link_libraries (sadfsd-bootstrap
     PRIVATE ${FUSE_LINK_LIBRARIES})
 target_compile_options(sadfsd-bootstrap
     PRIVATE ${FUSE_CFLAGS})
+
+# find the SQLite3 library. this sets
+# the SQLite3_INCLUDE_DIRS and SQLite3_LIBRARIES variables
+find_package (SQLite3
+	REQUIRED)
+
+foreach (TARGET sadmd) # sadcd
+	target_include_directories (${TARGET}
+		PRIVATE ${SQLite3_INCLUDE_DIRS})
+	target_link_libraries (${TARGET}
+		PRIVATE ${SQLite3_LIBRARIES})
+endforeach()
 
 # add source files for "example" targets
 target_sources (echod        PRIVATE ${COMMON_SOURCE_FILES})
