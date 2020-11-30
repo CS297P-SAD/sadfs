@@ -30,8 +30,8 @@ private:
     // file system operation definitions
     void load_operations();
 
-    // retrieves instance of this class with the help of fuse_get_context() and
-    // returns a static pointer to it
+    // returns a pointer to this instance of the class that was provided 
+    // to FUSE in bootstrap()
     static sadfilesys* this_();
     
     // get file attributes
