@@ -48,9 +48,9 @@ private:
     int read(char const* path, char* buf, size_t size, off_t offset,
              fuse_file_info* fi);
 
-    fuse_operations operations_;
+    fuse_operations operations_{};
     
-    inet::service master_service_;
+    comm::service master_service_;
 };
 
 } // sadfs namespace;
