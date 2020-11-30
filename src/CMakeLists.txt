@@ -40,9 +40,6 @@ add_executable (sadcd
 	sadcd/main.cpp
 	sadcd/sadcd.cpp
 	${COMMON_SOURCE_FILES})
-# add_executable (sadfsd
-#	sadfsd/sadfsd.cpp
-#	${COMMON_SOURCE_FILES})
 
 # first, find the boost_program_options library. this sets
 # the Boost_INCLUDE_DIRS and Boost_LIBRARIES variables
@@ -67,9 +64,15 @@ foreach (TARGET sadmd sadcd sadfsd)
 		PRIVATE ${Boost_LIBRARIES})
 endforeach()
 
-# mark as a dependency of the main target
-add_dependencies (sadmd sadmd-bootstrap)
-add_dependencies (sadcd sadcd-bootstrap)
+# for sadmd and sadcd, do the following
+# 1. mark their bootstrap targets as dependencies
+# 2. mark sadfs_protobuf as a dependency
+foreach(TARGET sadmd sadcd)
+	add_dependencies (${TARGET} ${TARGET}-bootstrap)
+	target_link_libraries (${TARGET} PRIVATE sadfs_protobuf)
+endforeach()
+
+# source files for sadfsd-bootstrap
 target_sources (sadfsd-bootstrap
     PRIVATE sadfsd/sadfilesys.cpp
     PRIVATE ${COMMON_SOURCE_FILES})
