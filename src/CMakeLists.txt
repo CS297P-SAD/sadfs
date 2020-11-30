@@ -5,7 +5,8 @@ find_package (Protobuf REQUIRED)
 protobuf_generate_cpp (PROTO_SOURCE_FILES PROTO_HEADER_FILES
 	proto/common.proto
 	proto/master.proto
-	proto/chunk.proto)
+	proto/chunk.proto
+	proto/internal.proto)
 add_library (sadfs_protobuf STATIC ${PROTO_SOURCE_FILES})
 # directory containing all *.pb.h so they can be included
 set (PROTO_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/)
