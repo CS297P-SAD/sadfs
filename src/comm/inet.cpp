@@ -13,7 +13,7 @@
 #include <system_error> // std::system_error, std::system_category
 #include <sys/socket.h> // bind, listen, accept
 
-namespace sadfs { namespace inet {
+namespace sadfs { namespace comm {
 using namespace std::string_literals;
 
 namespace {
@@ -179,5 +179,5 @@ accept() const
 	return {socket_.comm_domain(), socket_.socket_type(), desc};
 }
 
-} // namespace inet
+} // namespace comm
 } // namespace sadfs

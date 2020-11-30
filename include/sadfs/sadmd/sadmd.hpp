@@ -18,7 +18,7 @@ using time_point = std::chrono::steady_clock::rep;
 // all the information needed about a chunk server
 struct chunk_server_info
 {
-	inet::service service;
+	comm::service service;
 	uint64_t max_chunks;
 	uint64_t chunk_count;
 	time_point expiration_point;
@@ -64,7 +64,7 @@ private:
 	void register_server_heartbeat(serverid) noexcept;
 	bool is_active(serverid) const noexcept;
 
-	inet::service const service_;
+	comm::service const service_;
 	// in memory representation of each file
 	std::unordered_map<std::string, file_info> files_;
 	// metadata for each chunk server
