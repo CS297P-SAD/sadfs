@@ -10,7 +10,7 @@
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/string_generator.hpp>
 
-namespace sadfs { namespace common {
+namespace sadfs {
 
 // defines a UUID class that can be (de)serialized
 // from/to 16-element conainers
@@ -62,17 +62,16 @@ std::string to_string(uuid const& u)
 }
 
 
-} // common namespace
 } // sadfs namespace
 
-// define std::hash for sadfs::common::uuid
+// define std::hash for sadfs::uuid
 // for use with std::unordered_{map|set}
 namespace std {
 
 template <>
-struct hash<sadfs::common::uuid>
+struct hash<sadfs::uuid>
 {
-	std::size_t operator()(sadfs::common::uuid const& u) const
+	std::size_t operator()(sadfs::uuid const& u) const
 	{
 		return boost::uuids::hash_value(u.value);
 	}
