@@ -21,13 +21,15 @@ struct uuid
 	// generates a new UUID
 	static uuid generate()
 	{
-		return uuid{boost::uuids::random_generator_pure{}()};
+		static auto generate = boost::uuids::random_generator_pure{};
+		return uuid{generate()};
 	}
 
 	// parses a UUID from a std::string
 	static uuid from_string(std::string const& str)
 	{
-		return uuid{boost::uuids::string_generator{}(str)};
+		static auto generate = boost::uuids::string_generator{};
+		return uuid{generate(str)};
 	}
 
 	// serializes to a 16-element container
@@ -46,13 +48,15 @@ struct uuid
 };
 
 // required by STL
-bool operator==(uuid const& lhs, uuid const& rhs)
+inline bool
+operator==(uuid const& lhs, uuid const& rhs)
 {
 	return lhs.value == rhs.value;
 }
 
 // generates a std::string in human-readable format
-inline std::string to_string(uuid const& u)
+inline
+std::string to_string(uuid const& u)
 {
 	return boost::uuids::to_string(u.value);
 }
