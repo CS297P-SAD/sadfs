@@ -1,4 +1,4 @@
-/* implementation of sadfs::socket */
+/* implementation of sadfs::comm::socket */
 
 // sadfs-specific includes
 #include <sadfs/comm/socket.hpp>
@@ -9,7 +9,7 @@
 #include <sys/socket.h> // ::socket
 #include <unistd.h>     // ::close
 
-namespace sadfs {
+namespace sadfs { namespace comm {
 namespace {
 
 int
@@ -71,6 +71,21 @@ socket(socket&& other) noexcept
 	other.descriptor_ = -1;
 }
 
+socket& socket::
+operator=(socket&& other) noexcept
+{
+	// move this into temporary that will be destroyed
+	auto tmp = socket{std::move(*this)};
+	domain_     = other.domain_;
+	type_       = other.type_;
+	descriptor_ = other.descriptor_;
+
+	// prevent other's destructor from closing the descriptor
+	other.descriptor_ = -1;
+
+	return *this;
+}
+
 socket::
 ~socket() noexcept
 {
@@ -98,4 +113,5 @@ descriptor() const noexcept
 	return descriptor_;
 }
 
-} // sadfs
+} // comm namespace
+} // sadfs namespace

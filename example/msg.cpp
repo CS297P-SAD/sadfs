@@ -38,7 +38,7 @@ main(int argc, char** argv)
 	auto const& msg = (argc == 2) ? argv[1] : "hi, there";
 	auto const msg_len = len(msg);
 
-	auto sock = inet::service{inet::constants::ip_localhost, 6666}.connect();
+	auto sock = comm::service{comm::constants::ip_localhost, 6666}.connect();
 
 	if (send(sock.descriptor(), msg, msg_len, 0) != msg_len)
 	{

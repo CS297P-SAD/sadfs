@@ -7,7 +7,7 @@
 // standard includes
 #include <cstdint> // std::uint32_t, std::uint16_t
 
-namespace sadfs { namespace inet {
+namespace sadfs { namespace comm {
 
 // encodes a dotted-decimal ip address as a
 // 32-bit unsigned integer in network byte order
@@ -73,12 +73,12 @@ private:
 	socket        socket_;
 };
 
-namespace constants { // sadfs::inet::constants
+namespace constants { // sadfs::comm::constants
 
 inline constexpr auto ip_localhost{"127.0.0.1"};
 
 } // constants namespace
-} // inet
-} // sadfs
+} // comm namespace
+} // sadfs namespace
 
 #endif // SADFS_COMM_INET_HPP

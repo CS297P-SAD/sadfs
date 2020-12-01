@@ -1,4 +1,4 @@
-/* example code for testing sadfs::inet::listener */
+/* example code for testing sadfs::comm::listener */
 #include <sadfs/comm/inet.hpp>
 
 #include <array>
@@ -9,7 +9,7 @@ int
 main()
 {
 	using namespace sadfs;
-	auto listener = inet::listener{{inet::constants::ip_localhost, 6666}};
+	auto listener = comm::listener{{comm::constants::ip_localhost, 6666}};
 	auto buf = std::array<char, 64>{};
 
 	while (true)
@@ -23,14 +23,14 @@ main()
 			if (len == -1)
 			{
 				std::cerr << "read error\n";
-				return 1;
+				break;
 			}
 			std::cout << "received:    " << len << " byte(s)\n";
 
 			if (len != ::write(sock.descriptor(), buf.data(), len))
 			{
 				std::cerr << "write error\n";
-				return 1;
+				break;
 			}
 			std::cout << "echoed back: " << len << " byte(s)\n";
 			buf.fill({}); // clear buffer
