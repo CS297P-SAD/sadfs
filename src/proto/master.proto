@@ -1,0 +1,20 @@
+/* defines protocol buffers used by various processes */
+syntax = "proto3";
+package sadfs.proto.master;
+import "common.proto";
+
+// request for file IO
+message file_request {
+	io_type type     = 1;
+	string  filename = 2;
+	uint64  offset   = 3;
+	uint64  length   = 4;
+}
+
+// generic request message
+message control_message {
+	sadfs.proto.host_id sender = 1;
+	oneof               msg {
+		file_request file_req = 11;
+	}
+}
