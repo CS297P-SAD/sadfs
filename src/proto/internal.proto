@@ -1,3 +1,4 @@
+/* defines internally used protobufs */
 syntax = "proto3";
 package sadfs.proto.internal;
 
