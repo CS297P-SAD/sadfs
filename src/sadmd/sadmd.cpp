@@ -40,14 +40,15 @@ open_db()
 }
 
 std::string
-serialize(std::vector<uint64_t>& chunkids) noexcept
+serialize(std::vector<chunkid>& chunkids) noexcept
 {
 	auto chunkid_pb = sadfs::proto::internal::chunkid_container{};
 	auto chunkid_str = std::string{};
 
 	for (auto chunkid : chunkids)
 	{
-		chunkid_pb.add_chunkids(chunkid);
+		//TODO: fix protobuf so this works
+		//chunkid_pb.add_chunkids(chunkid);
 	}
 	chunkid_pb.SerializeToString(&chunkid_str);
 
@@ -55,7 +56,7 @@ serialize(std::vector<uint64_t>& chunkids) noexcept
 }
 
 void
-deserialize(std::vector<uint64_t>& chunkids, 
+deserialize(std::vector<chunkid>& chunkids, 
 	std::string const& existing_chunks)
 {
 	if (existing_chunks.size() == 0)
@@ -74,7 +75,8 @@ deserialize(std::vector<uint64_t>& chunkids,
 	// copy items from protobuf object into vector
 	for (auto id : chunkid_pb.chunkids())
 	{
-		chunkids.push_back(id);
+		//TODO: fix protobuf so this works
+		//chunkids.push_back(id);
 	}
 }
 
@@ -141,6 +143,21 @@ sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 void sadmd::
 start()
 {
+
+add_chunk_to_file("main.cpp");
+add_chunk_to_file("a.out");
+create_file("a.out");
+add_chunk_to_file("main.cpp");
+add_chunk_to_file("a.out");
+for (auto file : files_)
+{
+	std::cout << file.first << ": ";
+	for (auto id : file.second.chunkids)
+	{
+		std::cout << id << ' ';
+	}
+	std::cout << '\n';
+}
 	auto listener = comm::listener{service_};
 
 	while (true)
@@ -299,5 +316,20 @@ is_active(serverid id) const noexcept
 		return false;
 	}
 	return (chunk_server_metadata_.at(id).expiration_point) > time::now();
+}
+
+void sadmd::
+add_chunk_to_file(std::string const& filename)
+{
+	if (!files_.count(filename))
+	{
+		std::cerr << "Error: cannot add new chunk to file "
+				  << filename
+				  << ": file does not exist\n";
+		return;
+	}
+	auto new_chunkid = generate_chunkid();
+	files_[filename].chunkids.push_back(new_chunkid);
+	//chunk_locations_.emplace(new_chunkid);
 }
 } // sadfs namespace

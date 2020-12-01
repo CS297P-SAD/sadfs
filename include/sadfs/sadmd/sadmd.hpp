@@ -1,8 +1,12 @@
 #ifndef SADFS_SADMD_SADMD_HPP
 #define SADFS_SADMD_SADMD_HPP
+
+
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/comm/socket.hpp>
+#include <sadfs/comm/uuid.hpp>
 
+#include <boost/container_hash/hash.hpp>
 #include <chrono>
 #include <string>
 #include <sqlite3.h>
@@ -11,7 +15,7 @@
 
 namespace sadfs {
 
-using chunkid = uint64_t;
+using chunkid = boost::uuids::uuid;
 using serverid = uint64_t;
 using time_point = std::chrono::steady_clock::rep;
 
@@ -58,6 +62,8 @@ private:
 
 	// functions for maintaining chunk servers 
 
+	void add_chunk_to_file(std::string const&);
+
 	// returns true on success
 	bool add_server_to_network(serverid, char const*, int, uint64_t, uint64_t);
 	void remove_server_from_network(serverid) noexcept;
@@ -70,9 +76,11 @@ private:
 	// metadata for each chunk server
 	std::unordered_map<serverid, chunk_server_info> chunk_server_metadata_;
 	// map from chunkid to list of chunk servers
-	std::unordered_map<chunkid, std::vector<chunk_server_info*> > chunk_locations_;
+	std::unordered_map<chunkid, std::vector<chunk_server_info*>, boost::hash<chunkid> > chunk_locations_;
 	// persistent/on disk copy of files_
 	sqlite3* const files_db_;
+
+	uuid_generator generate_chunkid;
 };
 
 } // sadfs namespace
