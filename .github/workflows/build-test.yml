@@ -30,7 +30,7 @@ jobs:
     - name: Run CMake
       run: cmake -B build/
     - name: Build
-      run: cd build/ && make
+      run: cmake --build build/ -j `cat /proc/cpuinfo | grep processor | wc -l`
         
   build_osx:
     name: Build job on MacOS
