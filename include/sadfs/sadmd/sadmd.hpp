@@ -2,6 +2,7 @@
 #define SADFS_SADMD_SADMD_HPP
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/comm/socket.hpp>
+#include <sadfs/comm/uuid.hpp>
 
 #include <chrono>
 #include <string>
