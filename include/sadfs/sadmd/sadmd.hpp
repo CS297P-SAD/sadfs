@@ -1,16 +1,19 @@
 #ifndef SADFS_SADMD_SADMD_HPP
 #define SADFS_SADMD_SADMD_HPP
 
-
+// sadfs specific includes
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/comm/socket.hpp>
 #include <sadfs/uuid.hpp>
 #include "internal.hpp" // file_chunks object
 
+// extrenal includes
 #include <boost/container_hash/hash.hpp>
+#include <sqlite3.h>
+
+// standard includes
 #include <chrono>
 #include <string>
-#include <sqlite3.h>
 #include <unordered_map>
 #include <vector>
 
@@ -77,7 +80,7 @@ private:
 	// metadata for each chunk server
 	std::unordered_map<serverid, chunk_server_info> chunk_server_metadata_;
 	// map from chunkid to list of chunk servers
-	std::unordered_map<chunkid, std::vector<chunk_server_info*>> chunk_locations_;
+	std::unordered_map<chunkid, std::vector<chunk_server_info*> > chunk_locations_;
 	// persistent/on disk copy of files_
 	sqlite3* const files_db_;
 };
