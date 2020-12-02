@@ -4,7 +4,8 @@
 
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/comm/socket.hpp>
-#include <sadfs/comm/uuid.hpp>
+#include <sadfs/uuid.hpp>
+#include "internal.hpp" // file_chunks object
 
 #include <boost/container_hash/hash.hpp>
 #include <chrono>
@@ -15,8 +16,8 @@
 
 namespace sadfs {
 
-using chunkid = boost::uuids::uuid;
-using serverid = uint64_t;
+using chunkid = sadfs::uuid;
+using serverid = sadfs::uuid;
 using time_point = std::chrono::steady_clock::rep;
 
 // all the information needed about a chunk server
@@ -32,7 +33,7 @@ struct chunk_server_info
 struct file_info
 {
 	int ttl;
-	std::vector<chunkid> chunkids;
+	file_chunks chunkids;
 };
 
 class sadmd
@@ -76,11 +77,9 @@ private:
 	// metadata for each chunk server
 	std::unordered_map<serverid, chunk_server_info> chunk_server_metadata_;
 	// map from chunkid to list of chunk servers
-	std::unordered_map<chunkid, std::vector<chunk_server_info*>, boost::hash<chunkid> > chunk_locations_;
+	std::unordered_map<chunkid, std::vector<chunk_server_info*>> chunk_locations_;
 	// persistent/on disk copy of files_
 	sqlite3* const files_db_;
-
-	uuid_generator generate_chunkid;
 };
 
 } // sadfs namespace
