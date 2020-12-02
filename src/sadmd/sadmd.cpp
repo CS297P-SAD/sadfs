@@ -120,7 +120,7 @@ create_file(std::string const& filename, std::string const& existing_chunks)
 	if (!files_.count(filename))
 	{
 		auto info = file_info{};
-		info.chunkids.from_string(existing_chunks);
+		info.chunkids.deserialize(existing_chunks);
 		files_.emplace(filename, info);
 	}
 	else
@@ -192,7 +192,7 @@ save_files() const noexcept
 	{
 		auto sql_command = std::string{};
 		auto filename = std::string{file.first};
-		auto chunkids = file.second.chunkids.as_string();
+		auto chunkids = file.second.chunkids.serialize();
 
 		if(db_contains(file.first))
 		{

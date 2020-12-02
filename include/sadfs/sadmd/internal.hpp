@@ -16,28 +16,31 @@ class file_chunks
 public:
     file_chunks() = default;
 
-    void add_chunk(sadfs::uuid id)
+    void add_chunk(uuid const& id)
     {
         protobuf_.add_uuids(to_string(id));
     }
 
-    std::string as_string()
+    std::string serialize()
     {
-	auto pb_str = std::string();
+	auto pb_str = std::string{};
 	protobuf_.SerializeToString(&pb_str);
 	return pb_str;
     }
 
-    void from_string(std::string str)
+    void deserialize(std::string const& str)
     {
         protobuf_.ParseFromString(str);
     }
 
     std::string 
-    operator[](int i)
+    operator[](unsigned int const i)
     {
         //TODO: handle error.. or convert this to an iterator?
-        if (i > protobuf_.uuids_size()) return std::string{};
+        if (i >= protobuf_.uuids_size()) 
+        {
+            return std::string{};
+        }
         return protobuf_.uuids(i);
     }
 
