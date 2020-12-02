@@ -33,7 +33,8 @@ public:
         protobuf_.ParseFromString(str);
 	}
 
-    std::string at(int i)
+    std::string 
+    operator[](int i)
     {
         //TODO: handle error.. or convert this to an iterator?
         if (i > protobuf_.uuids_size()) return std::string{};
