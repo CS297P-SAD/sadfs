@@ -14,24 +14,24 @@ namespace sadfs {
 class file_chunks
 {
 public:
-	file_chunks() = default;
+    file_chunks() = default;
 
     void add_chunk(sadfs::uuid id)
     {
         protobuf_.add_uuids(to_string(id));
     }
 
-	std::string as_string()
-	{
-        auto pb_str = std::string();
-		protobuf_.SerializeToString(&pb_str);
-        return pb_str;
-	}
+    std::string as_string()
+    {
+	auto pb_str = std::string();
+	protobuf_.SerializeToString(&pb_str);
+	return pb_str;
+    }
 
     void from_string(std::string str)
-	{
+    {
         protobuf_.ParseFromString(str);
-	}
+    }
 
     std::string 
     operator[](int i)
