@@ -115,7 +115,7 @@ for (auto file : files_)
 	
 	for (int i = 0; i < file.second.chunkids.size(); i++)
 	{
-		std::cout << "\n\t" << file.second.chunkids.at(i);
+		std::cout << "\n\t" << file.second.chunkids[i];
 	}
 	
 	std::cout << '\n';
@@ -146,7 +146,9 @@ create_file(std::string const& filename, std::string const& existing_chunks)
 	else
 	{
 		// TODO: give a more meaningful error message to the user
-		std::cerr << "Error: " << filename << ": file already exists\n";
+		std::cerr << "Error: attempt to create " 
+				  << filename 
+				  << ": file already exists\n";
 		return;
 	}
 	
