@@ -102,26 +102,6 @@ sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 void sadmd::
 start()
 {
-// Test code to be deleted before merge
-add_chunk_to_file("main.cpp");
-add_chunk_to_file("a.out");
-create_file("main.cpp");
-add_chunk_to_file("main.cpp");
-add_chunk_to_file("a.out");
-
-for (auto file : files_)
-{
-	std::cout << file.first << ": ";
-	
-	for (int i = 0; i < file.second.chunkids.size(); i++)
-	{
-		std::cout << "\n\t" << file.second.chunkids[i];
-	}
-	
-	std::cout << '\n';
-}
-save_files();
-// End of test code
 	auto listener = comm::listener{service_};
 
 	while (true)
