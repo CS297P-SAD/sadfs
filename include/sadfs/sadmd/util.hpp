@@ -1,5 +1,5 @@
-#ifndef SADFS_SADMD_INTERNAL_HPP
-#define SADFS_SADMD_INTERNAL_HPP
+#ifndef SADFS_SADMD_UTIL_HPP
+#define SADFS_SADMD_UTIL_HPP
 
 // sadfs-specific includes
 #include <sadfs/proto/internal.pb.h>

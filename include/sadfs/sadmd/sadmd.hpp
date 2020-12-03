@@ -5,7 +5,7 @@
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/comm/socket.hpp>
 #include <sadfs/uuid.hpp>
-#include "internal.hpp" // file_chunks object
+#include "util.hpp" // file_chunks object
 
 // extrenal includes
 #include <sqlite3.h>
