@@ -8,7 +8,6 @@
 #include "internal.hpp" // file_chunks object
 
 // extrenal includes
-#include <boost/container_hash/hash.hpp>
 #include <sqlite3.h>
 
 // standard includes
