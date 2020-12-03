@@ -117,9 +117,9 @@ start()
 void sadmd::load_file(std::string const& filename, std::string const& existing_chunks)
 {
 	create_file(filename);
-	auto file_chunkids  = files_[filename].chunkids;
-	file_chunkids.deserialize(existing_chunks);
-	reintroduce_chunks_to_network(file_chunkids);
+	auto file_chunkids  = &(files_[filename].chunkids);
+	file_chunkids->deserialize(existing_chunks);
+	reintroduce_chunks_to_network(*file_chunkids);
 }
 
 void sadmd::
