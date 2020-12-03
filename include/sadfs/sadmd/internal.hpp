@@ -33,14 +33,8 @@ public:
         protobuf_.ParseFromString(str);
     }
 
-    std::string 
-    operator[](unsigned int const i)
+    std::string operator[](unsigned int const i)
     {
-        //TODO: handle error.. or convert this to an iterator?
-        if (i >= protobuf_.uuids_size()) 
-        {
-            return std::string{};
-        }
         return protobuf_.uuids(i);
     }
 
