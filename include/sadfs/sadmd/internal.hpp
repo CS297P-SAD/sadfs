@@ -38,7 +38,7 @@ public:
         return protobuf_.uuids(i);
     }
 
-    size_t size()
+    std::size_t size()
     {
         return protobuf_.uuids_size();
     }
