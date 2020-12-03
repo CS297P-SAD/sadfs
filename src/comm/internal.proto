@@ -2,5 +2,5 @@ syntax = "proto3";
 package sadfs.proto.internal;
 
 message file_chunks {
-    repeated bytes uuids = 1;
+    repeated bytes chunkids = 1;
 }

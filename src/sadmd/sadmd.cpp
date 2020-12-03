@@ -114,24 +114,25 @@ start()
 	}
 }
 
-void sadmd::
-create_file(std::string const& filename, std::string const& existing_chunks)
+void sadmd::load_file(std::string const& filename, std::string const& existing_chunks)
 {
-	if (!files_.count(filename))
+	create_file(filename);
+	auto file_chunkids  = files_[filename].chunkids;
+	file_chunkids.deserialize(existing_chunks);
+	reintroduce_chunks_to_network(file_chunkids);
+}
+
+void sadmd::
+create_file(std::string const& filename)
+{
+	if (files_.count(filename))
 	{
-		auto info = file_info{};
-		info.chunkids.deserialize(existing_chunks);
-		files_.emplace(filename, info);
-	}
-	else
-	{
-		// TODO: give a more meaningful error message to the user
 		std::cerr << "Error: attempt to create " 
 				  << filename 
 				  << ": file already exists\n";
 		return;
 	}
-	
+	files_.emplace(filename, file_info{});
 }
 
 void sadmd::
@@ -180,7 +181,7 @@ load_files()
 			sqlite3_column_text(stmt, constants::filename_col))};
 		auto cids = std::string{reinterpret_cast<const char*>(
 			sqlite3_column_text(stmt, constants::chunkid_str_col))};
-		create_file(filename, cids);
+		load_file(filename, cids);
 	}
 	sqlite3_finalize(stmt);
 }
@@ -265,11 +266,11 @@ is_active(serverid id) const noexcept
 }
 
 void sadmd::
-add_chunk_to_file(std::string const& filename)
+append_chunk_to_file(std::string const& filename)
 {
 	if (!files_.count(filename))
 	{
-		std::cerr << "Error: cannot add new chunk to file "
+		std::cerr << "Error: cannot append chunk to file "
 				  << filename
 				  << ": file does not exist\n";
 		return;
@@ -277,5 +278,14 @@ add_chunk_to_file(std::string const& filename)
 	auto new_chunkid = chunkid::generate();
 	files_[filename].chunkids.add_chunk(new_chunkid);
 	chunk_locations_.emplace(new_chunkid, std::vector<chunk_server_info*>{});
+}
+
+void sadmd::
+reintroduce_chunks_to_network(file_chunks ids)
+{
+	for (auto i = 0; i < ids.size(); i++)
+	{
+		chunk_locations_.emplace(ids[i], std::vector<chunk_server_info*>{});
+	}
 }
 } // sadfs namespace

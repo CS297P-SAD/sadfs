@@ -49,11 +49,11 @@ public:
 
 private:
 	// creates (the metadata for) a new file
-	void create_file(std::string const&, 
-		std::string const& existing_chunks = "");
+	void create_file(std::string const&);
 
 	// loads file metadata from disk
 	void load_files();
+	void load_file(std::string const&, std::string const&);
 
 	// copies in-memory files into database
 	void save_files() const noexcept;
@@ -66,7 +66,8 @@ private:
 
 	// functions for maintaining chunk servers 
 
-	void add_chunk_to_file(std::string const&);
+	void append_chunk_to_file(std::string const&);
+	void reintroduce_chunks_to_network(file_chunks);
 
 	// returns true on success
 	bool add_server_to_network(serverid, char const*, int, uint64_t, uint64_t);
