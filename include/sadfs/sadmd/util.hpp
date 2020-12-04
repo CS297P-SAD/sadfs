@@ -38,7 +38,7 @@ public:
         protobuf_.ParseFromString(str);
     }
 
-    chunkid operator[](unsigned int const i)
+    chunkid operator[](int const i)
     {
         auto id = chunkid{};
         id.deserialize(protobuf_.chunkids(i).data());
