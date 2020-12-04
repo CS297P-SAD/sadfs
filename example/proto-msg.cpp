@@ -67,6 +67,13 @@ main(int argc, char** argv)
 	{
 		std::cout << "[INFO]: " << msg << "\n";
 	};
+	auto info = [](auto const& msg)
+	{
+		std::cout << "[INFO]: " << msg << "\n";
+	};
+
+	auto ch = establish_conn();
+	info("connection established with the echo server");
 
 	auto ch = establish_conn();
 	info("connection established with the echo server");
@@ -84,7 +91,13 @@ main(int argc, char** argv)
 	ch.flush();
 
 	// send chunk_request
-	auto c_serializer = msgs::chunk::serializer{};
+	msgs::chunk::serializer{}.serialize(cr, ch);
+	info("sent chunk request");
+
+	// to make sure that the serialized msgs are sent,
+	// flush the channel
+	ch.flush();
+
 	std::cout << "\n";
 	// receive file_request
 	auto new_fr = msgs::master::file_request{};
