@@ -102,39 +102,6 @@ sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 void sadmd::
 start()
 {
-// Test code to be deleted before merge
-append_chunk_to_file("main.cpp");
-append_chunk_to_file("a.out");
-create_file("main.cpp");
-create_file("a.out");
-append_chunk_to_file("main.cpp");
-append_chunk_to_file("a.out");
-
-
-auto serverid = uuid::generate();
-add_server_to_network(serverid, "127.0.0.1", 6666, 100, 0);
-
-auto serverptr = &(chunk_server_metadata_.begin()->second);
-chunk_locations_[files_["a.out"].chunkids[0]].push_back(serverptr);
-chunk_locations_[files_["a.out"].chunkids[0]].push_back(serverptr);
-chunk_locations_[files_["a.out"].chunkids[0]].push_back(serverptr);
-
-for (auto file : files_)
-{
-	std::cout << file.first << ": ";
-
-	for (int i = 0; i < file.second.chunkids.size(); i++)
-	{
-		auto id = file.second.chunkids[i];
-		std::cout << "\n\t" << to_string(id)
-				  << "\n\t\t located in: "
-				  << chunk_locations_[id].size()
-				  << " places";
-	}
-	std::cout << '\n';
-}
-save_files();
-// End of test code
 	auto listener = comm::listener{service_};
 
 	while (true)
