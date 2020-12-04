@@ -14,7 +14,7 @@ void
 print_chunk_location_req(msgs::master::chunk_location_request const& req)
 {
 	std::cout << delim
-		<< "File Request:"
+		<< "Chunk Location Request:"
 		<< "\nFilename:     " << req.filename()
 		<< "\nChunk number: " << req.chunk_number()
 		<< "\n" << delim << "\n";
@@ -79,7 +79,7 @@ main(int argc, char** argv)
 
 	// send chunk_location_request
 	msgs::master::serializer{}.serialize(fr, ch);
-	info("sent file request");
+	info("sent chunk location request");
 
 	// send chunk_request
 	msgs::chunk::serializer{}.serialize(cr, ch);
@@ -101,7 +101,7 @@ main(int argc, char** argv)
 	// receive chunk_location_request
 	auto new_fr = msgs::master::chunk_location_request{};
 	msgs::master::deserializer{}.deserialize(new_fr, ch);
-	info("received file request");
+	info("received chunk location request");
 	print_chunk_location_req(new_fr);
 
 	// receive chunk_request
