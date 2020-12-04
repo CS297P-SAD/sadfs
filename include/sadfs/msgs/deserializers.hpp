@@ -10,55 +10,55 @@
 
 namespace sadfs { namespace msgs {
 
-// uses ControlMessage as a container for raw control messages
-template <typename ControlMessage>
+// Container refers to a container for control messages
+template <typename Container>
 class deserializer
 {
 public:
 	deserializer() = default; // TODO: remove
 	deserializer(host_id id);
 
-	template <typename RawMessage>
-	bool deserialize(RawMessage&, channel const&);
+	template <typename ControlMessage>
+	bool deserialize(ControlMessage&, channel const&);
 
 private:
-	ControlMessage cm_{};
+	Container container_{};
 
 	friend class msgs::channel;
 	bool deserialize(gpio::ZeroCopyInputStream*);
 };
 
 // template definitions
+template <typename Container>
 template <typename ControlMessage>
-template <typename RawMessage>
-bool msgs::deserializer<ControlMessage>::
-deserialize(RawMessage& rm, channel const& ch)
+bool msgs::deserializer<Container>::
+deserialize(ControlMessage& cm, channel const& ch)
 {
-	auto res =  ch.accept_deserializer(*this) && extract(rm, cm_);
+	auto res =  ch.accept_deserializer(*this) && extract(cm, container_);
 	// we must not hold data after serialization
-	cm_.clear_msg();
+	container_.clear_msg();
 	return res;
 }
 
-template <typename ControlMessage>
-bool deserializer<ControlMessage>::
+template <typename Container>
+bool deserializer<Container>::
 deserialize(gpio::ZeroCopyInputStream* in)
 {
 	namespace gputil = google::protobuf::util;
 	auto const deserialize = gputil::ParseDelimitedFromZeroCopyStream;
 
 	// TODO: change API to return clean_eof
-	return deserialize(&cm_, in, /*clean_eof=*/nullptr);
+	return deserialize(&container_, in, /*clean_eof=*/nullptr);
 }
 
 // define a deserializer to receive messages sent to the master server
 namespace master {
-using deserializer = msgs::deserializer<proto::master::control_message>;
+using deserializer = msgs::deserializer<proto::master::message_container>;
 }
 
 // define a deserializer to receive messages sent to chunk servers
 namespace chunk {
-using deserializer = msgs::deserializer<proto::chunk::control_message>;
+using deserializer = msgs::deserializer<proto::chunk::message_container>;
 }
 } // msgs namespace
 } // sadfs namespace

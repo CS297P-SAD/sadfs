@@ -10,8 +10,8 @@ message chunk_location_request {
 	uint64  chunk_number = 3;
 }
 
-// generic request message
-message control_message {
+// container for control messages
+message message_container {
 	sadfs.proto.host_id sender = 1;
 	oneof               msg {
 		chunk_location_request chunk_location_req = 11;

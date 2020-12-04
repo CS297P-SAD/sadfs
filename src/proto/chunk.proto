@@ -9,8 +9,8 @@ message chunk_request {
 	uint64  chunk_id = 3;
 }
 
-// generic request message
-message control_message {
+// container for control messages
+message message_container {
 	sadfs.proto.host_id sender = 1;
 	oneof               msg {
 		chunk_request chunk_req = 11;

@@ -10,7 +10,7 @@
 #include <string>
 
 namespace sadfs { namespace msgs { namespace chunk {
-using control_message = proto::chunk::control_message;
+using message_container = proto::chunk::message_container;
 
 enum class msg_type
 {
@@ -33,13 +33,13 @@ private:
 	proto::chunk::chunk_request protobuf_{};
 
 	// provide embed/extract functions access to private members
-	friend bool embed(chunk_request const&, control_message&);
-	friend bool extract(chunk_request&, control_message const&);
+	friend bool embed(chunk_request const&, message_container&);
+	friend bool extract(chunk_request&, message_container const&);
 };
 
 // declarations
-bool embed(chunk_request const&, control_message&);
-bool extract(chunk_request&, control_message const&);
+bool embed(chunk_request const&, message_container&);
+bool extract(chunk_request&, message_container const&);
 
 // ==================================================================
 //                      inline function definitions
