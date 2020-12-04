@@ -40,45 +40,6 @@ open_db()
 }
 
 std::string
-serialize(std::vector<uint64_t>& chunkids) noexcept
-{
-	auto chunkid_pb = sadfs::proto::internal::chunkid_container{};
-	auto chunkid_str = std::string{};
-
-	for (auto chunkid : chunkids)
-	{
-		chunkid_pb.add_chunkids(chunkid);
-	}
-	chunkid_pb.SerializeToString(&chunkid_str);
-
-	return chunkid_str;
-}
-
-void
-deserialize(std::vector<uint64_t>& chunkids, 
-	std::string const& existing_chunks)
-{
-	if (existing_chunks.size() == 0)
-	{
-		// do nothing if string is empty
-		return;
-	}
-	// parse string into protobuf object
-	auto chunkid_pb = sadfs::proto::internal::chunkid_container{};
-	chunkid_pb.ParseFromString(existing_chunks);
-	
-	// clear chunkids, and allocate enough space for contents
-	chunkids.clear();
-	chunkids.reserve(chunkid_pb.chunkids_size());
-	
-	// copy items from protobuf object into vector
-	for (auto id : chunkid_pb.chunkids())
-	{
-		chunkids.push_back(id);
-	}
-}
-
-std::string
 process_message(comm::socket const& sock)
 {
 	auto buf = std::array<char, 512>{};
@@ -153,22 +114,25 @@ start()
 	}
 }
 
-void sadmd::
-create_file(std::string const& filename, std::string const& existing_chunks)
+void sadmd::load_file(std::string const& filename, std::string const& existing_chunks)
 {
-	if (!files_.count(filename))
+	create_file(filename);
+	auto file_chunkids  = &(files_[filename].chunkids);
+	file_chunkids->deserialize(existing_chunks);
+	reintroduce_chunks_to_network(*file_chunkids);
+}
+
+void sadmd::
+create_file(std::string const& filename)
+{
+	if (files_.count(filename))
 	{
-		auto info = file_info{};
-		deserialize(info.chunkids, existing_chunks);
-		files_.emplace(filename, info);
+		std::cerr << "Error: attempt to create " 
+				  << filename 
+				  << ": file already exists\n";
+		return;
 	}
-	else
-	{
-		// TODO: give a more meaningful error message to the user
-		std::cerr << "Error: " << filename << ": file already exists\n";
-		std::exit(1);
-	}
-	
+	files_.emplace(filename, file_info{});
 }
 
 void sadmd::
@@ -217,7 +181,7 @@ load_files()
 			sqlite3_column_text(stmt, constants::filename_col))};
 		auto cids = std::string{reinterpret_cast<const char*>(
 			sqlite3_column_text(stmt, constants::chunkid_str_col))};
-		create_file(filename, cids);
+		load_file(filename, cids);
 	}
 	sqlite3_finalize(stmt);
 }
@@ -229,7 +193,7 @@ save_files() const noexcept
 	{
 		auto sql_command = std::string{};
 		auto filename = std::string{file.first};
-		auto chunkids = serialize(file.second.chunkids);
+		auto chunkids = file.second.chunkids.serialize();
 
 		if(db_contains(file.first))
 		{
@@ -252,7 +216,7 @@ add_server_to_network(serverid uuid, char const* ip, int port,
 	if (chunk_server_metadata_.count(uuid))
 	{
 		std::cerr << "Error: attempt to add server "
-			<< uuid
+			<< to_string(uuid)
 			<< " which is already on the network\n";
 		return false;
 	}
@@ -280,7 +244,7 @@ register_server_heartbeat(serverid id) noexcept
 	if (!chunk_server_metadata_.count(id))
 	{
 		std::cerr << "Error: received heartbeat from server "
-			<< id
+			<< to_string(id)
 			<< " which is not on the network\n";
 		return;
 	}
@@ -294,10 +258,34 @@ is_active(serverid id) const noexcept
 	if (!chunk_server_metadata_.count(id))
 	{
 		std::cerr << "Error: query for status of server "
-			<< id
+			<< to_string(id)
 			<< " which is not on the network\n";
 		return false;
 	}
 	return (chunk_server_metadata_.at(id).expiration_point) > time::now();
+}
+
+void sadmd::
+append_chunk_to_file(std::string const& filename)
+{
+	if (!files_.count(filename))
+	{
+		std::cerr << "Error: cannot append chunk to file "
+				  << filename
+				  << ": file does not exist\n";
+		return;
+	}
+	auto new_chunkid = chunkid::generate();
+	files_[filename].chunkids.add_chunk(new_chunkid);
+	chunk_locations_.emplace(new_chunkid, std::vector<chunk_server_info*>{});
+}
+
+void sadmd::
+reintroduce_chunks_to_network(util::file_chunks ids)
+{
+	for (auto i = 0; i < ids.size(); i++)
+	{
+		chunk_locations_.emplace(ids[i], std::vector<chunk_server_info*>{});
+	}
 }
 } // sadfs namespace

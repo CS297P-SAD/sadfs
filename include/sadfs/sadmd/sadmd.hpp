@@ -1,18 +1,25 @@
 #ifndef SADFS_SADMD_SADMD_HPP
 #define SADFS_SADMD_SADMD_HPP
+
+// sadfs specific includes
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/comm/socket.hpp>
+#include <sadfs/uuid.hpp>
+#include "util.hpp" // file_chunks object
 
+// extrenal includes
+#include <sqlite3.h>
+
+// standard includes
 #include <chrono>
 #include <string>
-#include <sqlite3.h>
 #include <unordered_map>
 #include <vector>
 
 namespace sadfs {
 
-using chunkid = uint64_t;
-using serverid = uint64_t;
+using chunkid = sadfs::uuid;
+using serverid = sadfs::uuid;
 using time_point = std::chrono::steady_clock::rep;
 
 // all the information needed about a chunk server
@@ -28,7 +35,7 @@ struct chunk_server_info
 struct file_info
 {
 	int ttl;
-	std::vector<chunkid> chunkids;
+	util::file_chunks chunkids;
 };
 
 class sadmd
@@ -41,11 +48,11 @@ public:
 
 private:
 	// creates (the metadata for) a new file
-	void create_file(std::string const&, 
-		std::string const& existing_chunks = "");
+	void create_file(std::string const&);
 
 	// loads file metadata from disk
 	void load_files();
+	void load_file(std::string const&, std::string const&);
 
 	// copies in-memory files into database
 	void save_files() const noexcept;
@@ -57,6 +64,9 @@ private:
 	bool db_contains(std::string const&) const;
 
 	// functions for maintaining chunk servers 
+
+	void append_chunk_to_file(std::string const&);
+	void reintroduce_chunks_to_network(util::file_chunks);
 
 	// returns true on success
 	bool add_server_to_network(serverid, char const*, int, uint64_t, uint64_t);
