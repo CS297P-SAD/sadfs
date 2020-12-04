@@ -34,7 +34,7 @@ struct uuid
 
 	// serializes to a 16-element container
 	template <typename OutputIt>
-	void serialize(OutputIt it) const
+	void serialize(OutputIt it)
 	{
 		std::copy(value.begin(), value.end(), it);
 	}
@@ -44,11 +44,6 @@ struct uuid
 	void deserialize(InputIt it)
 	{
 		std::copy(it, it+value.size(), value.begin());
-	}
-
-	constexpr static std::size_t size()
-	{
-		return boost::uuids::uuid::static_size();
 	}
 };
 
