@@ -1,6 +1,7 @@
+/* defines internally used protobufs */
 syntax = "proto3";
 package sadfs.proto.internal;
 
-message file_chunks {
-    repeated bytes chunkids = 1;
+message chunkid_container {
+    repeated uint64 chunkids = 1;
 }
