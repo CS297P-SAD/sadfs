@@ -41,6 +41,15 @@ private:
 bool embed(chunk_request const&, control_message&);
 bool extract(chunk_request&, control_message const&);
 
+// ==================================================================
+//                      inline function definitions
+// ==================================================================
+inline std::size_t chunk_request::
+chunk_id() const
+{
+	return protobuf_.chunk_id();
+}
+
 } // chunk namespace
 } // msgs namespace
 } // sadfs namespace

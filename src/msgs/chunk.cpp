@@ -31,12 +31,6 @@ chunk_request(msgs::io_type type, std::size_t chunk_id)
 	protobuf_.set_chunk_id(chunk_id);
 }
 
-std::size_t chunk_request::
-chunk_id() const
-{
-	return protobuf_.chunk_id();
-}
-
 io_type chunk_request::
 io_type() const
 {
