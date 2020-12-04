@@ -114,25 +114,26 @@ start()
 	}
 }
 
-void sadmd::load_file(std::string const& filename, std::string const& existing_chunks)
-{
-	create_file(filename);
-	auto file_chunkids  = &(files_[filename].chunkids);
-	file_chunkids->deserialize(existing_chunks);
-	reintroduce_chunks_to_network(*file_chunkids);
-}
-
 void sadmd::
 create_file(std::string const& filename)
 {
+	load_file(filename, {});
+}
+
+void sadmd::
+load_file(std::string const& filename, std::string const& existing_chunks)
+{
 	if (files_.count(filename))
 	{
-		std::cerr << "Error: attempt to create " 
+		std::cerr << "Error: attempt to load " 
 				  << filename 
 				  << ": file already exists\n";
 		return;
 	}
 	files_.emplace(filename, file_info{});
+	auto& file_chunkids  = files_[filename].chunkids;
+	file_chunkids.deserialize(existing_chunks);
+	reintroduce_chunks_to_network(file_chunkids);
 }
 
 void sadmd::
@@ -249,7 +250,7 @@ register_server_heartbeat(serverid id) noexcept
 		return;
 	}
 	// use the default value
-	chunk_server_metadata_.at(id).expiration_point = time::from_now(time::server_ttl);
+	chunk_server_metadata_.at(id).valid_until = time::from_now(time::server_ttl);
 }
 
 bool sadmd::
@@ -262,11 +263,11 @@ is_active(serverid id) const noexcept
 			<< " which is not on the network\n";
 		return false;
 	}
-	return (chunk_server_metadata_.at(id).expiration_point) > time::now();
+	return (chunk_server_metadata_.at(id).valid_until) > time::now();
 }
 
 void sadmd::
-append_chunk_to_file(std::string const& filename)
+append_chunk_to_file(std::string const& filename, chunkid new_chunkid)
 {
 	if (!files_.count(filename))
 	{
@@ -275,7 +276,6 @@ append_chunk_to_file(std::string const& filename)
 				  << ": file does not exist\n";
 		return;
 	}
-	auto new_chunkid = chunkid::generate();
 	files_[filename].chunkids.add_chunk(new_chunkid);
 	chunk_locations_.emplace(new_chunkid, std::vector<chunk_server_info*>{});
 }
@@ -288,4 +288,5 @@ reintroduce_chunks_to_network(util::file_chunks ids)
 		chunk_locations_.emplace(ids[i], std::vector<chunk_server_info*>{});
 	}
 }
+
 } // sadfs namespace

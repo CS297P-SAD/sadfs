@@ -35,7 +35,7 @@ public:
         protobuf_.ParseFromString(str);
     }
 
-    chunkid operator[](unsigned int const i)
+    chunkid operator[](int const i)
     {
         return chunkid::from_string(protobuf_.chunkids(i));
     }
