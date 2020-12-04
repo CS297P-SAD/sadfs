@@ -46,9 +46,9 @@ struct uuid
 		std::copy(it, it+value.size(), value.begin());
 	}
 
-	std::size_t size() const
+	constexpr static std::size_t size()
 	{
-		return value.size();
+		return boost::uuids::uuid::static_size();
 	}
 };
 
