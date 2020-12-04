@@ -11,14 +11,12 @@ using namespace sadfs;
 constexpr auto delim = std::string_view{"******************************\n"};
 
 void
-print_file_req(msgs::master::file_request const& req)
+print_chunk_location_req(msgs::master::chunk_location_request const& req)
 {
-	auto const& section = req.section();
 	std::cout << delim
 		<< "File Request:"
-		<< "\nFilename:  " << section.filename
-		<< "\nOffset:    " << section.offset
-		<< "\nLength:    " << section.length
+		<< "\nFilename:     " << req.filename()
+		<< "\nChunk number: " << req.chunk_number()
 		<< "\n" << delim << "\n";
 }
 
@@ -34,12 +32,13 @@ print_chunk_req(msgs::chunk::chunk_request const& req)
 int
 main(int argc, char** argv)
 {
-	auto fr = msgs::master::file_request
+	auto fr = msgs::master::chunk_location_request
 	{
 		msgs::io_type::read,
-		{"/mnt/a/file.dat", 0, 4096}
+		"/mnt/a/file.dat",
+		6
 	};
-	print_file_req(fr);
+	print_chunk_location_req(fr);
 
 	auto cr = msgs::chunk::chunk_request
 	{
@@ -71,7 +70,7 @@ main(int argc, char** argv)
 	auto ch = establish_conn();
 	info("connection established with the echo server");
 
-	// send file_request
+	// send chunk_location_request
 	msgs::master::serializer{}.serialize(fr, ch);
 	info("sent file request");
 
@@ -84,11 +83,11 @@ main(int argc, char** argv)
 	ch.flush();
 
 	std::cout << "\n";
-	// receive file_request
-	auto new_fr = msgs::master::file_request{};
+	// receive chunk_location_request
+	auto new_fr = msgs::master::chunk_location_request{};
 	msgs::master::deserializer{}.deserialize(new_fr, ch);
 	info("received file request");
-	print_file_req(new_fr);
+	print_chunk_location_req(new_fr);
 
 	// receive chunk_request
 	auto new_cr = msgs::chunk::chunk_request{};
