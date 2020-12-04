@@ -28,7 +28,7 @@ struct chunk_server_info
 	comm::service service;
 	uint64_t max_chunks;
 	uint64_t chunk_count;
-	time_point expiration_point;
+	time_point valid_until;
 };
 
 // all the information needed about a file
@@ -65,7 +65,7 @@ private:
 
 	// functions for maintaining chunk servers 
 
-	void append_chunk_to_file(std::string const&);
+	void append_chunk_to_file(std::string const&, chunkid);
 	void reintroduce_chunks_to_network(util::file_chunks);
 
 	// returns true on success

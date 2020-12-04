@@ -147,7 +147,8 @@ save_files();
 	}
 }
 
-void sadmd::create_file(std::string const& filename)
+void sadmd::
+create_file(std::string const& filename)
 {
 	load_file(filename, {});
 }
@@ -282,7 +283,7 @@ register_server_heartbeat(serverid id) noexcept
 		return;
 	}
 	// use the default value
-	chunk_server_metadata_.at(id).expiration_point = time::from_now(time::server_ttl);
+	chunk_server_metadata_.at(id).valid_until = time::from_now(time::server_ttl);
 }
 
 bool sadmd::
@@ -295,11 +296,11 @@ is_active(serverid id) const noexcept
 			<< " which is not on the network\n";
 		return false;
 	}
-	return (chunk_server_metadata_.at(id).expiration_point) > time::now();
+	return (chunk_server_metadata_.at(id).valid_until) > time::now();
 }
 
 void sadmd::
-append_chunk_to_file(std::string const& filename)
+append_chunk_to_file(std::string const& filename, chunkid new_chunkid)
 {
 	if (!files_.count(filename))
 	{
@@ -308,7 +309,6 @@ append_chunk_to_file(std::string const& filename)
 				  << ": file does not exist\n";
 		return;
 	}
-	auto new_chunkid = chunkid::generate();
 	files_[filename].chunkids.add_chunk(new_chunkid);
 	chunk_locations_.emplace(new_chunkid, std::vector<chunk_server_info*>{});
 }
