@@ -6,6 +6,7 @@
 #include <sadfs/uuid.hpp>
 
 // standard includes
+#include <iterator>
 #include <string>
 
 namespace sadfs { namespace util {
