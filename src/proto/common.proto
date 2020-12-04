@@ -1,0 +1,13 @@
+/* defines common components used by other .proto files */
+syntax = "proto3";
+package sadfs.proto;
+
+enum io_type {
+	UNKNOWN = 0;
+	READ    = 1;
+	WRITE   = 2;
+}
+
+message host_id {
+	uint64 id = 1;
+}
