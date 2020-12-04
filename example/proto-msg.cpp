@@ -83,6 +83,8 @@ main(int argc, char** argv)
 	// flush the channel
 	ch.flush();
 
+	// send chunk_request
+	auto c_serializer = msgs::chunk::serializer{};
 	std::cout << "\n";
 	// receive file_request
 	auto new_fr = msgs::master::file_request{};
