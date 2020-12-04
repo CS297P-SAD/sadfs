@@ -20,7 +20,9 @@ public:
 
     void add_chunk(chunkid const& id)
     {
-        protobuf_.add_chunkids(to_string(id));
+        auto chunkid = protobuf_.add_chunkids();
+        chunkid->reserve(id.size());
+        id.serialize(std::back_inserter(*chunkid));
     }
 
     std::string serialize()
@@ -37,7 +39,9 @@ public:
 
     chunkid operator[](unsigned int const i)
     {
-        return chunkid::from_string(protobuf_.chunkids(i));
+        auto id = chunkid{};
+        id.deserialize(protobuf_.chunkids(i).data());
+        return id;
     }
 
     std::size_t size()
