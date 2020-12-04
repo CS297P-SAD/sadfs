@@ -40,54 +40,6 @@ open_db()
 }
 
 std::string
-<<<<<<< HEAD
-=======
-chunkid_str(std::vector<uint64_t>& chunkids) noexcept
-{
-	std::ostringstream oss; 
-	
-	if (!chunkids.empty())
-	{
-		// copy vector with comma separators
-		std::copy(chunkids.begin(), chunkids.end() - 1, 
-			std::ostream_iterator<uint64_t>(oss, ", "));
-		// add last separately to avoid trailing comma
-		oss << chunkids.back();
-	}
-
-	return oss.str(); 
-}
-
-void
-parse_chunkid_str(std::vector<uint64_t>& chunkids, 
-	std::string const& existing_chunks) noexcept
-{
-	// index of the next (comma delimited) substring of existing_chunks
-	auto front = 0;
-	// length of the substring
-	auto len = 0;
-	
-	while (front < existing_chunks.size())
-	{
-		len = existing_chunks.find(',', front) - front; 
-		if (len > -1)
-		{
-			// add an integer representation of the substring
-			chunkids.push_back(std::stoi(existing_chunks.substr(front, len)));
-			front += len + 1;
-		}
-		else
-		{
-			// the rest of the string is the last chunkid
-			chunkids.push_back(std::stoi(existing_chunks.substr(
-				front, existing_chunks.size())));
-			break;
-		}
-	}
-}
-
-std::string
->>>>>>> fced14b... partially (re-)implemented control messages
 process_message(comm::socket const& sock)
 {
 	auto buf = std::array<char, 512>{};
@@ -115,7 +67,6 @@ process_message(comm::socket const& sock)
 
 	return result;
 }
-<<<<<<< HEAD
 
 } // unnamed namespace
 
@@ -138,10 +89,6 @@ now() noexcept
 	return from_now(0min);
 }
 } // time namespace
-=======
-
-} // unnamed namespace
->>>>>>> fced14b... partially (re-)implemented control messages
 
 sadmd::
 sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
