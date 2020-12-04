@@ -6,7 +6,6 @@
 #include <sadfs/uuid.hpp>
 
 // standard includes
-#include <iterator>
 #include <string>
 
 namespace sadfs { namespace util {
@@ -21,9 +20,7 @@ public:
 
     void add_chunk(chunkid const& id)
     {
-        auto chunkid = protobuf_.add_chunkids();
-        chunkid->reserve(id.size());
-        id.serialize(std::back_inserter(*chunkid));
+        protobuf_.add_chunkids(to_string(id));
     }
 
     std::string serialize()
@@ -40,9 +37,7 @@ public:
 
     chunkid operator[](int const i)
     {
-        auto id = chunkid{};
-        id.deserialize(protobuf_.chunkids(i).data());
-        return id;
+        return chunkid::from_string(protobuf_.chunkids(i));
     }
 
     std::size_t size()
