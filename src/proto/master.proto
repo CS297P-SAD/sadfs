@@ -4,17 +4,16 @@ package sadfs.proto.master;
 import "common.proto";
 
 // request for file IO
-message file_request {
-	io_type type     = 1;
-	string  filename = 2;
-	uint64  offset   = 3;
-	uint64  length   = 4;
+message chunk_location_request {
+	io_type type         = 1;
+	string  filename     = 2;
+	uint64  chunk_number = 3;
 }
 
 // generic request message
 message control_message {
 	sadfs.proto.host_id sender = 1;
 	oneof               msg {
-		file_request file_req = 11;
+		chunk_location_request chunk_location_req = 11;
 	}
 }

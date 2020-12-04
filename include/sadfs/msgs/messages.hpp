@@ -31,38 +31,32 @@ using control_message = proto::master::control_message;
 enum class msg_type
 {
 	unknown,
-	file_request,
+	chunk_location_request,
 };
 
-// specifies a section of a file
-struct file_section
-{
-	std::string const filename;
-	std::size_t const offset;
-	std::size_t const length;
-};
-
-class file_request
+class chunk_location_request
 {
 public:
-	file_request() = default;
-	file_request(msgs::io_type, file_section const&);
+	chunk_location_request() = default;
+	chunk_location_request(msgs::io_type, std::string const& filename,
+	                       std::size_t chunk_number);
 
-	msgs::io_type io_type() const;
-	file_section  section() const;
+	msgs::io_type      io_type()     const;
+	std::string const& filename()    const;
+	std::size_t        chunk_number() const;
 	
-	inline static msg_type type{msg_type::file_request};
+	inline static msg_type type{msg_type::chunk_location_request};
 private:
-	proto::master::file_request protobuf_{};
+	proto::master::chunk_location_request protobuf_{};
 
 	// provide embed/extract functions access to private members
-	friend bool embed(file_request const&, control_message&);
-	friend bool extract(file_request&, control_message const&);
+	friend bool embed(chunk_location_request const&, control_message&);
+	friend bool extract(chunk_location_request&, control_message const&);
 };
 
 // declarations
-bool embed(file_request const&, control_message&);
-bool extract(file_request&, control_message const&);
+bool embed(chunk_location_request const&, control_message&);
+bool extract(chunk_location_request&, control_message const&);
 
 } // master namespace
 
@@ -99,6 +93,25 @@ bool embed(chunk_request const&, control_message&);
 bool extract(chunk_request&, control_message const&);
 
 } // chunk namespace
+
+// ==================================================================
+//                     small function definitions
+// ==================================================================
+namespace master {
+
+inline std::string const& chunk_location_request::
+filename() const
+{
+	return protobuf_.filename();
+}
+
+inline std::size_t chunk_location_request::
+chunk_number() const
+{
+	return protobuf_.chunk_number();
+}
+
+} // master namespace
 
 } // msgs namespace
 } // sadfs namespace
