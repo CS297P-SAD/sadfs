@@ -281,7 +281,7 @@ append_chunk_to_file(std::string const& filename)
 }
 
 void sadmd::
-reintroduce_chunks_to_network(file_chunks ids)
+reintroduce_chunks_to_network(util::file_chunks ids)
 {
 	for (auto i = 0; i < ids.size(); i++)
 	{

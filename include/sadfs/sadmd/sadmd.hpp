@@ -35,7 +35,7 @@ struct chunk_server_info
 struct file_info
 {
 	int ttl;
-	file_chunks chunkids;
+	util::file_chunks chunkids;
 };
 
 class sadmd
@@ -66,7 +66,7 @@ private:
 	// functions for maintaining chunk servers 
 
 	void append_chunk_to_file(std::string const&);
-	void reintroduce_chunks_to_network(file_chunks);
+	void reintroduce_chunks_to_network(util::file_chunks);
 
 	// returns true on success
 	bool add_server_to_network(serverid, char const*, int, uint64_t, uint64_t);

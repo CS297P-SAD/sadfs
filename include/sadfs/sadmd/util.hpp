@@ -8,7 +8,7 @@
 // standard includes
 #include <string>
 
-namespace sadfs {
+namespace sadfs { namespace util {
 
 using chunkid = sadfs::uuid;
 
@@ -49,7 +49,7 @@ private:
 	proto::internal::file_chunks protobuf_{};
 };
 
-
+} // util namespace
 } // sadfs namespace
 
 #endif
