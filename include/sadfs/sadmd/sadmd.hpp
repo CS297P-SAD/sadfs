@@ -66,6 +66,7 @@ private:
 	// functions for maintaining chunk servers 
 
 	void append_chunk_to_file(std::string const&, chunkid);
+
 	void reintroduce_chunks_to_network(util::file_chunks);
 
 	// returns true on success

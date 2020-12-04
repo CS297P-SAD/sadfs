@@ -114,6 +114,14 @@ start()
 	}
 }
 
+void sadmd::load_file(std::string const& filename, std::string const& existing_chunks)
+{
+	create_file(filename);
+	auto file_chunkids  = &(files_[filename].chunkids);
+	file_chunkids->deserialize(existing_chunks);
+	reintroduce_chunks_to_network(*file_chunkids);
+}
+
 void sadmd::
 create_file(std::string const& filename)
 {
@@ -130,7 +138,7 @@ load_file(std::string const& filename, std::string const& existing_chunks)
 				  << ": file already exists\n";
 		return;
 	}
-	files_.emplace(filename, file_info{});
+	files_.emplace(filename, {});
 	auto& file_chunkids  = files_[filename].chunkids;
 	file_chunkids.deserialize(existing_chunks);
 	reintroduce_chunks_to_network(file_chunkids);
@@ -276,6 +284,30 @@ append_chunk_to_file(std::string const& filename, chunkid new_chunkid)
 				  << ": file does not exist\n";
 		return;
 	}
+	files_[filename].chunkids.add_chunk(new_chunkid);
+	chunk_locations_.emplace(new_chunkid, std::vector<chunk_server_info*>{});
+}
+
+void sadmd::
+reintroduce_chunks_to_network(util::file_chunks ids)
+{
+	for (auto i = 0; i < ids.size(); i++)
+	{
+		chunk_locations_.emplace(ids[i], std::vector<chunk_server_info*>{});
+	}
+}
+
+void sadmd::
+append_chunk_to_file(std::string const& filename)
+{
+	if (!files_.count(filename))
+	{
+		std::cerr << "Error: cannot append chunk to file "
+				  << filename
+				  << ": file does not exist\n";
+		return;
+	}
+	auto new_chunkid = chunkid::generate();
 	files_[filename].chunkids.add_chunk(new_chunkid);
 	chunk_locations_.emplace(new_chunkid, std::vector<chunk_server_info*>{});
 }
