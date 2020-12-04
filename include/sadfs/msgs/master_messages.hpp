@@ -10,7 +10,7 @@
 #include <string>
 
 namespace sadfs { namespace msgs { namespace master {
-using control_message = proto::master::control_message;
+using message_container = proto::master::message_container;
 
 // enumerates types of raw messages
 enum class msg_type
@@ -35,13 +35,13 @@ private:
 	proto::master::chunk_location_request protobuf_{};
 
 	// provide embed/extract functions access to private members
-	friend bool embed(chunk_location_request const&, control_message&);
-	friend bool extract(chunk_location_request&, control_message const&);
+	friend bool embed(chunk_location_request const&, message_container&);
+	friend bool extract(chunk_location_request&, message_container const&);
 };
 
 // declarations
-bool embed(chunk_location_request const&, control_message&);
-bool extract(chunk_location_request&, control_message const&);
+bool embed(chunk_location_request const&, message_container&);
+bool extract(chunk_location_request&, message_container const&);
 
 // ==================================================================
 //                     inline function definitions

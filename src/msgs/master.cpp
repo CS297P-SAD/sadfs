@@ -7,8 +7,8 @@
 
 namespace sadfs { namespace msgs { namespace master {
 
-using proto::master::control_message;
-using MsgCase = control_message::MsgCase;
+using proto::master::message_container;
+using MsgCase = message_container::MsgCase;
 using msg_type_map = std::unordered_map<MsgCase, msg_type>;
 namespace {
 
@@ -43,7 +43,7 @@ io_type() const
 // embeds a raw message into control message that is
 // (typically) sent over the wire
 bool
-embed(chunk_location_request const& req, control_message& cm)
+embed(chunk_location_request const& req, message_container& cm)
 {
 	// should this be in a try-catch block?
 	// msg.mutable_chunk_location_req() can throw if heap allocation fails
@@ -54,7 +54,7 @@ embed(chunk_location_request const& req, control_message& cm)
 // extracts a raw message from the control message that is
 // (typically) received over the wire
 bool
-extract(chunk_location_request& req, control_message const& cm)
+extract(chunk_location_request& req, message_container const& cm)
 {
 	if (msg_type_lookup.at(cm.msg_case()) != chunk_location_request::type)
 	{
@@ -62,7 +62,7 @@ extract(chunk_location_request& req, control_message const& cm)
 		return false;
 	}
 
-	// read chunk_location_request from control_message
+	// read chunk_location_request from message_container
 	req.protobuf_ = cm.chunk_location_req();
 	return true;
 }
