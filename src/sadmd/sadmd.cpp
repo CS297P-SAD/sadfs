@@ -147,25 +147,25 @@ save_files();
 	}
 }
 
-void sadmd::load_file(std::string const& filename, std::string const& existing_chunks)
+void sadmd::create_file(std::string const& filename)
 {
-	create_file(filename);
-	auto file_chunkids  = &(files_[filename].chunkids);
-	file_chunkids->deserialize(existing_chunks);
-	reintroduce_chunks_to_network(*file_chunkids);
+	load_file(filename, {});
 }
 
 void sadmd::
-create_file(std::string const& filename)
+load_file(std::string const& filename, std::string const& existing_chunks)
 {
 	if (files_.count(filename))
 	{
-		std::cerr << "Error: attempt to create " 
+		std::cerr << "Error: attempt to load " 
 				  << filename 
 				  << ": file already exists\n";
 		return;
 	}
 	files_.emplace(filename, file_info{});
+	auto& file_chunkids  = files_[filename].chunkids;
+	file_chunkids.deserialize(existing_chunks);
+	reintroduce_chunks_to_network(file_chunkids);
 }
 
 void sadmd::
