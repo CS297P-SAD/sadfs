@@ -63,6 +63,7 @@ private:
 	// returns true if the database contains a file with the given name
 	bool db_contains(std::string const&) const;
 
+<<<<<<< HEAD
 	// functions for maintaining chunk servers 
 
 	void append_chunk_to_file(std::string const&, chunkid);
@@ -75,6 +76,8 @@ private:
 	void register_server_heartbeat(serverid) noexcept;
 	bool is_active(serverid) const noexcept;
 
+=======
+>>>>>>> fced14b... partially (re-)implemented control messages
 	comm::service const service_;
 	// in memory representation of each file
 	std::unordered_map<std::string, file_info> files_;
