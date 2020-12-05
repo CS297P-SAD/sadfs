@@ -4,6 +4,7 @@
 // sadfs-specific includes
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/messages.hpp>
+#include <sadfs/msgs/client_messages.hpp>
 
 // external includes
 #include <google/protobuf/util/delimited_message_util.h>
@@ -58,6 +59,11 @@ using serializer = msgs::serializer<proto::master::message_container>;
 // define a serializer to send messages to chunk servers
 namespace chunk {
 using serializer = msgs::serializer<proto::chunk::message_container>;
+}
+
+// define a serializer to send messages to clients
+namespace client {
+using serializer = msgs::serializer<proto::client::control_message>;
 }
 
 } // msgs namespace
