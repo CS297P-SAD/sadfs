@@ -1,30 +1,51 @@
 # src/CMakeLists.txt
 
-# compile protobuf files into a library
+add_compile_options( -ggdb )
+
+# FindgRPC.cmake module location where function grpc_generate_cpp() is defined
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../cmake")
 find_package (Protobuf REQUIRED)
+find_package(gRPC REQUIRED)
+
+# generate *.pb.cc and *.pb.h files
 protobuf_generate_cpp (PROTO_SOURCE_FILES PROTO_HEADER_FILES
 	proto/common.proto
 	proto/master.proto
 	proto/chunk.proto
-	proto/internal.proto)
+	proto/internal.proto
+    proto/services.proto)
+# generate *.grpc.pb.cc and *.grpc.pb.h files
+grpc_generate_cpp (RPC_SOURCE_FILES RPC_HEADER_FILES
+   	proto/services.proto)
+# compile *.pb.cc files into a library
 add_library (sadfs_protobuf STATIC ${PROTO_SOURCE_FILES})
-# directory containing all *.pb.h so they can be included
-set (PROTO_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/)
+# compile *.pb.grpc.cc files into a library
+add_library (sadfs_grpc STATIC ${RPC_SOURCE_FILES})
+# directory containing all *.pb.h and *.pb.grpc.h files so they can be included
+set (INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
 target_include_directories (sadfs_protobuf PUBLIC
 	${Protobuf_INCLUDE_DIRS}
-	${PROTO_INCLUDE_DIR})
+	${INCLUDE_DIR})
+target_include_directories (sadfs_grpc PUBLIC
+    ${gRPC_INCLUDE_DIR}
+	${INCLUDE_DIR})
 target_link_libraries (sadfs_protobuf
 	${Protobuf_LIBRARIES})
-# copy *.pb.h into PROTO_INCLUDE_DIR before the library is built
+target_link_libraries (sadfs_grpc
+    gRPC::grpc++)
+# copy *.pb.h and *.grpc.pb.h into INCLUDE_DIR before the library is built
 # so that they can actually be #include-d
-set (PROTO_HEADER_FILES_DIR ${PROTO_INCLUDE_DIR}sadfs/proto/)
-add_custom_target (sadfs_protobuf_includes
-	DEPENDS ${PROTO_HEADER_FILES}
+set (PROTOC_HEADER_FILES_DIR ${INCLUDE_DIR}/sadfs/proto)
+add_custom_target (sadfs_protoc_includes
+    DEPENDS ${PROTO_HEADER_FILES} ${RPC_HEADER_FILES}
 	COMMAND ${CMAKE_COMMAND} -E
-	make_directory ${PROTO_HEADER_FILES_DIR}
+    make_directory ${PROTOC_HEADER_FILES_DIR}
 	COMMAND ${CMAKE_COMMAND} -E
-	copy ${PROTO_HEADER_FILES} ${PROTO_HEADER_FILES_DIR})
-add_dependencies (sadfs_protobuf sadfs_protobuf_includes)
+    copy ${PROTO_HEADER_FILES} ${PROTOC_HEADER_FILES_DIR}
+	COMMAND ${CMAKE_COMMAND} -E
+    copy ${RPC_HEADER_FILES} ${PROTOC_HEADER_FILES_DIR})
+add_dependencies (sadfs_protobuf sadfs_protoc_includes)
+add_dependencies (sadfs_grpc sadfs_protoc_includes)
 
 # common components that almost all targets depend on
 set (COMMON_SOURCE_FILES
@@ -50,14 +71,11 @@ find_package (Boost
 
 # then, do the following for every main daemon target
 # 1. add a corresponding bootstrap target
-# 2. inform CMake of dependency on protobuf headers
-# 3. inform CMake of any external dependencies
+# 2. inform CMake of any external dependencies
 foreach (TARGET sadmd sadcd sadfsd)
 	set (BOOTSTRAP_TARGET ${TARGET}-bootstrap)
 	add_executable (${BOOTSTRAP_TARGET}
 		${TARGET}/${BOOTSTRAP_TARGET}.cpp bootstrap/util.cpp)
-	target_link_libraries (${BOOTSTRAP_TARGET}
-		PRIVATE sadfs_protobuf)
 	target_include_directories (${BOOTSTRAP_TARGET}
 		PRIVATE ${Boost_INCLUDE_DIRS})
 	target_link_libraries (${BOOTSTRAP_TARGET}
@@ -66,16 +84,19 @@ endforeach()
 
 # for sadmd and sadcd, do the following
 # 1. mark their bootstrap targets as dependencies
-# 2. mark sadfs_protobuf as a dependency
+# 2. mark sadfs_protobuf and sadfs_grpc as a dependency
 foreach(TARGET sadmd sadcd)
 	add_dependencies (${TARGET} ${TARGET}-bootstrap)
-	target_link_libraries (${TARGET} PRIVATE sadfs_protobuf)
+	target_link_libraries (${TARGET} PRIVATE sadfs_protobuf
+                                     PRIVATE sadfs_grpc)
 endforeach()
 
 # source files for sadfsd-bootstrap
 target_sources (sadfsd-bootstrap
     PRIVATE sadfsd/sadfilesys.cpp
     PRIVATE ${COMMON_SOURCE_FILES})
+target_link_libraries (sadfsd-bootstrap PRIVATE sadfs_protobuf
+                                        PRIVATE sadfs_grpc)
 
 # find fuse library. this sets the FUSE_INCLUDE_DIRS and FUSE_LIBRARIES
 # variables

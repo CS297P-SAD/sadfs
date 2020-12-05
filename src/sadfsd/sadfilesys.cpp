@@ -3,6 +3,7 @@
 // sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/sadfsd/sadfilesys.hpp>
+#include <sadfs/proto/services.grpc.pb.h>
 
 namespace sadfs {
 
