@@ -4,7 +4,6 @@
 #include <sadfs/msgs/client_messages.hpp>
 
 // standard includes
-#include <arpa/inet.h> // ntohs
 #include <iterator>    // std::back_inserter
 
 namespace sadfs { namespace msgs { namespace client {
@@ -30,8 +29,8 @@ chunk_location_response(bool ok, comm::service const& service,
                         chunkid chunk_id, std::string const& payload)
 {
 	protobuf_.set_ok(ok);
-	protobuf_.set_server_ip(::inet_ntoa({service.ip().value()}));
-	protobuf_.set_port(ntohs(service.port().value()));
+	protobuf_.set_server_ip(to_string(service.ip()));
+	protobuf_.set_port(to_int(service.port()));
 	chunk_id.serialize(std::back_inserter(*protobuf_.mutable_chunk_id()));
 	protobuf_.set_payload(payload);
 }

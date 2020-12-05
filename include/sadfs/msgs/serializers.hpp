@@ -4,7 +4,6 @@
 // sadfs-specific includes
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/messages.hpp>
-#include <sadfs/msgs/client_messages.hpp>
 
 // external includes
 #include <google/protobuf/util/delimited_message_util.h>
