@@ -6,6 +6,8 @@
 #include <sadfs/comm/socket.hpp>
 #include <sadfs/uuid.hpp>
 #include "util.hpp" // file_chunks object
+#include <sadfs/msgs/channel.hpp>
+#include <sadfs/msgs/messages.hpp>
 
 // extrenal includes
 #include <sqlite3.h>
@@ -66,6 +68,14 @@ private:
 	// functions for maintaining chunk servers 
 
 	void append_chunk_to_file(std::string const&, chunkid);
+
+	// process a chunk_location_request and respond to channel it came in on
+	void process(msgs::channel&, 
+				 msgs::master::chunk_location_request&);
+
+	chunk_server_info* choose_best_server(std::vector<chunk_server_info*>&);
+
+	void add_chunk_to_server(chunkid, serverid);
 
 	void reintroduce_chunks_to_network(util::file_chunks);
 

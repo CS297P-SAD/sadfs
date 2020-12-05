@@ -4,6 +4,10 @@
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/sadmd/sadmd.hpp>
 #include <sadfs/proto/internal.pb.h>
+#include <sadfs/msgs/channel.hpp>
+#include <sadfs/msgs/messages.hpp>
+#include <sadfs/msgs/deserializers.hpp>
+#include <sadfs/msgs/serializers.hpp>
 
 // standard includes
 #include <array>
@@ -102,15 +106,41 @@ sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 void sadmd::
 start()
 {
+
+auto server = serverid::generate();
+add_server_to_network(server, "0.0.0.10", 6543, 1000, 0);
+
+for (auto file : files_)
+{
+	auto ids = file.second.chunkids;
+	for (auto i = 0; i < ids.size(); i++)
+	{
+		add_chunk_to_server(ids[i], server);
+	}
+}
+
 	auto listener = comm::listener{service_};
 
 	while (true)
 	{
-		auto sock = listener.accept();
-		auto result = process_message(sock);
-
-		std::cout << result << "\n";
-		// perform some action based on result
+		try
+		{
+			auto ch = msgs::channel{listener.accept()};
+			//auto handle = ..(ch)
+			//while (handle.is_channel_open());
+			if(true){ // check that this is a chunk_location_request
+				auto clr = msgs::master::chunk_location_request{};
+				msgs::master::deserializer{}.deserialize(clr, ch);
+				process(ch, clr);
+				
+			}
+		}
+		catch (std::system_error ex)
+		{
+			std::cerr << "[error]: failed to connect to client\n"
+			          << ex.what() << "\n";
+			std::exit(1);
+		}
 	}
 }
 
@@ -287,6 +317,94 @@ reintroduce_chunks_to_network(util::file_chunks ids)
 	{
 		chunk_locations_.emplace(ids[i], std::vector<chunk_server_info*>{});
 	}
+}
+
+void sadmd::
+process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
+{
+	auto filename = clr.filename();
+	auto chunk_number = clr.chunk_number();
+	ch.flush();
+// TODO: remove before merge
+	std::cout << "request for " 
+				<< filename
+				<< " at offest "
+				<<  chunk_number
+				<< '\n';
+// remove before merge
+	if (!files_.count(filename))
+	{
+		std::cerr << "Error: request for chunk location in file "
+				  << filename
+				  << " which does not exist\n";
+		return;
+	}
+	auto chunks = files_[filename].chunkids;
+	
+	if (chunk_number >= chunks.size())
+	{
+		std::cerr << "Error: request for chunk number "
+				  << chunk_number
+				  << " of "
+				  << filename
+				  << " whose maximum chunk number is "
+				  << chunks.size() - 1;
+		return;
+	}
+	auto id = chunks[chunk_number];
+	auto locations = chunk_locations_[id];
+	auto server_ptr = choose_best_server(locations);
+	if (!server_ptr) return;
+// TODO: remove before merge
+	std::cout << "found at  " 
+				<< server_ptr->service.ip().value()
+				<< ' '
+				<<  server_ptr->service.port().value()
+				<< '\n';
+// remove before merge
+	
+/*
+	auto cr = msgs::chunk::chunk_location
+	{
+		msgs::io_type::read,
+		7
+	};
+*/
+	return;
+}
+
+chunk_server_info* sadmd::
+choose_best_server(std::vector<chunk_server_info*>& servers)
+{
+	if (!servers.size())
+	{
+		std::cerr << "Error: list of server locations empty\n";
+		return nullptr;
+	}
+	//TODO: make decision more complicated....
+	return servers[0];
+}
+
+void sadmd::
+add_chunk_to_server(chunkid cid, serverid sid)
+{
+	if (!is_active(sid)) return;	
+	auto server_ptr = &(chunk_server_metadata_.at(sid));
+
+	if (server_ptr->chunk_count >= server_ptr->max_chunks)
+	{
+		std::cerr << "Error: chunk server full\n";
+		return;
+	}
+
+	if (!chunk_locations_.count(cid))
+	{
+		std::cerr << "Error: invalid chunk id\n";
+		return;
+	}
+
+	chunk_locations_[cid].push_back(server_ptr);
+	server_ptr->chunk_count++;
 }
 
 } // sadfs namespace
