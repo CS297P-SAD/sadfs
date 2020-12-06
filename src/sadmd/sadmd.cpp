@@ -279,6 +279,7 @@ void sadmd::
 process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 {
 	auto ok = true;
+	auto payload = std::string{};
 	chunkid id;
 	chunk_server_info* server_ptr;
 
@@ -287,6 +288,11 @@ process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 		id = files_[clr.filename()].chunkids[clr.chunk_number()];
 		server_ptr = choose_best_server(chunk_locations_[id]);
 		ok = (server_ptr != nullptr);
+		if (clr.io_type() == sadfs::msgs::io_type::write)
+		{
+			//TODO: fill with chunk_locations_[id] excluding best server
+			payload = "non-empty payload";
+		}
 	}
 	
 	auto response = msgs::client::chunk_location_response
@@ -294,7 +300,7 @@ process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 		ok,
 		ok ? server_ptr->service : comm::service{"0.0.0.0", 0},
 		id, // junk if !ok
-		{}
+		payload
 	};
 	msgs::client::serializer{}.serialize(response, ch);
 	ch.flush();
