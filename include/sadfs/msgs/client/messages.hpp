@@ -7,7 +7,7 @@
 #include <sadfs/uuid.hpp>
 
 namespace sadfs { namespace msgs { namespace client {
-using control_message = proto::client::control_message;
+using proto::client::message_container;
 using chunkid = uuid;
 
 // enumerates types of control messages sent to clients
@@ -33,9 +33,14 @@ public:
 private:
 	proto::client::chunk_location_response protobuf_{};
 
-	friend bool embed(chunk_location_response const&, control_message&);
-	friend bool extract(chunk_location_response&, control_message const&);
+	friend bool embed(chunk_location_response const&, message_container&);
+	friend bool extract(chunk_location_response&, message_container const&);
 };
+
+// declarations
+bool embed(chunk_location_response const&, message_container&);
+bool extract(chunk_location_response&, message_container const&);
+
 
 // ==================================================================
 //                     inline function definitions

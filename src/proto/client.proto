@@ -13,7 +13,7 @@ message chunk_location_response {
 }
 
 // container for all control messages sent to clients
-message control_message {
+message message_container {
 	sadfs.proto.host_id sender = 1;
 	oneof               msg {
 		chunk_location_response chunk_location_res = 11;
