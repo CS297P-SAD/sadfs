@@ -1,0 +1,21 @@
+/* defines protocol buffers sent to clients */
+syntax = "proto3";
+package sadfs.proto.client;
+import "common.proto";
+
+// response for a chunk_location_request
+message chunk_location_response {
+	bool   ok        = 1;
+	string server_ip = 2;
+	int32  port      = 3;  // not uint32 for sadfs code compatibility
+	bytes  chunk_id  = 4;
+	bytes  payload   = 5;
+}
+
+// container for all control messages sent to clients
+message control_message {
+	sadfs.proto.host_id sender = 1;
+	oneof               msg {
+		chunk_location_response chunk_location_res = 11;
+	}
+}

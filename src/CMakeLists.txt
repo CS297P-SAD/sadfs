@@ -6,6 +6,7 @@ protobuf_generate_cpp (PROTO_SOURCE_FILES PROTO_HEADER_FILES
 	proto/common.proto
 	proto/master.proto
 	proto/chunk.proto
+	proto/client.proto
 	proto/internal.proto)
 add_library (sadfs_protobuf STATIC ${PROTO_SOURCE_FILES})
 # directory containing all *.pb.h so they can be included
@@ -29,7 +30,10 @@ add_dependencies (sadfs_protobuf sadfs_protobuf_includes)
 # common components that almost all targets depend on
 set (COMMON_SOURCE_FILES
 	comm/inet.cpp comm/socket.cpp
-	msgs/master.cpp msgs/chunk.cpp msgs/channel.cpp)
+	msgs/channel.cpp
+	msgs/master_messages.cpp
+	msgs/chunk_messages.cpp
+	msgs/client_messages.cpp)
 
 # add main targets
 add_executable (sadmd
