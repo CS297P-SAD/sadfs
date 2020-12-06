@@ -60,6 +60,12 @@ using deserializer = msgs::deserializer<proto::master::message_container>;
 namespace chunk {
 using deserializer = msgs::deserializer<proto::chunk::message_container>;
 }
+
+// define a deserializer to receive messages sent to clients
+namespace client {
+using deserializer = msgs::deserializer<proto::client::control_message>;
+}
+
 } // msgs namespace
 } // sadfs namespace
 

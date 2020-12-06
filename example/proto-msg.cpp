@@ -4,6 +4,7 @@
 #include <sadfs/msgs/messages.hpp>
 #include <sadfs/msgs/deserializers.hpp>
 #include <sadfs/msgs/serializers.hpp>
+#include <sadfs/uuid.hpp>
 
 #include <iostream>
 
@@ -17,6 +18,20 @@ print_chunk_location_req(msgs::master::chunk_location_request const& req)
 		<< "Chunk Location Request:"
 		<< "\nFilename:     " << req.filename()
 		<< "\nChunk number: " << req.chunk_number()
+		<< "\n" << delim << "\n";
+}
+
+void
+print_chunk_location_res(msgs::client::chunk_location_response const& res)
+{
+	auto service = res.service();
+	std::cout << delim
+		<< "Chunk location request:"
+		<< "\nOK:       " << res.ok()
+		<< "\nIP:       " << to_string(service.ip())
+		<< "\nPort:     " << to_int(service.port())
+		<< "\nChunk id: " << to_string(res.chunk_id())
+		<< "\nPayload   " << res.payload()
 		<< "\n" << delim << "\n";
 }
 
@@ -46,6 +61,15 @@ main(int argc, char** argv)
 		78234
 	};
 	print_chunk_req(cr);
+
+	auto clr = msgs::client::chunk_location_response
+	{
+		true,
+		{"10.0.0.13", 6666},
+		uuid::generate(),
+		"secret payload"
+	};
+	print_chunk_location_res(clr);
 
 	auto establish_conn = []() -> msgs::channel
 	{
@@ -78,6 +102,10 @@ main(int argc, char** argv)
 	msgs::chunk::serializer{}.serialize(cr, ch);
 	info("sent chunk request");
 
+	// send chunk_location_response
+	msgs::client::serializer{}.serialize(clr, ch);
+	info("sent chunk location response");
+
 	// to make sure that the serialized msgs are sent,
 	// flush the channel
 	ch.flush();
@@ -94,6 +122,12 @@ main(int argc, char** argv)
 	msgs::chunk::deserializer{}.deserialize(new_cr, ch);
 	info("received chunk request");
 	print_chunk_req(new_cr);
+
+	// receive chunk_location_response
+	auto new_clr = msgs::client::chunk_location_response{};
+	msgs::client::deserializer{}.deserialize(new_clr, ch);
+	info("received chunk location response");
+	print_chunk_location_res(new_clr);
 
 	return 0;
 }

@@ -60,6 +60,11 @@ namespace chunk {
 using serializer = msgs::serializer<proto::chunk::message_container>;
 }
 
+// define a serializer to send messages to clients
+namespace client {
+using serializer = msgs::serializer<proto::client::control_message>;
+}
+
 } // msgs namespace
 } // sadfs namespace
 
