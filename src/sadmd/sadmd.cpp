@@ -279,28 +279,23 @@ void sadmd::
 process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 {
 	auto ok = true;
-	auto payload = std::string{};
+	auto servers = std::pair<chunk_server_info*, std::string>{};
 	chunkid id;
-	chunk_server_info* server_ptr;
 
 	if ((ok = is_valid_chunk(clr.filename(), clr.chunk_number())))
 	{
 		id = files_[clr.filename()].chunkids[clr.chunk_number()];
-		server_ptr = choose_best_server(chunk_locations_[id]);
-		ok = (server_ptr != nullptr);
-		if (ok && clr.io_type() == sadfs::msgs::io_type::write)
-		{
-			//TODO: fill with chunk_locations_[id] excluding best server
-			payload = all_servers_except(chunk_locations_[id], server_ptr);
-		}
+		servers = choose_best_server(chunk_locations_[id], 
+									 clr.io_type() == sadfs::msgs::io_type::write);
+		ok = (servers.first != nullptr);
 	}
 	
 	auto response = msgs::client::chunk_location_response
 	{
 		ok,
-		ok ? server_ptr->service : comm::service{"0.0.0.0", 0},
+		ok ? servers.first->service : comm::service{"0.0.0.0", 0},
 		id, // junk if !ok
-		payload
+		servers.second
 	};
 	msgs::client::serializer{}.serialize(response, ch);
 	ch.flush();
@@ -331,16 +326,22 @@ is_valid_chunk(std::string const& filename, size_t chunk_number)
 	return true;
 }
 
-chunk_server_info* sadmd::
-choose_best_server(std::vector<chunk_server_info*>& servers)
+std::pair<chunk_server_info*, std::string> sadmd::
+choose_best_server(std::vector<chunk_server_info*>& servers, bool include_rest)
 {
 	if (!servers.size())
 	{
 		std::cerr << "Error: list of server locations empty\n";
-		return nullptr;
+		return {nullptr, {}};
 	}
 	//TODO: make decision more complicated....
-	return servers[0];
+	auto best = servers[0];
+	if (include_rest)
+	{
+		return {best, all_servers_except(servers, best)};
+	}
+	return {best, {}};
+
 }
 
 std::string sadmd::
