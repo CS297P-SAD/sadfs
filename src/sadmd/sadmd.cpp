@@ -2,12 +2,12 @@
 
 // sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
-#include <sadfs/sadmd/sadmd.hpp>
-#include <sadfs/proto/internal.pb.h>
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/messages.hpp>
 #include <sadfs/msgs/deserializers.hpp>
 #include <sadfs/msgs/serializers.hpp>
+#include <sadfs/sadmd/sadmd.hpp>
+#include <sadfs/proto/internal.pb.h>
 
 // standard includes
 #include <array>
@@ -106,19 +106,6 @@ sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 void sadmd::
 start()
 {
-// TODO: remove before merge
-auto server = serverid::generate();
-add_server_to_network(server, "0.0.0.10", 6543, 1000, 0);
-
-for (auto file : files_)
-{
-	auto ids = file.second.chunkids;
-	for (auto i = 0; i < ids.size(); i++)
-	{
-		add_chunk_to_server(ids[i], server);
-	}
-}
-// remove before merge
 	auto listener = comm::listener{service_};
 
 	while (true)
@@ -126,8 +113,6 @@ for (auto file : files_)
 		try
 		{
 			auto ch = msgs::channel{listener.accept()};
-			//auto handle = ..(ch)
-			//while (handle.is_channel_open());
 			if(true){ // check that this is a chunk_location_request
 				auto clr = msgs::master::chunk_location_request{};
 				msgs::master::deserializer{}.deserialize(clr, ch);
@@ -331,21 +316,16 @@ process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 		id = files_[clr.filename()].chunkids[clr.chunk_number()];
 		server_ptr = choose_best_server(chunk_locations_[id]);
 		ok = (server_ptr != nullptr);
-		std::cout << to_string(id) 
-				  << " at "
-				  << to_string(server_ptr->service.ip())
-				  << ':'
-				  << to_int(server_ptr->service.port())
-				  << '\n';
 	}
 	
-	
-	auto cr = msgs::chunk::chunk_request
+	auto response = msgs::client::chunk_location_response
 	{
-		msgs::io_type::read,
-		static_cast<size_t>(ok ? 12345 : 0)
+		ok,
+		ok ? server_ptr->service : comm::service{"0.0.0.0", 0},
+		id, // junk if !ok
+		{}
 	};
-	msgs::chunk::serializer{}.serialize(cr, ch);
+	msgs::client::serializer{}.serialize(response, ch);
 	ch.flush();
 	ch.close();
 	return;

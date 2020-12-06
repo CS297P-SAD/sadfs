@@ -1,4 +1,24 @@
-/* example code for testing sending of protobuf message */
+/* example code for testing sending chunk_location_request
+
+
+Note: to see non-error cases, copy this code block to the top of sadmd::start()
+
+
+auto server = serverid::generate();
+add_server_to_network(server, "0.0.0.10", 6543, 1000, 0);
+
+for (auto file : files_)
+{
+	auto ids = file.second.chunkids;
+	for (auto i = 0; i < ids.size(); i++)
+	{
+		add_chunk_to_server(ids[i], server);
+	}
+}
+append_chunk_to_file("/mnt/a/file.dat", chunkid::generate());
+
+*/
+
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/messages.hpp>
@@ -21,11 +41,16 @@ print_chunk_location_req(msgs::master::chunk_location_request const& req)
 }
 
 void
-print_chunk_req(msgs::chunk::chunk_request const& req)
+print_chunk_location_res(msgs::client::chunk_location_response const& res)
 {
+	auto service = res.service();
 	std::cout << delim
-		<< "Chunk Request:"
-		<< "\nChunk ID:  " << req.chunk_id()
+		<< "Chunk location res:"
+		<< "\nOK:       " << res.ok()
+		<< "\nIP:       " << to_string(service.ip())
+		<< "\nPort:     " << to_int(service.port())
+		<< "\nChunk id: " << to_string(res.chunk_id())
+		<< "\nPayload   " << res.payload()
 		<< "\n" << delim << "\n";
 }
 
@@ -49,6 +74,7 @@ auto info = [](auto const& msg)
 	std::cout << "[INFO]: " << msg << "\n";
 };
 
+// some version of this can be put in the client
 void 
 request_chunk(std::string filename, size_t offset)
 {
@@ -67,9 +93,10 @@ request_chunk(std::string filename, size_t offset)
 	info("sent chunk location request");
 	ch.flush();
 
-	auto response = msgs::chunk::chunk_request{};
-	msgs::chunk::deserializer{}.deserialize(response, ch);
-	info("received response: " + std::to_string(response.chunk_id()));
+	auto response = msgs::client::chunk_location_response{};
+	msgs::client::deserializer{}.deserialize(response, ch);
+	info("received chunk location response");
+	print_chunk_location_res(response);
 
 	std::cout << "\n";
 }

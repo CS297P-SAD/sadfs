@@ -4,10 +4,10 @@
 // sadfs specific includes
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/comm/socket.hpp>
-#include <sadfs/uuid.hpp>
-#include "util.hpp" // file_chunks object
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/messages.hpp>
+#include <sadfs/uuid.hpp>
+#include "util.hpp" // file_chunks object
 
 // extrenal includes
 #include <sqlite3.h>
