@@ -3,11 +3,11 @@
 // sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/msgs/channel.hpp>
-#include <sadfs/msgs/messages.hpp>
 #include <sadfs/msgs/deserializers.hpp>
+#include <sadfs/msgs/messages.hpp>
 #include <sadfs/msgs/serializers.hpp>
-#include <sadfs/sadmd/sadmd.hpp>
 #include <sadfs/proto/internal.pb.h>
+#include <sadfs/sadmd/sadmd.hpp>
 
 // standard includes
 #include <array>
