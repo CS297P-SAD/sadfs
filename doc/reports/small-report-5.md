@@ -8,7 +8,7 @@
  
 2. What worked and what didn't work during the week. For items or tasks that didn't work, why did they not work?
 	
-  Our turnover time between creating and merging a pull-request has been slow throughout the project since the changes requested and changes being made can involve a lot of back and forth when done asynchronously. Starting on Friday we decided to hold daily meetings (in addition to scrum meetings) to go over all outstanding pull requests together to speed this up. This has already noiceably increased the volume. 
+  Our turnover time between creating and merging a pull-request has been slow throughout the project since the changes requested and changes being made can involve a lot of back and forth when done asynchronously. Starting on Friday we decided to hold daily meetings (in addition to scrum meetings) to go over all outstanding pull requests together to speed this up. This has already noticeably increased the volume. 
  
 3. What do we plan to work on next week? This chapter #3 can be affected by chapters #1 and #2 above.
 
