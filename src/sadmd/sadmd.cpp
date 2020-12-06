@@ -43,35 +43,6 @@ open_db()
 	return db;
 }
 
-std::string
-process_message(comm::socket const& sock)
-{
-	auto buf = std::array<char, 512>{};
-	auto len = 0;
-	auto result = std::string{};
-	while ((len = ::read(sock.descriptor(), buf.data(), buf.size())))
-	{
-		if (len == -1)
-		{
-			std::cerr << "read error\n";
-			std::cerr << std::strerror(errno) << std::endl;
-			std::exit(1);
-		}
-		if (::write(sock.descriptor(), buf.data(), len) == -1)
-		{
-			std::cerr << "write error\n";
-			std::exit(1);
-		}
-		for (auto i = 0; i < len; i++)
-		{
-			result += buf[i];
-		}
-		buf.fill({});
-	}
-
-	return result;
-}
-
 } // unnamed namespace
 
 namespace time{
