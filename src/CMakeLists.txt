@@ -7,45 +7,53 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../cmake")
 find_package (Protobuf REQUIRED)
 find_package(gRPC REQUIRED)
 
+# directory containing all *.pb.h and *.pb.grpc.h files so they can be included
+set (BUILD_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
+
 # generate *.pb.cc and *.pb.h files
 protobuf_generate_cpp (PROTO_SOURCE_FILES PROTO_HEADER_FILES
 	proto/common.proto
 	proto/master.proto
 	proto/chunk.proto
-	proto/internal.proto
-    proto/services.proto)
-# generate *.grpc.pb.cc and *.grpc.pb.h files
-grpc_generate_cpp (RPC_SOURCE_FILES RPC_HEADER_FILES
-   	proto/services.proto)
+	proto/internal.proto)
 # compile *.pb.cc files into a library
 add_library (sadfs_protobuf STATIC ${PROTO_SOURCE_FILES})
-# compile *.pb.grpc.cc files into a library
-add_library (sadfs_grpc STATIC ${RPC_SOURCE_FILES})
-# directory containing all *.pb.h and *.pb.grpc.h files so they can be included
-set (INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
 target_include_directories (sadfs_protobuf PUBLIC
 	${Protobuf_INCLUDE_DIRS}
-	${INCLUDE_DIR})
-target_include_directories (sadfs_grpc PUBLIC
-    ${gRPC_INCLUDE_DIR}
-	${INCLUDE_DIR})
+	${BUILD_INCLUDE_DIR})
 target_link_libraries (sadfs_protobuf
 	${Protobuf_LIBRARIES})
+# copy *.pb.h into BUILD_INCLUDE_DIR before the library is built so that they
+# can actually be #include-d
+set (PROTO_HEADER_FILES_DIR ${BUILD_INCLUDE_DIR}/sadfs/proto)
+add_custom_target (sadfs_proto_includes
+    DEPENDS ${PROTO_HEADER_FILES}
+	COMMAND ${CMAKE_COMMAND} -E
+    make_directory ${PROTO_HEADER_FILES_DIR}
+	COMMAND ${CMAKE_COMMAND} -E
+    copy ${PROTO_HEADER_FILES} ${PROTO_HEADER_FILES_DIR})
+add_dependencies (sadfs_protobuf sadfs_proto_includes)
+
+# generate *.grpc.pb.cc and *.grpc.pb.h files
+grpc_generate_cpp (GRPC_SOURCE_FILES GRPC_HEADER_FILES
+   	grpc/services.proto)
+# compile *.pb.grpc.cc files into a library
+add_library (sadfs_grpc STATIC ${GRPC_SOURCE_FILES})
+target_include_directories (sadfs_grpc PUBLIC
+    ${gRPC_INCLUDE_DIR}
+	${BUILD_INCLUDE_DIR})
 target_link_libraries (sadfs_grpc
     gRPC::grpc++)
-# copy *.pb.h and *.grpc.pb.h into INCLUDE_DIR before the library is built
-# so that they can actually be #include-d
-set (PROTOC_HEADER_FILES_DIR ${INCLUDE_DIR}/sadfs/proto)
-add_custom_target (sadfs_protoc_includes
-    DEPENDS ${PROTO_HEADER_FILES} ${RPC_HEADER_FILES}
+# copy *.pb.h into BUILD_INCLUDE_DIR before the library is built so that they
+# can actually be #include-d
+set (GRPC_HEADER_FILES_DIR ${BUILD_INCLUDE_DIR}/sadfs/grpc)
+add_custom_target (sadfs_grpc_includes
+    DEPENDS ${GRPC_HEADER_FILES}
 	COMMAND ${CMAKE_COMMAND} -E
-    make_directory ${PROTOC_HEADER_FILES_DIR}
+    make_directory ${GRPC_HEADER_FILES_DIR}
 	COMMAND ${CMAKE_COMMAND} -E
-    copy ${PROTO_HEADER_FILES} ${PROTOC_HEADER_FILES_DIR}
-	COMMAND ${CMAKE_COMMAND} -E
-    copy ${RPC_HEADER_FILES} ${PROTOC_HEADER_FILES_DIR})
-add_dependencies (sadfs_protobuf sadfs_protoc_includes)
-add_dependencies (sadfs_grpc sadfs_protoc_includes)
+    copy ${GRPC_HEADER_FILES} ${GRPC_HEADER_FILES_DIR})
+add_dependencies (sadfs_grpc sadfs_grpc_includes)
 
 # common components that almost all targets depend on
 set (COMMON_SOURCE_FILES
