@@ -106,7 +106,7 @@ sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 void sadmd::
 start()
 {
-
+// TODO: remove before merge
 auto server = serverid::generate();
 add_server_to_network(server, "0.0.0.10", 6543, 1000, 0);
 
@@ -118,7 +118,7 @@ for (auto file : files_)
 		add_chunk_to_server(ids[i], server);
 	}
 }
-
+// remove before merge
 	auto listener = comm::listener{service_};
 
 	while (true)
@@ -322,55 +322,56 @@ reintroduce_chunks_to_network(util::file_chunks ids)
 void sadmd::
 process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 {
-	auto filename = clr.filename();
-	auto chunk_number = clr.chunk_number();
+	auto ok = true;
+	chunkid id;
+	chunk_server_info* server_ptr;
+
+	if ((ok = is_valid_chunk(clr.filename(), clr.chunk_number())))
+	{
+		id = files_[clr.filename()].chunkids[clr.chunk_number()];
+		server_ptr = choose_best_server(chunk_locations_[id]);
+		ok = (server_ptr != nullptr);
+		std::cout << to_string(id) 
+				  << " at "
+				  << to_string(server_ptr->service.ip())
+				  << ':'
+				  << to_int(server_ptr->service.port())
+				  << '\n';
+	}
+	
+	
+	auto cr = msgs::chunk::chunk_request
+	{
+		msgs::io_type::read,
+		static_cast<size_t>(ok ? 12345 : 0)
+	};
+	msgs::chunk::serializer{}.serialize(cr, ch);
 	ch.flush();
-// TODO: remove before merge
-	std::cout << "request for " 
-				<< filename
-				<< " at offest "
-				<<  chunk_number
-				<< '\n';
-// remove before merge
+	ch.close();
+	return;
+}
+
+bool sadmd::
+is_valid_chunk(std::string const& filename, size_t chunk_number)
+{
 	if (!files_.count(filename))
 	{
-		std::cerr << "Error: request for chunk location in file "
+		std::cerr << "Error: request for chunk location in nonexistant file "
 				  << filename
-				  << " which does not exist\n";
-		return;
+				  << '\n';
+		return false;
 	}
-	auto chunks = files_[filename].chunkids;
-	
-	if (chunk_number >= chunks.size())
+
+	if (chunk_number >= files_[filename].chunkids.size())
 	{
-		std::cerr << "Error: request for chunk number "
+		std::cerr << "Error: request for too large chunk number: chunk "
 				  << chunk_number
 				  << " of "
 				  << filename
-				  << " whose maximum chunk number is "
-				  << chunks.size() - 1;
-		return;
+				  << '\n';
+		return false;
 	}
-	auto id = chunks[chunk_number];
-	auto locations = chunk_locations_[id];
-	auto server_ptr = choose_best_server(locations);
-	if (!server_ptr) return;
-// TODO: remove before merge
-	std::cout << "found at  " 
-				<< server_ptr->service.ip().value()
-				<< ' '
-				<<  server_ptr->service.port().value()
-				<< '\n';
-// remove before merge
-	
-/*
-	auto cr = msgs::chunk::chunk_location
-	{
-		msgs::io_type::read,
-		7
-	};
-*/
-	return;
+	return true;
 }
 
 chunk_server_info* sadmd::
