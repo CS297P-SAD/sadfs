@@ -3,19 +3,26 @@
 
 Note: to see non-error cases, copy this code block to the top of sadmd::start()
 
-
-auto server = serverid::generate();
-add_server_to_network(server, "0.0.0.10", 6543, 1000, 0);
+create_file("/mnt/a/file.dat");
+append_chunk_to_file("/mnt/a/file.dat", chunkid::generate());
+append_chunk_to_file("/mnt/a/file.dat", chunkid::generate());
+auto server1 = serverid::generate();
+add_server_to_network(server1, "0.0.0.10", 6543, 1000, 0);
+auto server2 = serverid::generate();
+add_server_to_network(server2, "0.0.0.20", 9876, 1000, 0);
+auto server3 = serverid::generate();
+add_server_to_network(server3, "0.0.0.30", 9999, 1000, 0);
 
 for (auto file : files_)
 {
 	auto ids = file.second.chunkids;
 	for (auto i = 0; i < ids.size(); i++)
 	{
-		add_chunk_to_server(ids[i], server);
+		add_chunk_to_server(ids[i], server1);
+		add_chunk_to_server(ids[i], server2);
+		add_chunk_to_server(ids[i], server3);
 	}
 }
-append_chunk_to_file("/mnt/a/file.dat", chunkid::generate());
 
 */
 
@@ -76,11 +83,12 @@ auto info = [](auto const& msg)
 
 // some version of this can be put in the client
 void 
-request_chunk(std::string filename, size_t offset)
+request_chunk(std::string filename, size_t offset, char rw)
 {
+	auto type = (rw == 'r') ? msgs::io_type::read : msgs::io_type::write;
 	auto fr = msgs::master::chunk_location_request
 	{
-		msgs::io_type::read,
+		type,
 		filename,
 		offset
 	};
@@ -105,10 +113,10 @@ int
 main(int argc, char** argv)
 {
 
-	request_chunk("/mnt/a/file.dat", 0);
-	request_chunk("/mnt/a/file.dat", 1);
-	request_chunk("/mnt/a/file.dat", 2);
-	request_chunk("/mnt/a/file.da", 0);
+	request_chunk("/mnt/a/file.dat", 0, 'r');
+	request_chunk("/mnt/a/file.dat", 1, 'w');
+	request_chunk("/mnt/a/file.dat", 2, 'r');
+	request_chunk("/mnt/a/file.da", 0, 'r');
 
 	return 0;
 }

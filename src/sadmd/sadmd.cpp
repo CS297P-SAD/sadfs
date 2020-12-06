@@ -288,10 +288,10 @@ process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 		id = files_[clr.filename()].chunkids[clr.chunk_number()];
 		server_ptr = choose_best_server(chunk_locations_[id]);
 		ok = (server_ptr != nullptr);
-		if (clr.io_type() == sadfs::msgs::io_type::write)
+		if (ok && clr.io_type() == sadfs::msgs::io_type::write)
 		{
 			//TODO: fill with chunk_locations_[id] excluding best server
-			payload = "non-empty payload";
+			payload = all_servers_except(chunk_locations_[id], server_ptr);
 		}
 	}
 	
@@ -341,6 +341,24 @@ choose_best_server(std::vector<chunk_server_info*>& servers)
 	}
 	//TODO: make decision more complicated....
 	return servers[0];
+}
+
+std::string sadmd::
+all_servers_except(std::vector<chunk_server_info*>& servers, 
+				   chunk_server_info* exception)
+{
+	auto other_servers = std::string{};
+	for (auto server_ptr : servers)
+	{
+		if (server_ptr != exception)
+		{
+			other_servers += to_string(server_ptr->service.ip()) 
+						  + ':'
+						  + std::to_string(to_int(server_ptr->service.port()))
+						  + ';';
+		}
+	}
+	return other_servers;
 }
 
 void sadmd::

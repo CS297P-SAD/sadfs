@@ -75,6 +75,9 @@ private:
 
 	chunk_server_info* choose_best_server(std::vector<chunk_server_info*>&);
 
+	std::string all_servers_except(std::vector<chunk_server_info*>&, 
+								   chunk_server_info*);
+
 	bool is_valid_chunk(std::string const&, size_t);
 
 	void add_chunk_to_server(chunkid, serverid);
