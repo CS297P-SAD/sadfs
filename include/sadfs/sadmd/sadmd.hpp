@@ -73,7 +73,10 @@ private:
 	void process(msgs::channel&, 
 				 msgs::master::chunk_location_request&);
 
-	std::pair<chunk_server_info*, std::string> choose_best_server(std::vector<chunk_server_info*>&, bool);
+	// returns a pointer to the best server (i.e. first to contact) 
+	// and a string representation of all other servers in the vector
+	std::pair<chunk_server_info*, std::string> choose_best_server(
+		std::vector<chunk_server_info*>&, bool);
 
 	std::string all_servers_except(std::vector<chunk_server_info*>&, 
 								   chunk_server_info*);

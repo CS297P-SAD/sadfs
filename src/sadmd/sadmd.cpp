@@ -346,12 +346,12 @@ choose_best_server(std::vector<chunk_server_info*>& servers, bool include_rest)
 
 std::string sadmd::
 all_servers_except(std::vector<chunk_server_info*>& servers, 
-				   chunk_server_info* exception)
+				   chunk_server_info* excluded_server)
 {
 	auto other_servers = std::string{};
 	for (auto server_ptr : servers)
 	{
-		if (server_ptr != exception)
+		if (server_ptr != excluded_server)
 		{
 			other_servers += to_string(server_ptr->service.ip()) 
 						  + ':'
