@@ -94,26 +94,8 @@ sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 void sadmd::
 start()
 {
-	create_file("/mnt/a/file.dat");
-append_chunk_to_file("/mnt/a/file.dat", chunkid::generate());
-append_chunk_to_file("/mnt/a/file.dat", chunkid::generate());
-auto server1 = serverid::generate();
-add_server_to_network(server1, "0.0.0.10", 6543, 1000, 0);
-auto server2 = serverid::generate();
-add_server_to_network(server2, "0.0.0.20", 9876, 1000, 0);
-auto server3 = serverid::generate();
-add_server_to_network(server3, "0.0.0.30", 9999, 1000, 0);
-
 for (auto file : files_)
 {
-	auto ids = file.second.chunkids;
-	for (auto i = 0; i < ids.size(); i++)
-	{
-		add_chunk_to_server(ids[i], server1);
-		add_chunk_to_server(ids[i], server2);
-		add_chunk_to_server(ids[i], server3);
-	}
-}
 	auto listener = comm::listener{service_};
 
 	while (true)
