@@ -1,15 +1,15 @@
 /* defines control messages intended for clients */
 //sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
-#include <sadfs/msgs/client_messages.hpp>
+#include <sadfs/msgs/client/messages.hpp>
 
 // standard includes
 #include <iterator>    // std::back_inserter
 
 namespace sadfs { namespace msgs { namespace client {
 
-using proto::client::control_message;
-using MsgCase = control_message::MsgCase;
+using proto::client::message_container;
+using MsgCase = message_container::MsgCase;
 using msg_type_map = std::unordered_map<MsgCase, msg_type>;
 namespace {
 
@@ -35,10 +35,10 @@ chunk_location_response(bool ok, comm::service const& service,
 	protobuf_.set_payload(payload);
 }
 
-// embeds a raw message into control message that is
+// embeds a control message into a container that is
 // (typically) sent over the wire
 bool
-embed(chunk_location_response const& res, control_message& cm)
+embed(chunk_location_response const& res, message_container& cm)
 {
 	// should this be in a try-catch block?
 	// msg.mutable_chunk_location_res() can throw if heap allocation fails
@@ -46,10 +46,10 @@ embed(chunk_location_response const& res, control_message& cm)
 	return true;
 }
 
-// extracts a raw message from the control message that is
+// extracts a control message from a container that is
 // (typically) received over the wire
 bool
-extract(chunk_location_response& res, control_message const& cm)
+extract(chunk_location_response& res, message_container const& cm)
 {
 	if (msg_type_lookup.at(cm.msg_case()) != chunk_location_response::type)
 	{
@@ -57,7 +57,7 @@ extract(chunk_location_response& res, control_message const& cm)
 		return false;
 	}
 
-	// read chunk_location_response from control_message
+	// read chunk_location_response from message_container
 	res.protobuf_ = cm.chunk_location_res();
 	return true;
 }

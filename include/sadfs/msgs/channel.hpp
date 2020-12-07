@@ -5,7 +5,8 @@
 #include <sadfs/comm/socket.hpp>
 
 // standard includes
-#include <memory>
+#include <memory>  // std::unique_ptr
+#include <utility> // std::pair
 
 // external includes
 #include <google/protobuf/io/zero_copy_stream_impl.h>
@@ -27,19 +28,15 @@ public:
 	// accepts a deserializer, and provides it
 	// access to the underlying input stream
 	template <typename Deserializer>
-	bool accept_deserializer(Deserializer&) const noexcept;
+	std::pair<bool, bool> accept_deserializer(Deserializer&) const noexcept;
 
 	// flushes the output buffer
-	void flush() const noexcept;
+	void flush()   const noexcept;
 
-	// close channel, and give up ownership of the socket
+	// close channel
 	// output buffers are flushed, and closed
 	// unread data in input buffers will be lost
-	comm::socket&& close()              noexcept;
-	// open a channel on another socket
-	// (or re-open on a previously closed socket)
-	void           open(comm::socket&&) noexcept;
-
+	void close()         noexcept;
 	bool is_open() const noexcept;
 
 private:
@@ -57,10 +54,39 @@ accept_serializer(Serializer const& serializer) const noexcept
 }
 
 template <typename Deserializer>
-bool channel::
+std::pair<bool, bool> channel::
 accept_deserializer(Deserializer& deserializer) const noexcept
 {
 	return deserializer.deserialize(istream_.get());
+}
+
+// inline function definitions
+inline channel::
+channel(comm::socket&& sock) : sock_{std::move(sock)},
+	istream_{std::make_unique<gpio::FileInputStream>(sock_.descriptor())},
+	ostream_{std::make_unique<gpio::FileOutputStream>(sock_.descriptor())}
+{
+	// do nothing else
+}
+
+inline void channel::
+flush() const noexcept
+{
+	ostream_->Flush();
+}
+
+inline bool channel::
+is_open() const noexcept
+{
+	return istream_ && ostream_;
+}
+
+inline void channel::
+close() noexcept
+{
+	istream_.reset(nullptr);
+	ostream_.reset(nullptr);
+	auto tmp = std::move(sock_);
 }
 
 } // msgs namespace
