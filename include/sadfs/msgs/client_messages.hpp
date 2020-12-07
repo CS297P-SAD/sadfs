@@ -21,13 +21,14 @@ class chunk_location_response
 {
 public:
 	chunk_location_response() = default;
-	chunk_location_response(bool ok, comm::service const& service,
-	                        chunkid chunk_id, std::string const& payload);
+	chunk_location_response(bool ok, chunkid chunk_id);
+	void add_service(comm::service const&);
+	void set_ok(bool);
 
 	bool               ok()       const noexcept;
-	comm::service      service()  const;
+	comm::service      service(int)  const;
 	chunkid            chunk_id() const noexcept;
-	std::string const& payload()  const;
+	int                num_locations()  const;
 
 	inline static msg_type type{msg_type::chunk_location_response};
 private:
@@ -47,15 +48,9 @@ ok() const noexcept
 }
 
 inline comm::service chunk_location_response::
-service() const
+service(int i) const
 {
-	return {protobuf_.server_ip().c_str(), protobuf_.port()};
-}
-
-inline std::string const& chunk_location_response::
-payload() const
-{
-	return protobuf_.payload();
+	return {protobuf_.server_ips(i).c_str(), protobuf_.ports(i)};
 }
 
 inline chunkid chunk_location_response::
@@ -64,6 +59,12 @@ chunk_id() const noexcept
 	auto id = chunkid{};
 	id.deserialize(protobuf_.chunk_id().data());
 	return id;
+}
+
+inline int chunk_location_response::
+num_locations() const
+{
+	return protobuf_.server_ips_size();
 }
 
 } // client namespace

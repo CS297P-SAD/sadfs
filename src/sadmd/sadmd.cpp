@@ -278,28 +278,52 @@ reintroduce_chunks_to_network(util::file_chunks ids)
 void sadmd::
 process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 {
-	auto ok = true;
-	auto servers = std::pair<chunk_server_info*, std::string>{};
-	chunkid id;
+	auto ok = false;
+	auto id = chunkid{};
+	auto servers = std::vector<chunk_server_info*>{};
+	auto const& filename = clr.filename();
 
-	if ((ok = is_valid_chunk(clr.filename(), clr.chunk_number())))
+	auto validate = [&filename](auto it, auto chunk_number)
 	{
-		id = files_[clr.filename()].chunkids[clr.chunk_number()];
-		servers = choose_best_server(chunk_locations_[id], 
-									 clr.io_type() == sadfs::msgs::io_type::write);
-		ok = (servers.first != nullptr);
+		 // safe since we don't validate if iterator is invalid
+		if (chunk_number >= it->second.chunkids.size())
+		{
+			std::cerr << "Error: request for too large chunk number: chunk "
+					<< chunk_number
+					<< " of "
+					<< filename
+					<< '\n';
+			return false;
+		}
+		return true;
+	};
+
+	auto it = files_.find(filename);
+	if (it == files_.end())
+	{
+		std::cerr << "Error: request for chunk location in nonexistant file "
+				  << filename
+				  << '\n';
+	}
+	else if ((ok = validate(it, clr.chunk_number())))
+	{
+		id = it->second.chunkids[clr.chunk_number()];
 	}
 	
 	auto response = msgs::client::chunk_location_response
 	{
 		ok,
-		ok ? servers.first->service : comm::service{"0.0.0.0", 0},
-		id, // junk if !ok
-		servers.second
+		id,
 	};
+
+	if (ok)
+	{
+		add_valid_servers(response, chunk_locations_[id], 
+						  clr.io_type() == sadfs::msgs::io_type::read);
+	}
+
 	msgs::client::serializer{}.serialize(response, ch);
 	ch.flush();
-	ch.close();
 	return;
 }
 
@@ -326,40 +350,25 @@ is_valid_chunk(std::string const& filename, size_t chunk_number)
 	return true;
 }
 
-std::pair<chunk_server_info*, std::string> sadmd::
-choose_best_server(std::vector<chunk_server_info*>& servers, bool include_rest)
+void sadmd::
+add_valid_servers(msgs::client::chunk_location_response& response, 
+				  std::vector<chunk_server_info*>& servers, bool latest_only)
 {
-	if (!servers.size())
-	{
-		std::cerr << "Error: list of server locations empty\n";
-		return {nullptr, {}};
-	}
 	//TODO: make decision more complicated....
-	auto best = servers[0];
-	if (include_rest)
+	//TODO: wrap this in if block, only include servers with latest version if latest_only == true
+	for (auto server : servers)
 	{
-		return {best, all_servers_except(servers, best)};
-	}
-	return {best, {}};
-
-}
-
-std::string sadmd::
-all_servers_except(std::vector<chunk_server_info*>& servers, 
-				   chunk_server_info* excluded_server)
-{
-	auto other_servers = std::string{};
-	for (auto server_ptr : servers)
-	{
-		if (server_ptr != excluded_server)
+		if (server->valid_until > time::now())
 		{
-			other_servers += to_string(server_ptr->service.ip()) 
-						  + ':'
-						  + std::to_string(to_int(server_ptr->service.port()))
-						  + ';';
+			response.add_service(server->service);
 		}
 	}
-	return other_servers;
+	if (response.num_locations() <= 0)
+	{
+		std::cerr << "Error: list of server locations empty\n";
+		response.set_ok(false);
+		return;
+	}
 }
 
 void sadmd::
@@ -367,21 +376,7 @@ add_chunk_to_server(chunkid cid, serverid sid)
 {
 	if (!is_active(sid)) return;	
 	auto server_ptr = &(chunk_server_metadata_.at(sid));
-
-	if (server_ptr->chunk_count >= server_ptr->max_chunks)
-	{
-		std::cerr << "Error: chunk server full\n";
-		return;
-	}
-
-	if (!chunk_locations_.count(cid))
-	{
-		std::cerr << "Error: invalid chunk id\n";
-		return;
-	}
-
 	chunk_locations_[cid].push_back(server_ptr);
-	server_ptr->chunk_count++;
 }
 
 } // sadfs namespace

@@ -24,14 +24,13 @@ print_chunk_location_req(msgs::master::chunk_location_request const& req)
 void
 print_chunk_location_res(msgs::client::chunk_location_response const& res)
 {
-	auto service = res.service();
+	auto service = res.service(0);
 	std::cout << delim
 		<< "Chunk location request:"
-		<< "\nOK:       " << res.ok()
-		<< "\nIP:       " << to_string(service.ip())
-		<< "\nPort:     " << to_int(service.port())
-		<< "\nChunk id: " << to_string(res.chunk_id())
-		<< "\nPayload   " << res.payload()
+		<< "\nOK:           " << res.ok()
+		<< "\nDefault IP:   " << to_string(service.ip())
+		<< "\nDefault Port: " << to_int(service.port())
+		<< "\nChunk id:     " << to_string(res.chunk_id())
 		<< "\n" << delim << "\n";
 }
 
@@ -65,10 +64,9 @@ main(int argc, char** argv)
 	auto clr = msgs::client::chunk_location_response
 	{
 		true,
-		{"10.0.0.13", 6666},
 		uuid::generate(),
-		"secret payload"
 	};
+	clr.add_service({"10.0.0.13", 6666});
 	print_chunk_location_res(clr);
 
 	auto establish_conn = []() -> msgs::channel

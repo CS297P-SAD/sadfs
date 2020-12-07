@@ -70,16 +70,10 @@ private:
 	void append_chunk_to_file(std::string const&, chunkid);
 
 	// process a chunk_location_request and respond to channel it came in on
-	void process(msgs::channel&, 
-				 msgs::master::chunk_location_request&);
+	void process(msgs::channel&, msgs::master::chunk_location_request&);
 
-	// returns a pointer to the best server (i.e. first to contact) 
-	// and a string representation of all other servers in the vector
-	std::pair<chunk_server_info*, std::string> choose_best_server(
-		std::vector<chunk_server_info*>&, bool);
-
-	std::string all_servers_except(std::vector<chunk_server_info*>&, 
-								   chunk_server_info*);
+	void add_valid_servers(msgs::client::chunk_location_response&,
+						   std::vector<chunk_server_info*>&, bool);
 
 	bool is_valid_chunk(std::string const&, size_t);
 
@@ -99,6 +93,8 @@ private:
 	// metadata for each chunk server
 	std::unordered_map<serverid, chunk_server_info> chunk_server_metadata_;
 	// map from chunkid to list of chunk servers
+	// TODO: make chunk_locations_.second include latest version number and a 
+	//       version number associated with each server
 	std::unordered_map<chunkid, std::vector<chunk_server_info*> > chunk_locations_;
 	// persistent/on disk copy of files_
 	sqlite3* const files_db_;

@@ -50,15 +50,20 @@ print_chunk_location_req(msgs::master::chunk_location_request const& req)
 void
 print_chunk_location_res(msgs::client::chunk_location_response const& res)
 {
-	auto service = res.service();
 	std::cout << delim
-		<< "Chunk location res:"
-		<< "\nOK:       " << res.ok()
-		<< "\nIP:       " << to_string(service.ip())
-		<< "\nPort:     " << to_int(service.port())
-		<< "\nChunk id: " << to_string(res.chunk_id())
-		<< "\nPayload   " << res.payload()
-		<< "\n" << delim << "\n";
+		<< "Chunk location request:"
+		<< "\nOK:           " << res.ok()
+		<< "\nChunk id:     " << to_string(res.chunk_id());
+	std::cout << "\n";
+	for (auto i = 0; i < res.num_locations(); i++)
+	{
+		auto service = res.service(i);
+		std::cout
+		<< "\nService "
+		<< i  << ": " << to_string(service.ip())
+		<< ':' << to_int(service.port());
+	}
+	std::cout << "\n" << delim << "\n";
 }
 
 auto establish_conn = []() -> msgs::channel
