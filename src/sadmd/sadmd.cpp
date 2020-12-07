@@ -28,23 +28,6 @@ constexpr auto chunkid_str_col = 1;
 
 } // (local) constants namespace
 
-sqlite3*
-open_db()
-{
-	sqlite3* db;
-
-	// open the sadmd database
-	if (sqlite3_open("sadmd.db", &db) != 0)
-	{
-		std::cerr << "Error: Couldn't open database: ";
-		std::cerr << sqlite3_errmsg(db) << '\n';
-		std::exit(1);
-	}
-	return db;
-}
-
-} // unnamed namespace
-
 namespace time{
 
 using namespace std::literals;
@@ -65,6 +48,40 @@ now() noexcept
 }
 } // time namespace
 
+
+sqlite3*
+open_db()
+{
+	sqlite3* db;
+
+	// open the sadmd database
+	if (sqlite3_open("sadmd.db", &db) != 0)
+	{
+		std::cerr << "Error: Couldn't open database: ";
+		std::cerr << sqlite3_errmsg(db) << '\n';
+		std::exit(1);
+	}
+	return db;
+}
+
+std::vector<comm::service>
+valid_servers(std::vector<chunk_server_info*>& servers, bool latest_only)
+{
+	auto services = std::vector<comm::service>{};
+	services.reserve(servers.size());
+	//TODO: make decision more complicated....
+	//TODO: wrap this in if block, only include servers with latest version if latest_only == true
+	for (auto server : servers)
+	{
+		if (server->valid_until > time::now())
+		{
+			services.push_back(server->service);
+		}
+	}
+	return services;
+}
+} // unnamed namespace
+
 sadmd::
 sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 {
@@ -77,6 +94,26 @@ sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 void sadmd::
 start()
 {
+	create_file("/mnt/a/file.dat");
+append_chunk_to_file("/mnt/a/file.dat", chunkid::generate());
+append_chunk_to_file("/mnt/a/file.dat", chunkid::generate());
+auto server1 = serverid::generate();
+add_server_to_network(server1, "0.0.0.10", 6543, 1000, 0);
+auto server2 = serverid::generate();
+add_server_to_network(server2, "0.0.0.20", 9876, 1000, 0);
+auto server3 = serverid::generate();
+add_server_to_network(server3, "0.0.0.30", 9999, 1000, 0);
+
+for (auto file : files_)
+{
+	auto ids = file.second.chunkids;
+	for (auto i = 0; i < ids.size(); i++)
+	{
+		add_chunk_to_server(ids[i], server1);
+		add_chunk_to_server(ids[i], server2);
+		add_chunk_to_server(ids[i], server3);
+	}
+}
 	auto listener = comm::listener{service_};
 
 	while (true)
@@ -278,11 +315,11 @@ reintroduce_chunks_to_network(util::file_chunks ids)
 void sadmd::
 process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 {
-	auto ok = false;
 	auto id = chunkid{};
-	auto servers = std::vector<chunk_server_info*>{};
+	auto servers = std::vector<comm::service>{};
 	auto const& filename = clr.filename();
 
+	// lambda to check if a chunk number is valid for filename
 	auto validate = [&filename](auto it, auto chunk_number)
 	{
 		 // safe since we don't validate if iterator is invalid
@@ -298,6 +335,7 @@ process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 		return true;
 	};
 
+	// look up chunk id
 	auto it = files_.find(filename);
 	if (it == files_.end())
 	{
@@ -305,26 +343,28 @@ process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 				  << filename
 				  << '\n';
 	}
-	else if ((ok = validate(it, clr.chunk_number())))
+	else if (validate(it, clr.chunk_number()))
 	{
 		id = it->second.chunkids[clr.chunk_number()];
+		servers = valid_servers(chunk_locations_[id], 
+								clr.io_type() == sadfs::msgs::io_type::read); 
+		if (servers.size() <= 0)
+		{
+			std::cerr << "Error: list of server locations empty\n";
+		}
 	}
-	
+		
+	// create the response protobuf
 	auto response = msgs::client::chunk_location_response
 	{
-		ok,
+		servers.size() > 0,
+		servers,
 		id,
 	};
 
-	if (ok)
-	{
-		add_valid_servers(response, chunk_locations_[id], 
-						  clr.io_type() == sadfs::msgs::io_type::read);
-	}
-
+	// send protobuf back over channel
 	msgs::client::serializer{}.serialize(response, ch);
 	ch.flush();
-	return;
 }
 
 bool sadmd::
@@ -348,27 +388,6 @@ is_valid_chunk(std::string const& filename, size_t chunk_number)
 		return false;
 	}
 	return true;
-}
-
-void sadmd::
-add_valid_servers(msgs::client::chunk_location_response& response, 
-				  std::vector<chunk_server_info*>& servers, bool latest_only)
-{
-	//TODO: make decision more complicated....
-	//TODO: wrap this in if block, only include servers with latest version if latest_only == true
-	for (auto server : servers)
-	{
-		if (server->valid_until > time::now())
-		{
-			response.add_service(server->service);
-		}
-	}
-	if (response.num_locations() <= 0)
-	{
-		std::cerr << "Error: list of server locations empty\n";
-		response.set_ok(false);
-		return;
-	}
 }
 
 void sadmd::

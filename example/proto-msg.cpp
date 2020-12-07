@@ -52,6 +52,7 @@ print_chunk_req(msgs::chunk::chunk_request const& req)
 int
 main(int argc, char** argv)
 {
+	std::cout << std::boolalpha;
 	auto fr = msgs::master::chunk_location_request
 	{
 		msgs::io_type::read,
@@ -70,9 +71,9 @@ main(int argc, char** argv)
 	auto clr = msgs::client::chunk_location_response
 	{
 		true,
+		{{"10.0.0.13", 6666}},
 		uuid::generate(),
 	};
-	clr.add_service({"10.0.0.13", 6666});
 	print_chunk_location_res(clr);
 
 	auto establish_conn = []() -> msgs::channel

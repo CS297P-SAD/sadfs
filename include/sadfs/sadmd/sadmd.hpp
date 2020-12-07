@@ -72,9 +72,6 @@ private:
 	// process a chunk_location_request and respond to channel it came in on
 	void process(msgs::channel&, msgs::master::chunk_location_request&);
 
-	void add_valid_servers(msgs::client::chunk_location_response&,
-						   std::vector<chunk_server_info*>&, bool);
-
 	bool is_valid_chunk(std::string const&, size_t);
 
 	void add_chunk_to_server(chunkid, serverid);

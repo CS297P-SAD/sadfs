@@ -117,7 +117,7 @@ request_chunk(std::string filename, size_t offset, char rw)
 int
 main(int argc, char** argv)
 {
-
+	std::cout << std::boolalpha;
 	request_chunk("/mnt/a/file.dat", 0, 'r');
 	request_chunk("/mnt/a/file.dat", 1, 'w');
 	request_chunk("/mnt/a/file.dat", 2, 'r');

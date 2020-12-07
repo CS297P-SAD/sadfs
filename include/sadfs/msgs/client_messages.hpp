@@ -21,9 +21,8 @@ class chunk_location_response
 {
 public:
 	chunk_location_response() = default;
-	chunk_location_response(bool ok, chunkid chunk_id);
-	void add_service(comm::service const&);
-	void set_ok(bool);
+	chunk_location_response(bool ok, std::vector<comm::service> const& services, 
+							chunkid chunk_id);
 
 	bool               ok()       const noexcept;
 	comm::service      service(int)  const;
