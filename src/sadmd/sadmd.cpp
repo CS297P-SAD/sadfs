@@ -94,8 +94,6 @@ sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 void sadmd::
 start()
 {
-for (auto file : files_)
-{
 	auto listener = comm::listener{service_};
 
 	while (true)
