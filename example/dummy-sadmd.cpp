@@ -2,7 +2,6 @@
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/msgs/client/messages.hpp>
 #include <sadfs/msgs/client/serializer.hpp>
-#include <sadfs/msgs/master/deserializer.hpp>
 #include <sadfs/msgs/master/message_processor.hpp>
 #include <sadfs/uuid.hpp>
 

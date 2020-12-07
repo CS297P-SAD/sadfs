@@ -67,7 +67,6 @@ extract(chunk_location_request& req, message_container const& cm)
 	return true;
 }
 
-
 } // master namespace
 } // msgs namespace
 } // sadfs namespace

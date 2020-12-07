@@ -97,7 +97,7 @@ main(int argc, char** argv)
 	info("sent chunk location request again");
 
 	// to make sure that the serialized msgs are sent,
-	// flush the buffer
+	// flush the output buffer
 	ch.flush();
 
 	std::cout << "\n";

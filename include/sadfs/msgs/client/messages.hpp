@@ -41,7 +41,6 @@ private:
 bool embed(chunk_location_response const&, message_container&);
 bool extract(chunk_location_response&, message_container const&);
 
-
 // ==================================================================
 //                     inline function definitions
 // ==================================================================
