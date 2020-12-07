@@ -1,9 +1,10 @@
 /* example code for testing sending of protobuf message */
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/msgs/channel.hpp>
+#include <sadfs/msgs/client/deserializer.hpp>
 #include <sadfs/msgs/messages.hpp>
-#include <sadfs/msgs/deserializers.hpp>
-#include <sadfs/msgs/serializers.hpp>
+#include <sadfs/msgs/master/message_processor.hpp>
+#include <sadfs/msgs/master/serializer.hpp>
 #include <sadfs/uuid.hpp>
 
 #include <iostream>
@@ -61,6 +62,7 @@ main(int argc, char** argv)
 	};
 	print_chunk_location_req(fr);
 
+	
 	auto cr = msgs::chunk::chunk_request
 	{
 		msgs::io_type::read,
@@ -78,15 +80,14 @@ main(int argc, char** argv)
 
 	auto establish_conn = []() -> msgs::channel
 	{
-		using namespace comm;
-		auto&& echod = service{constants::ip_localhost, 6666};
+		auto&& service = comm::service{comm::constants::ip_localhost, 6666};
 		try
 		{
-			return msgs::channel{echod.connect()};
+			return msgs::channel{service.connect()};
 		}
 		catch (std::system_error ex)
 		{
-			std::cerr << "[error]: failed to connect to echo server\n"
+			std::cerr << "[error]: failed to connect to the server\n"
 			          << ex.what() << "\n";
 			std::exit(1);
 		}
@@ -97,42 +98,39 @@ main(int argc, char** argv)
 	};
 
 	auto ch = establish_conn();
-	info("connection established with the echo server");
+	info("connection established with the server");
 
 	// send chunk_location_request
 	msgs::master::serializer{}.serialize(fr, ch);
 	info("sent chunk location request");
 
-	// send chunk_request
-	msgs::chunk::serializer{}.serialize(cr, ch);
-	info("sent chunk request");
-
-	// send chunk_location_response
-	msgs::client::serializer{}.serialize(clr, ch);
-	info("sent chunk location response");
+	// send chunk_location_request a second time to test
+	// deserialization
+	msgs::master::serializer{}.serialize(fr, ch);
+	info("sent chunk location request again");
 
 	// to make sure that the serialized msgs are sent,
-	// flush the channel
+	// flush the output buffer
 	ch.flush();
 
 	std::cout << "\n";
-	// receive chunk_location_request
-	auto new_fr = msgs::master::chunk_location_request{};
-	msgs::master::deserializer{}.deserialize(new_fr, ch);
-	info("received chunk location request");
-	print_chunk_location_req(new_fr);
+	// should receive 2 chunk_location_response s
+	auto new_clr1 = msgs::client::chunk_location_response{};
+	msgs::client::deserializer{}.deserialize(new_clr1, ch);
+	info("received chunk location response");
+	print_chunk_location_res(new_clr1);
+
+	auto new_clr2 = msgs::client::chunk_location_response{};
+	msgs::client::deserializer{}.deserialize(new_clr2, ch);
+	info("received chunk location response");
+	print_chunk_location_res(new_clr2);
 
 	// receive chunk_request
 	auto new_cr = msgs::chunk::chunk_request{};
 	msgs::chunk::deserializer{}.deserialize(new_cr, ch);
 	info("received chunk request");
 	print_chunk_req(new_cr);
-
-	// receive chunk_location_response
-	auto new_clr = msgs::client::chunk_location_response{};
-	msgs::client::deserializer{}.deserialize(new_clr, ch);
-	info("received chunk location response");
-	print_chunk_location_res(new_clr);
+	
 
 	return 0;
 }

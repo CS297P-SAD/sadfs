@@ -30,10 +30,9 @@ add_dependencies (sadfs_protobuf sadfs_protobuf_includes)
 # common components that almost all targets depend on
 set (COMMON_SOURCE_FILES
 	comm/inet.cpp comm/socket.cpp
-	msgs/channel.cpp
-	msgs/master_messages.cpp
-	msgs/chunk_messages.cpp
-	msgs/client_messages.cpp)
+	msgs/master/messages.cpp
+	msgs/chunk/messages.cpp
+	msgs/client/messages.cpp)
 
 # add main targets
 add_executable (sadmd
@@ -112,4 +111,6 @@ target_sources (proto-msg PRIVATE ${COMMON_SOURCE_FILES})
 target_link_libraries (proto-msg PRIVATE sadfs_protobuf)
 target_sources (send-req PRIVATE ${COMMON_SOURCE_FILES})
 target_link_libraries (send-req PRIVATE sadfs_protobuf)
+target_sources (dummy-sadmd PRIVATE ${COMMON_SOURCE_FILES})
+target_link_libraries (dummy-sadmd PRIVATE sadfs_protobuf)
 target_include_directories (uuid PRIVATE ${Boost_INCLUDE_DIRS})

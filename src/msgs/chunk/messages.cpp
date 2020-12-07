@@ -1,6 +1,6 @@
 /* implementation of control messages intended for chunk servers */
 // sadfs-specific includes
-#include <sadfs/msgs/chunk_messages.hpp>
+#include <sadfs/msgs/chunk/messages.hpp>
 
 // standard includes
 #include <unordered_map>
@@ -37,7 +37,7 @@ io_type() const
 	return io_type_lookup.at(protobuf_.type());
 }
 
-// embeds a raw message into a control message that is
+// embeds a control message into a container that is
 // (typically) sent over the wire
 bool
 embed(chunk_request const& req, message_container& cm)
@@ -48,7 +48,7 @@ embed(chunk_request const& req, message_container& cm)
 	return true;
 }
 
-// extracts a raw message from the control message that is
+// extracts a control message from a container that is
 // (typically) received over the wire
 bool
 extract(chunk_request& req, message_container const& cm)
