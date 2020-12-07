@@ -347,29 +347,6 @@ process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 	ch.flush();
 }
 
-bool sadmd::
-is_valid_chunk(std::string const& filename, size_t chunk_number)
-{
-	if (!files_.count(filename))
-	{
-		std::cerr << "Error: request for chunk location in nonexistant file "
-				  << filename
-				  << '\n';
-		return false;
-	}
-
-	if (chunk_number >= files_[filename].chunkids.size())
-	{
-		std::cerr << "Error: request for too large chunk number: chunk "
-				  << chunk_number
-				  << " of "
-				  << filename
-				  << '\n';
-		return false;
-	}
-	return true;
-}
-
 void sadmd::
 add_chunk_to_server(chunkid cid, serverid sid)
 {

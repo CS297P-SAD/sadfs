@@ -72,8 +72,6 @@ private:
 	// process a chunk_location_request and respond to channel it came in on
 	void process(msgs::channel&, msgs::master::chunk_location_request&);
 
-	bool is_valid_chunk(std::string const&, size_t);
-
 	void add_chunk_to_server(chunkid, serverid);
 
 	void reintroduce_chunks_to_network(util::file_chunks);
