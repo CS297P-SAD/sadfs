@@ -70,7 +70,8 @@ public:
 
 	//TODO
 	//serverid      id()     const;
-	uint64_t max_chunks() const;
+	uint64_t max_chunks()  const;
+	uint64_t chunk_count() const;
 	
 	inline static msg_type type{msg_type::join_network_request};
 private:
@@ -104,6 +105,12 @@ inline uint64_t join_network_request::
 max_chunks() const
 {
 	return protobuf_.max_chunks();
+}
+
+inline uint64_t join_network_request::
+chunk_count() const
+{
+	return protobuf_.chunk_count();
 }
 
 } // master namespace
