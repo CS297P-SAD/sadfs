@@ -12,6 +12,7 @@
 // standard includes
 #include <array>
 #include <cstring>  // std::strerror
+#include <functional>
 #include <iostream>
 #include <iterator>
 #include <sstream>  // std::osstream
@@ -66,28 +67,27 @@ open_db()
 std::vector<comm::service>
 valid_servers(chunk_info& info, bool latest_only)
 {
+	auto is_active = [&info](auto location)
+	{ 
+		return location.first->valid_until > time::now();
+	};
+	auto is_active_latest_version = [&info](auto location){ 
+		return location.first->valid_until > time::now() && 
+		      location.second == info.latest_version;
+	};
+	auto filter = [&](auto location)
+	{
+		if (latest_only) { return is_active_latest_version(location); }
+		return is_active(location);
+	};
+
 	auto services = std::vector<comm::service>{};
 	services.reserve(info.locations.size());
-	if (latest_only)
+	for (auto location : info.locations)
 	{
-		for (auto location : info.locations)
+		if (filter(location))
 		{
-			if (location.second == info.latest_version && 
-			    location.first->valid_until > time::now())
-			{
-				services.push_back(location.first->service);
-			}
-		}
-
-	}
-	else
-	{	
-		for (auto location : info.locations)
-		{
-			if (location.first->valid_until > time::now())
-			{
-				services.push_back(location.first->service);
-			}
+			services.push_back(location.first->service);
 		}
 	}
 	return services;
@@ -341,7 +341,7 @@ process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 		id = it->second.chunkids[clr.chunk_number()];
 		auto& chunk = chunk_metadata_[id];
 		servers = valid_servers(chunk, 
-								clr.io_type() == sadfs::msgs::io_type::read); 
+				/*latest_only=*/clr.io_type() == sadfs::msgs::io_type::read); 
 		version_num = chunk.latest_version;
 		if (servers.size() <= 0)
 		{
