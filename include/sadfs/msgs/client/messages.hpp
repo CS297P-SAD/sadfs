@@ -30,7 +30,7 @@ public:
 	comm::service      service(int)  const;
 	chunkid            chunk_id() const noexcept;
 	uint32_t           version_num() const;
-	int                num_locations()  const;
+	int                locations_size() const noexcept;
 
 	inline static msg_type type{msg_type::chunk_location_response};
 private:
@@ -68,7 +68,7 @@ chunk_id() const noexcept
 }
 
 inline int chunk_location_response::
-num_locations() const
+locations_size() const noexcept
 {
 	return protobuf_.server_ips_size();
 }
@@ -78,7 +78,7 @@ version_num() const
 {
 	return protobuf_.version_num();
 }
-
+  
 } // client namespace
 } // msgs namespace
 } // sadfs namespace

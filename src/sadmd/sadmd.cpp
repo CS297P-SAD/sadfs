@@ -28,11 +28,12 @@ constexpr auto chunkid_str_col = 1;
 
 } // (local) constants namespace
 
-namespace time{
+
+namespace time {
 
 using namespace std::literals;
 constexpr auto server_ttl = 1min;
-constexpr auto file_ttl = 1min;
+constexpr auto file_ttl   = 1min;
 
 time_point
 from_now(std::chrono::minutes delta) noexcept
@@ -47,7 +48,6 @@ now() noexcept
 	return from_now(0min);
 }
 } // time namespace
-
 
 sqlite3*
 open_db()
@@ -91,7 +91,6 @@ valid_servers(chunk_info& info, bool latest_only)
 			}
 		}
 	}
-
 	return services;
 }
 } // unnamed namespace
@@ -376,6 +375,5 @@ add_chunk_to_server(chunkid cid, version v, serverid sid)
 	// make sure latest version is correct
 	info.latest_version = std::max<version>(info.latest_version, v);
 }
-
-
+  
 } // sadfs namespace
