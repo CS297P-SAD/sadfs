@@ -315,7 +315,7 @@ process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 		return true;
 	};
 
-	// look up chunk id
+	// look up relevant info
 	auto it = files_.find(filename);
 	if (it == files_.end())
 	{
@@ -327,7 +327,7 @@ process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 	{
 		id = it->second.chunkids[clr.chunk_number()];
 		servers = valid_servers(chunk_locations_[id], 
-								clr.io_type() == sadfs::msgs::io_type::read); 
+					clr.io_type() == sadfs::msgs::io_type::read); 
 		if (servers.size() <= 0)
 		{
 			std::cerr << "Error: list of server locations empty\n";
