@@ -46,6 +46,29 @@ private:
 bool embed(chunk_location_request const&, message_container&);
 bool extract(chunk_location_request&, message_container const&);
 
+class join_network_request
+{
+public:
+	join_network_request() = default;
+	join_network_request(serverid id, uint64_t max_chunks);
+
+	//TODO
+	//serverid      id()     const;
+	uint64_t max_chunks() const;
+	
+	inline static msg_type type{msg_type::join_network_request};
+private:
+	proto::master::join_network_request protobuf_{};
+
+	// provide embed/extract functions access to private members
+	friend bool embed(join_network_request const&, message_container&);
+	friend bool extract(join_network_request&, message_container const&);
+};
+
+// declarations
+bool embed(join_network_request const&, message_container&);
+bool extract(join_network_request&, message_container const&);
+
 // ==================================================================
 //                     inline function definitions
 // ==================================================================
@@ -61,27 +84,11 @@ chunk_number() const
 	return protobuf_.chunk_number();
 }
 
-class join_network_request
+inline uint64_t join_network_request::
+max_chunks() const
 {
-public:
-	join_network_request() = default;
-	join_network_request(serverid id);
-
-	//TODO
-	//serverid      id()     const;
-	
-	inline static msg_type type{msg_type::join_network_request};
-private:
-	proto::master::join_network_request protobuf_{};
-
-	// provide embed/extract functions access to private members
-	friend bool embed(join_network_request const&, message_container&);
-	friend bool extract(join_network_request&, message_container const&);
-};
-
-// declarations
-bool embed(join_network_request const&, message_container&);
-bool extract(join_network_request&, message_container const&);
+	return protobuf_.max_chunks();
+}
 
 } // master namespace
 } // msgs namespace
