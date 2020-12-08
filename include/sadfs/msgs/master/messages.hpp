@@ -12,11 +12,12 @@
 namespace sadfs { namespace msgs { namespace master {
 using message_container = proto::master::message_container;
 
-// enumerates types of raw messages
+// enumerates types of control messages
 enum class msg_type
 {
 	unknown,
 	chunk_location_request,
+	chunk_server_heartbeat,
 };
 
 class chunk_location_request
@@ -42,6 +43,23 @@ private:
 // declarations
 bool embed(chunk_location_request const&, message_container&);
 bool extract(chunk_location_request&, message_container const&);
+
+class chunk_server_heartbeat
+{
+public:
+	chunk_server_heartbeat() = default;
+
+	inline static msg_type type{msg_type::chunk_server_heartbeat};
+private:
+	proto::master::chunk_server_heartbeat protobuf_;
+
+	friend bool embed(chunk_server_heartbeat const&, message_container&);
+	friend bool extract(chunk_server_heartbeat&, message_container const&);
+};
+
+// declarations
+bool embed(chunk_server_heartbeat const&, message_container&);
+bool extract(chunk_server_heartbeat&, message_container const&);
 
 // ==================================================================
 //                     inline function definitions

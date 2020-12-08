@@ -34,6 +34,10 @@ template <template <typename...> typename Op,
           typename... Args>
 using is_detected = detail::DETECTOR<void, Op, Args...>;
 
+template <template <typename...> typename Op,
+          typename... Args>
+constexpr bool is_detected_v = is_detected<Op, Args...>::value;
+
 } // sadfs namespace
 
 #endif // SADFS_IS_DETECTED_HPP

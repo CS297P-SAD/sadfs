@@ -42,6 +42,7 @@ add_executable (sadmd
 add_executable (sadcd
 	sadcd/main.cpp
 	sadcd/sadcd.cpp
+	sadcd/heart.cpp
 	${COMMON_SOURCE_FILES})
 
 # first, find the boost_program_options library. this sets
@@ -113,4 +114,6 @@ target_sources (send-req PRIVATE ${COMMON_SOURCE_FILES})
 target_link_libraries (send-req PRIVATE sadfs_protobuf)
 target_sources (dummy-sadmd PRIVATE ${COMMON_SOURCE_FILES})
 target_link_libraries (dummy-sadmd PRIVATE sadfs_protobuf)
+target_sources (dummy-sadcd PRIVATE ${COMMON_SOURCE_FILES} sadcd/heart.cpp)
+target_link_libraries (dummy-sadcd PRIVATE sadfs_protobuf pthread)
 target_include_directories (uuid PRIVATE ${Boost_INCLUDE_DIRS})

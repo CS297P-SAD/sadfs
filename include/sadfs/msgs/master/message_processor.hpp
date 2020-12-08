@@ -34,11 +34,27 @@ process_next(channel const& ch, Handler& h)
 	switch (container_.msg_case())
 	{
 		case container_type::MsgCase::kChunkLocationReq:
-			if constexpr (is_detected<can_handle,
-			                          Handler,
-			                          chunk_location_request>::value)
+			if constexpr (is_detected_v<can_handle,
+			                            Handler,
+			                            chunk_location_request>)
 			{
 				auto msg = chunk_location_request{};
+				res = res
+				      && extract(msg, container_)
+				      && h.handle(msg, ch);
+			}
+			else
+			{
+				// cannot handle this message
+				res = false;
+			}
+			break;
+		case container_type::MsgCase::kChunkServerHeartbeat:
+			if constexpr (is_detected_v<can_handle,
+			                            Handler,
+			                            chunk_server_heartbeat>)
+			{
+				auto msg = chunk_server_heartbeat{};
 				res = res
 				      && extract(msg, container_)
 				      && h.handle(msg, ch);
