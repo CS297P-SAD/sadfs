@@ -2,6 +2,8 @@
 #include <sadfs/comm/inet.hpp>
 
 #include <array>
+#include <cerrno>
+#include <cstring>
 #include <iostream>
 #include <unistd.h>
 
@@ -22,7 +24,7 @@ main()
 		{
 			if (len == -1)
 			{
-				std::cerr << "read error\n";
+				std::cerr << "read error: " << std::strerror(errno) << "\n";
 				break;
 			}
 			std::cout << "received:    " << len << " byte(s)\n";

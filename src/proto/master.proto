@@ -15,11 +15,17 @@ message join_network_request {
 	uint64 max_chunks = 2;
 }
 
+// chunk server chunk_server_heartbeat
+message chunk_server_heartbeat {
+
+}
+
 // container for control messages
 message message_container {
 	sadfs.proto.host_id sender = 1;
 	oneof               msg {
-		chunk_location_request chunk_location_req = 11;
-		join_network_request   join_network_req   = 13;
+		chunk_location_request chunk_location_req     = 11;
+		chunk_server_heartbeat chunk_server_heartbeat = 12;
+		join_network_request   join_network_req       = 13;
 	}
 }
