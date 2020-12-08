@@ -65,19 +65,33 @@ open_db()
 }
 
 std::vector<comm::service>
-valid_servers(std::vector<chunk_server_info*>& servers, bool latest_only)
+valid_servers(chunk_info& info, bool latest_only)
 {
 	auto services = std::vector<comm::service>{};
-	services.reserve(servers.size());
-	//TODO: make decision more complicated....
-	//TODO: wrap this in if block, only include servers with latest version if latest_only == true
-	for (auto server : servers)
+	services.reserve(info.locations.size());
+	if (latest_only)
 	{
-		if (server->valid_until > time::now())
+		for (auto location : info.locations)
 		{
-			services.push_back(server->service);
+			if (location.second == info.latest_version && 
+			    location.first->valid_until > time::now())
+			{
+				services.push_back(location.first->service);
+			}
+		}
+
+	}
+	else
+	{	
+		for (auto location : info.locations)
+		{
+			if (location.first->valid_until > time::now())
+			{
+				services.push_back(location.first->service);
+			}
 		}
 	}
+
 	return services;
 }
 } // unnamed namespace
@@ -280,7 +294,7 @@ append_chunk_to_file(std::string const& filename, chunkid new_chunkid)
 		return;
 	}
 	files_[filename].chunkids.add_chunk(new_chunkid);
-	chunk_locations_.emplace(new_chunkid, std::vector<chunk_server_info*>{});
+	chunk_metadata_.emplace(new_chunkid, chunk_info{});
 }
 
 void sadmd::
@@ -288,7 +302,7 @@ reintroduce_chunks_to_network(util::file_chunks ids)
 {
 	for (auto i = 0; i < ids.size(); i++)
 	{
-		chunk_locations_.emplace(ids[i], std::vector<chunk_server_info*>{});
+		chunk_metadata_.emplace(ids[i], chunk_info{});
 	}
 }
 
@@ -298,6 +312,7 @@ process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 	auto id = chunkid{};
 	auto servers = std::vector<comm::service>{};
 	auto const& filename = clr.filename();
+	auto version_num = version{0};
 
 	// lambda to check if a chunk number is valid for filename
 	auto validate = [&filename](auto it, auto chunk_number)
@@ -326,8 +341,10 @@ process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 	else if (validate(it, clr.chunk_number()))
 	{
 		id = it->second.chunkids[clr.chunk_number()];
-		servers = valid_servers(chunk_locations_[id], 
+		auto& chunk = chunk_metadata_[id];
+		servers = valid_servers(chunk, 
 								clr.io_type() == sadfs::msgs::io_type::read); 
+		version_num = chunk.latest_version;
 		if (servers.size() <= 0)
 		{
 			std::cerr << "Error: list of server locations empty\n";
@@ -340,6 +357,7 @@ process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 		servers.size() > 0,
 		servers,
 		id,
+		version_num
 	};
 
 	// send protobuf back over channel
@@ -348,11 +366,16 @@ process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 }
 
 void sadmd::
-add_chunk_to_server(chunkid cid, serverid sid)
+add_chunk_to_server(chunkid cid, version v, serverid sid)
 {
 	if (!is_active(sid)) return;	
 	auto server_ptr = &(chunk_server_metadata_.at(sid));
-	chunk_locations_[cid].push_back(server_ptr);
+	auto& info = chunk_metadata_[cid];
+	// add server to chunk's locations
+	info.locations.emplace_back(server_ptr, v);
+	// make sure latest version is correct
+	info.latest_version = std::max<version>(info.latest_version, v);
 }
+
 
 } // sadfs namespace

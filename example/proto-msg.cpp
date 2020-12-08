@@ -76,6 +76,7 @@ main(int argc, char** argv)
 		true,
 		{{"10.0.0.13", 6666}},
 		uuid::generate(),
+		0 // version
 	};
 	print_chunk_location_res(clr);
 
