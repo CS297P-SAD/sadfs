@@ -20,8 +20,6 @@
 
 namespace sadfs {
 
-using chunkid = sadfs::uuid;
-using serverid = sadfs::uuid;
 using time_point = std::chrono::steady_clock::rep;
 
 // all the information needed about a chunk server

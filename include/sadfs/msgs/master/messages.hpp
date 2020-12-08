@@ -11,7 +11,6 @@
 #include <string>
 
 namespace sadfs { namespace msgs { namespace master {
-using serverid = uuid;
 using message_container = proto::master::message_container;
 
 // enumerates types of control messages

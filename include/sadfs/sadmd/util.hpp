@@ -10,7 +10,6 @@
 
 namespace sadfs { namespace util {
 
-using chunkid = sadfs::uuid;
 
 // wrapper class around sadfs protobuf object for storing list of uuids
 class file_chunks

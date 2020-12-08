@@ -61,6 +61,9 @@ std::string to_string(uuid const& u)
 	return boost::uuids::to_string(u.value);
 }
 
+// aliases used by all three components 
+using chunkid = uuid;
+using serverid = uuid;
 
 } // sadfs namespace
 
