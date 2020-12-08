@@ -23,12 +23,12 @@ class chunk_location_response
 public:
 	chunk_location_response() = default;
 	chunk_location_response(bool ok, std::vector<comm::service> const& services, 
-							chunkid chunk_id);
+	                        chunkid chunk_id);
 
-	bool               ok()       const noexcept;
-	comm::service      service(int)  const;
-	chunkid            chunk_id() const noexcept;
-	int                num_locations()  const;
+	bool               ok()             const noexcept;
+	comm::service      service(int)     const;
+	chunkid            chunk_id()       const noexcept;
+	int                locations_size() const noexcept;
 
 	inline static msg_type type{msg_type::chunk_location_response};
 private:
@@ -66,7 +66,7 @@ chunk_id() const noexcept
 }
 
 inline int chunk_location_response::
-num_locations() const
+locations_size() const noexcept
 {
 	return protobuf_.server_ips_size();
 }
