@@ -6,7 +6,7 @@
 
 namespace sadfs {
 
-// indicates that a programmer has done 
+// indicates that a programmer has done
 // something that shouldn't have been done
 struct logic_error : std::logic_error
 {
