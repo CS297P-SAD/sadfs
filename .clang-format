@@ -1,0 +1,13 @@
+---
+BasedOnStyle: LLVM
+BreakBeforeBraces: Allman # Always
+IndentWidth: 4
+UseTab: Never # :(
+AlwaysBreakAfterReturnType: TopLevelDefinitions
+---
+Language: Cpp
+AllowShortLambdasOnASingleLine: All
+---
+Language: Proto
+# disable formatting of .proto files
+DisableFormat: true
