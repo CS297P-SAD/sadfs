@@ -17,7 +17,7 @@ start()
 	}
 
 	// start heartbeat
-	stop_token_ = stop_heartbeat_.get_future();
+	stop_token_ = stop_request_.get_future();
 	heartbeat_ = std::thread{[this](){ this->beat(); }};
 }
 
@@ -31,7 +31,7 @@ stop()
 	}
 
 	// notify the heartbeat thread that we want it to stop :(
-	stop_heartbeat_.set_value();
+	stop_request_.set_value();
 	heartbeat_.join();
 }
 

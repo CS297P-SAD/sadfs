@@ -15,7 +15,7 @@ class heart
 {
 	comm::service       master_;
 	std::thread         heartbeat_{};
-	std::promise<void>  stop_heartbeat_{};
+	std::promise<void>  stop_request_{};
 	std::future<void>   stop_token_{};
 
 	void beat() const;
