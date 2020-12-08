@@ -5,6 +5,7 @@
 #include <sadfs/comm/inet.hpp> // comm::service
 
 // standard includes
+#include <future>
 #include <thread>
 
 namespace sadfs { namespace chunk {
@@ -12,10 +13,12 @@ namespace sadfs { namespace chunk {
 // sends heartbeats to the master server
 class heart
 {
-	comm::service master_;
-	std::jthread  heartbeat_;
+	comm::service       master_;
+	std::thread         heartbeat_{};
+	std::promise<void>  stop_heartbeat_{};
+	std::future<void>   stop_token_{};
 
-	void beat(std::stop_token) const;
+	void beat() const;
 
 public:
 	heart(comm::service const& master) : master_{master} { }
