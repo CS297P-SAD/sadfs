@@ -42,6 +42,7 @@ add_executable (sadmd
 add_executable (sadcd
 	sadcd/main.cpp
 	sadcd/sadcd.cpp
+	sadcd/heart.cpp
 	${COMMON_SOURCE_FILES})
 
 # first, find the boost_program_options library. this sets
