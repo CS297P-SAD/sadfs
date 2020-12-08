@@ -28,7 +28,6 @@ constexpr auto chunkid_str_col = 1;
 
 } // (local) constants namespace
 
-
 namespace time {
 
 using namespace std::literals;
