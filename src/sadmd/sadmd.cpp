@@ -95,26 +95,99 @@ void sadmd::
 start()
 {
 	auto listener = comm::listener{service_};
-
 	while (true)
 	{
-		try
+		auto sock = listener.accept();
+		serve_requests(std::move(sock));
+	}
+}
+
+void sadmd::
+serve_requests(msgs::channel ch)
+{
+	auto processor = msgs::master::processor{};
+	bool result{false}, eof{false};
+	while (true)
+	{
+		auto [result, eof] = processor.process_next(ch, *this);
+		if (result)
 		{
-			auto ch = msgs::channel{listener.accept()};
-			if(true){ // check that this is a chunk_location_request
-				auto clr = msgs::master::chunk_location_request{};
-				msgs::master::deserializer{}.deserialize(clr, ch);
-				process(ch, clr);
-				
-			}
+			std::cout << "request served successfully\n";
 		}
-		catch (std::system_error ex)
+		else if (eof)
 		{
-			std::cerr << "[error]: failed to connect to client\n"
-			          << ex.what() << "\n";
-			std::exit(1);
+			std::cout << "EOF\n";
+			break;
+		}
+		else
+		{
+			std::cerr << "Error: request service failed\n";
 		}
 	}
+}
+
+bool sadmd::
+handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
+{
+	auto id = chunkid{};
+	auto servers = std::vector<comm::service>{};
+	auto const& filename = clr.filename();
+
+	// lambda to check if a chunk number is valid for filename
+	auto validate = [&filename](auto it, auto chunk_number)
+	{
+		 // safe since we don't validate if iterator is invalid
+		if (chunk_number >= it->second.chunkids.size())
+		{
+			std::cerr << "Error: request for too large chunk number: chunk "
+					<< chunk_number
+					<< " of "
+					<< filename
+					<< '\n';
+			return false;
+		}
+		return true;
+	};
+
+	// look up relevant info
+	auto it = files_.find(filename);
+	if (it == files_.end())
+	{
+		std::cerr << "Error: request for chunk location in nonexistant file "
+				  << filename
+				  << '\n';
+	}
+	else if (validate(it, clr.chunk_number()))
+	{
+		id = it->second.chunkids[clr.chunk_number()];
+		servers = valid_servers(chunk_locations_[id], 
+					clr.io_type() == sadfs::msgs::io_type::read); 
+		if (servers.size() <= 0)
+		{
+			std::cerr << "Error: list of server locations empty\n";
+		}
+	}
+		
+	// create the response protobuf
+	auto response = msgs::client::chunk_location_response
+	{
+		servers.size() > 0,
+		servers,
+		id,
+	};
+
+	// send protobuf back over channel
+	auto result = msgs::client::serializer{}.serialize(response, ch);
+	ch.flush();
+	return result;
+}
+
+bool sadmd::
+handle(msgs::master::join_network_request const& clr, msgs::channel const& ch)
+{
+	std::cout << "Received join network request\n";
+	ch.flush();
+	return true;
 }
 
 void sadmd::
@@ -290,61 +363,6 @@ reintroduce_chunks_to_network(util::file_chunks ids)
 	{
 		chunk_locations_.emplace(ids[i], std::vector<chunk_server_info*>{});
 	}
-}
-
-void sadmd::
-process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
-{
-	auto id = chunkid{};
-	auto servers = std::vector<comm::service>{};
-	auto const& filename = clr.filename();
-
-	// lambda to check if a chunk number is valid for filename
-	auto validate = [&filename](auto it, auto chunk_number)
-	{
-		 // safe since we don't validate if iterator is invalid
-		if (chunk_number >= it->second.chunkids.size())
-		{
-			std::cerr << "Error: request for too large chunk number: chunk "
-					<< chunk_number
-					<< " of "
-					<< filename
-					<< '\n';
-			return false;
-		}
-		return true;
-	};
-
-	// look up relevant info
-	auto it = files_.find(filename);
-	if (it == files_.end())
-	{
-		std::cerr << "Error: request for chunk location in nonexistant file "
-				  << filename
-				  << '\n';
-	}
-	else if (validate(it, clr.chunk_number()))
-	{
-		id = it->second.chunkids[clr.chunk_number()];
-		servers = valid_servers(chunk_locations_[id], 
-					clr.io_type() == sadfs::msgs::io_type::read); 
-		if (servers.size() <= 0)
-		{
-			std::cerr << "Error: list of server locations empty\n";
-		}
-	}
-		
-	// create the response protobuf
-	auto response = msgs::client::chunk_location_response
-	{
-		servers.size() > 0,
-		servers,
-		id,
-	};
-
-	// send protobuf back over channel
-	auto result = msgs::client::serializer{}.serialize(response, ch);
-	ch.flush();
 }
 
 void sadmd::

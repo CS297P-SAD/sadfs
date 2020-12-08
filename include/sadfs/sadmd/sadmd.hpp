@@ -47,6 +47,21 @@ public:
 	void start();
 
 private:
+	// takes ownership of a channel and serves the request on it
+	void serve_requests(msgs::channel);
+	
+	// handles a chunk_location_request and responds to channel it came in on
+	bool handle(msgs::master::chunk_location_request const&, 
+                msgs::channel const&);
+
+	// handles a chunk_server_hearbeat
+	bool handle(msgs::master::chunk_server_heartbeat const&, 
+                msgs::channel const&);
+
+	// handles a join_network_request and responds to channel it came in on
+	bool handle(msgs::master::join_network_request const&, 
+                msgs::channel const&);
+
 	// creates (the metadata for) a new file
 	void create_file(std::string const&);
 
@@ -66,9 +81,6 @@ private:
 	// functions for maintaining chunk servers 
 
 	void append_chunk_to_file(std::string const&, chunkid);
-
-	// process a chunk_location_request and respond to channel it came in on
-	void process(msgs::channel&, msgs::master::chunk_location_request&);
 
 	void add_chunk_to_server(chunkid, serverid);
 
