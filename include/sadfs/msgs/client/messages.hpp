@@ -2,6 +2,7 @@
 #define SADFS_MSGS_CLIENT_MESSAGES_HPP
 
 // sadfs-specific includes
+#include <sadfs/comm/inet.hpp>
 #include <sadfs/msgs/common.hpp>
 #include <sadfs/proto/client.pb.h>
 #include <sadfs/uuid.hpp>

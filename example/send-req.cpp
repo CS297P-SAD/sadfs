@@ -26,11 +26,13 @@ for (auto file : files_)
 
 */
 
+#include <sadfs/msgs/messages.hpp>
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/msgs/channel.hpp>
+#include <sadfs/msgs/client/deserializer.hpp>
 #include <sadfs/msgs/messages.hpp>
-#include <sadfs/msgs/deserializers.hpp>
-#include <sadfs/msgs/serializers.hpp>
+#include <sadfs/msgs/master/message_processor.hpp>
+#include <sadfs/msgs/master/serializer.hpp>
 
 #include <iostream>
 

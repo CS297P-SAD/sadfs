@@ -53,9 +53,8 @@ struct sadmd
 		auto response = msgs::client::chunk_location_response
 		{
 			/*ok=*/true,
-			{"10.0.0.13", 6666},
-			uuid::generate(),
-			"secret payload"
+			{{"10.0.0.13", 6666}},
+			uuid::generate()
 		};
 		auto result = msgs::client::serializer{}.serialize(response, ch);
 		ch.flush();

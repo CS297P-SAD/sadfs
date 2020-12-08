@@ -62,13 +62,14 @@ main(int argc, char** argv)
 	};
 	print_chunk_location_req(fr);
 
-	
+	/*
 	auto cr = msgs::chunk::chunk_request
 	{
 		msgs::io_type::read,
 		78234
 	};
 	print_chunk_req(cr);
+	*/
 
 	auto clr = msgs::client::chunk_location_response
 	{
@@ -126,11 +127,12 @@ main(int argc, char** argv)
 	print_chunk_location_res(new_clr2);
 
 	// receive chunk_request
+	/*
 	auto new_cr = msgs::chunk::chunk_request{};
 	msgs::chunk::deserializer{}.deserialize(new_cr, ch);
 	info("received chunk request");
 	print_chunk_req(new_cr);
-	
+	*/
 
 	return 0;
 }
