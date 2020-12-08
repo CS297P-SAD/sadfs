@@ -25,14 +25,16 @@ auto const msg_type_lookup = msg_type_map
 //                     chunk_location_response
 // ==================================================================
 chunk_location_response::
-chunk_location_response(bool ok, comm::service const& service,
-                        chunkid chunk_id, std::string const& payload)
+chunk_location_response(bool ok, std::vector<comm::service> const& services, 
+                        chunkid chunk_id)
 {
 	protobuf_.set_ok(ok);
-	protobuf_.set_server_ip(to_string(service.ip()));
-	protobuf_.set_port(to_int(service.port()));
+	for (auto service : services)
+	{
+		protobuf_.add_server_ips(to_string(service.ip()));
+		protobuf_.add_ports(to_int(service.port()));
+	}
 	chunk_id.serialize(std::back_inserter(*protobuf_.mutable_chunk_id()));
-	protobuf_.set_payload(payload);
 }
 
 // embeds a control message into a container that is

@@ -2,6 +2,7 @@
 #define SADFS_MSGS_CLIENT_MESSAGES_HPP
 
 // sadfs-specific includes
+#include <sadfs/comm/inet.hpp>
 #include <sadfs/msgs/common.hpp>
 #include <sadfs/proto/client.pb.h>
 #include <sadfs/uuid.hpp>
@@ -21,13 +22,13 @@ class chunk_location_response
 {
 public:
 	chunk_location_response() = default;
-	chunk_location_response(bool ok, comm::service const& service,
-	                        chunkid chunk_id, std::string const& payload);
+	chunk_location_response(bool ok, std::vector<comm::service> const& services, 
+	                        chunkid chunk_id);
 
-	bool               ok()       const noexcept;
-	comm::service      service()  const;
-	chunkid            chunk_id() const noexcept;
-	std::string const& payload()  const;
+	bool               ok()             const noexcept;
+	comm::service      service(int)     const;
+	chunkid            chunk_id()       const noexcept;
+	int                locations_size() const noexcept;
 
 	inline static msg_type type{msg_type::chunk_location_response};
 private:
@@ -51,15 +52,9 @@ ok() const noexcept
 }
 
 inline comm::service chunk_location_response::
-service() const
+service(int i) const
 {
-	return {protobuf_.server_ip().c_str(), protobuf_.port()};
-}
-
-inline std::string const& chunk_location_response::
-payload() const
-{
-	return protobuf_.payload();
+	return {protobuf_.server_ips(i).c_str(), protobuf_.ports(i)};
 }
 
 inline chunkid chunk_location_response::
@@ -68,6 +63,12 @@ chunk_id() const noexcept
 	auto id = chunkid{};
 	id.deserialize(protobuf_.chunk_id().data());
 	return id;
+}
+
+inline int chunk_location_response::
+locations_size() const noexcept
+{
+	return protobuf_.server_ips_size();
 }
 
 } // client namespace

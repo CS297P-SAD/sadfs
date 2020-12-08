@@ -4,6 +4,8 @@
 // sadfs specific includes
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/comm/socket.hpp>
+#include <sadfs/msgs/channel.hpp>
+#include <sadfs/msgs/messages.hpp>
 #include <sadfs/uuid.hpp>
 #include "util.hpp" // file_chunks object
 
@@ -67,6 +69,11 @@ private:
 
 	void append_chunk_to_file(std::string const&, chunkid);
 
+	// process a chunk_location_request and respond to channel it came in on
+	void process(msgs::channel&, msgs::master::chunk_location_request&);
+
+	void add_chunk_to_server(chunkid, serverid);
+
 	void reintroduce_chunks_to_network(util::file_chunks);
 
 	// returns true on success
@@ -81,6 +88,8 @@ private:
 	// metadata for each chunk server
 	std::unordered_map<serverid, chunk_server_info> chunk_server_metadata_;
 	// map from chunkid to list of chunk servers
+	// TODO: make chunk_locations_.second include latest version number and a 
+	//       version number associated with each server
 	std::unordered_map<chunkid, std::vector<chunk_server_info*> > chunk_locations_;
 	// persistent/on disk copy of files_
 	sqlite3* const files_db_;

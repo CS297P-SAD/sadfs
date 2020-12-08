@@ -2,8 +2,12 @@
 
 // sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
-#include <sadfs/sadmd/sadmd.hpp>
+#include <sadfs/msgs/channel.hpp>
+#include <sadfs/msgs/client/serializer.hpp>
+#include <sadfs/msgs/master/message_processor.hpp>
+#include <sadfs/msgs/messages.hpp>
 #include <sadfs/proto/internal.pb.h>
+#include <sadfs/sadmd/sadmd.hpp>
 
 // standard includes
 #include <array>
@@ -24,6 +28,26 @@ constexpr auto chunkid_str_col = 1;
 
 } // (local) constants namespace
 
+namespace time {
+
+using namespace std::literals;
+constexpr auto server_ttl = 1min;
+constexpr auto file_ttl   = 1min;
+
+time_point
+from_now(std::chrono::minutes delta) noexcept
+{
+	return (std::chrono::steady_clock::now() + delta).time_since_epoch().count();
+}
+
+time_point 
+now() noexcept
+{
+	// the time point zero minutes from now is, you guessed it, now
+	return from_now(0min);
+}
+} // time namespace
+
 sqlite3*
 open_db()
 {
@@ -39,56 +63,24 @@ open_db()
 	return db;
 }
 
-std::string
-process_message(comm::socket const& sock)
+std::vector<comm::service>
+valid_servers(std::vector<chunk_server_info*> const& servers, bool latest_only)
 {
-	auto buf = std::array<char, 512>{};
-	auto len = 0;
-	auto result = std::string{};
-	while ((len = ::read(sock.descriptor(), buf.data(), buf.size())))
+	auto services = std::vector<comm::service>{};
+	services.reserve(servers.size());
+	// TODO: make decision more complicated....
+	// TODO: wrap this in if block, only include servers with 
+	// latest version if latest_only == true
+	for (auto server : servers)
 	{
-		if (len == -1)
+		if (server->valid_until > time::now())
 		{
-			std::cerr << "read error\n";
-			std::cerr << std::strerror(errno) << std::endl;
-			std::exit(1);
+			services.push_back(server->service);
 		}
-		if (::write(sock.descriptor(), buf.data(), len) == -1)
-		{
-			std::cerr << "write error\n";
-			std::exit(1);
-		}
-		for (auto i = 0; i < len; i++)
-		{
-			result += buf[i];
-		}
-		buf.fill({});
 	}
-
-	return result;
+	return services;
 }
-
 } // unnamed namespace
-
-namespace time{
-
-using namespace std::literals;
-constexpr auto server_ttl = 1min;
-constexpr auto file_ttl = 1min;
-
-time_point
-from_now(std::chrono::minutes delta) noexcept
-{
-	return (std::chrono::steady_clock::now() + delta).time_since_epoch().count();
-}
-
-time_point 
-now() noexcept
-{
-	// the time point zero minutes from now is, you guessed it, now
-	return from_now(0min);
-}
-} // time namespace
 
 sadmd::
 sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
@@ -106,11 +98,22 @@ start()
 
 	while (true)
 	{
-		auto sock = listener.accept();
-		auto result = process_message(sock);
-
-		std::cout << result << "\n";
-		// perform some action based on result
+		try
+		{
+			auto ch = msgs::channel{listener.accept()};
+			if(true){ // check that this is a chunk_location_request
+				auto clr = msgs::master::chunk_location_request{};
+				msgs::master::deserializer{}.deserialize(clr, ch);
+				process(ch, clr);
+				
+			}
+		}
+		catch (std::system_error ex)
+		{
+			std::cerr << "[error]: failed to connect to client\n"
+			          << ex.what() << "\n";
+			std::exit(1);
+		}
 	}
 }
 
@@ -287,6 +290,69 @@ reintroduce_chunks_to_network(util::file_chunks ids)
 	{
 		chunk_locations_.emplace(ids[i], std::vector<chunk_server_info*>{});
 	}
+}
+
+void sadmd::
+process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
+{
+	auto id = chunkid{};
+	auto servers = std::vector<comm::service>{};
+	auto const& filename = clr.filename();
+
+	// lambda to check if a chunk number is valid for filename
+	auto validate = [&filename](auto it, auto chunk_number)
+	{
+		 // safe since we don't validate if iterator is invalid
+		if (chunk_number >= it->second.chunkids.size())
+		{
+			std::cerr << "Error: request for too large chunk number: chunk "
+					<< chunk_number
+					<< " of "
+					<< filename
+					<< '\n';
+			return false;
+		}
+		return true;
+	};
+
+	// look up relevant info
+	auto it = files_.find(filename);
+	if (it == files_.end())
+	{
+		std::cerr << "Error: request for chunk location in nonexistant file "
+				  << filename
+				  << '\n';
+	}
+	else if (validate(it, clr.chunk_number()))
+	{
+		id = it->second.chunkids[clr.chunk_number()];
+		servers = valid_servers(chunk_locations_[id], 
+					clr.io_type() == sadfs::msgs::io_type::read); 
+		if (servers.size() <= 0)
+		{
+			std::cerr << "Error: list of server locations empty\n";
+		}
+	}
+		
+	// create the response protobuf
+	auto response = msgs::client::chunk_location_response
+	{
+		servers.size() > 0,
+		servers,
+		id,
+	};
+
+	// send protobuf back over channel
+	auto result = msgs::client::serializer{}.serialize(response, ch);
+	ch.flush();
+}
+
+void sadmd::
+add_chunk_to_server(chunkid cid, serverid sid)
+{
+	if (!is_active(sid)) return;	
+	auto server_ptr = &(chunk_server_metadata_.at(sid));
+	chunk_locations_[cid].push_back(server_ptr);
 }
 
 } // sadfs namespace
