@@ -62,6 +62,8 @@ main(int argc, char** argv)
 	};
 	print_chunk_location_req(fr);
 
+	auto hb = msgs::master::chunk_server_heartbeat{};
+
 	/*
 	auto cr = msgs::chunk::chunk_request
 	{
@@ -100,6 +102,10 @@ main(int argc, char** argv)
 
 	auto ch = establish_conn();
 	info("connection established with the server");
+
+	// send chunk_server_heartbeat
+	msgs::master::serializer{}.serialize(hb, ch);
+	info("sent chunk server heartbeat");
 
 	// send chunk_location_request
 	msgs::master::serializer{}.serialize(fr, ch);
