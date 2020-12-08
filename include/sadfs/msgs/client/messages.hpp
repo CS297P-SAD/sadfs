@@ -24,13 +24,13 @@ class chunk_location_response
 public:
 	chunk_location_response() = default;
 	chunk_location_response(bool ok, std::vector<comm::service> const& services, 
-							chunkid chunk_id, version version_num);
+				chunkid chunk_id, version version_num);
 
-	bool               ok()       const noexcept;
-	comm::service      service(int)  const;
-	chunkid            chunk_id() const noexcept;
-	uint32_t           version_num() const;
-	int                locations_size() const noexcept;
+	bool               ok()			const noexcept;
+	comm::service      service(int)		const;
+	chunkid            chunk_id()		const noexcept;
+	uint32_t           version_num()	const;
+	int                locations_size()	const noexcept;
 
 	inline static msg_type type{msg_type::chunk_location_response};
 private:
