@@ -26,7 +26,7 @@ auto const msg_type_lookup = msg_type_map
 // ==================================================================
 chunk_location_response::
 chunk_location_response(bool ok, std::vector<comm::service> const& services, 
-						chunkid chunk_id)
+                        chunkid chunk_id)
 {
 	protobuf_.set_ok(ok);
 	for (auto service : services)
