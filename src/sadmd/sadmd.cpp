@@ -330,7 +330,7 @@ process(msgs::channel& ch, msgs::master::chunk_location_request& clr)
 		return true;
 	};
 
-	// look up chunk id
+	// look up relevant info
 	auto it = files_.find(filename);
 	if (it == files_.end())
 	{
