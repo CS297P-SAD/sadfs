@@ -57,7 +57,7 @@ print_chunk_location_res(msgs::client::chunk_location_response const& res)
 		<< "\nOK:           " << res.ok()
 		<< "\nChunk id:     " << to_string(res.chunk_id());
 	std::cout << "\n";
-	for (auto i = 0; i < res.num_locations(); i++)
+	for (auto i = 0; i < res.locations_size(); i++)
 	{
 		auto service = res.service(i);
 		std::cout
