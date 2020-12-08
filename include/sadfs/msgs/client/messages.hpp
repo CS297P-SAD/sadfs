@@ -25,7 +25,7 @@ public:
 	chunk_location_response() = default;
 	chunk_location_response(bool ok, std::vector<comm::service> const& services, 
 				chunkid chunk_id, version version_num);
-	
+
 	bool               ok()             const noexcept;
 	comm::service      service(int)     const;
 	chunkid            chunk_id()       const noexcept;
