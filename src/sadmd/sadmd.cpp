@@ -28,11 +28,11 @@ constexpr auto chunkid_str_col = 1;
 
 } // (local) constants namespace
 
-namespace time{
+namespace time {
 
 using namespace std::literals;
 constexpr auto server_ttl = 1min;
-constexpr auto file_ttl = 1min;
+constexpr auto file_ttl   = 1min;
 
 time_point
 from_now(std::chrono::minutes delta) noexcept
@@ -47,7 +47,6 @@ now() noexcept
 	return from_now(0min);
 }
 } // time namespace
-
 
 sqlite3*
 open_db()
@@ -65,12 +64,13 @@ open_db()
 }
 
 std::vector<comm::service>
-valid_servers(std::vector<chunk_server_info*>& servers, bool latest_only)
+valid_servers(std::vector<chunk_server_info*> const& servers, bool latest_only)
 {
 	auto services = std::vector<comm::service>{};
 	services.reserve(servers.size());
-	//TODO: make decision more complicated....
-	//TODO: wrap this in if block, only include servers with latest version if latest_only == true
+	// TODO: make decision more complicated....
+	// TODO: wrap this in if block, only include servers with 
+	// latest version if latest_only == true
 	for (auto server : servers)
 	{
 		if (server->valid_until > time::now())
