@@ -62,14 +62,15 @@ private:
 // declarations
 bool embed(chunk_server_heartbeat const&, message_container&);
 bool extract(chunk_server_heartbeat&, message_container const&);
+
 class join_network_request
 {
 public:
 	join_network_request() = default;
-	join_network_request(serverid id, uint64_t max_chunks);
+	join_network_request(serverid server_id, uint64_t max_chunks,
+                         uint64_t chunk_count);
 
-	//TODO
-	//serverid      id()     const;
+	serverid server_id()   const;
 	uint64_t max_chunks()  const;
 	uint64_t chunk_count() const;
 	
@@ -105,6 +106,14 @@ inline uint64_t join_network_request::
 max_chunks() const
 {
 	return protobuf_.max_chunks();
+}
+
+inline serverid join_network_request::
+server_id() const
+{
+	auto id = serverid{};
+	id.deserialize(protobuf_.server_id().data());
+	return id;
 }
 
 inline uint64_t join_network_request::

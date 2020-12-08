@@ -17,6 +17,7 @@ auto const msg_type_lookup = msg_type_map
 	{MsgCase::MSG_NOT_SET,           msg_type::unknown},
 	{MsgCase::kChunkLocationReq,     msg_type::chunk_location_request},
 	{MsgCase::kChunkServerHeartbeat, msg_type::chunk_server_heartbeat},
+	{MsgCase::kJoinNetworkReq,       msg_type::join_network_request},
 };
 
 } // unnamed namespace
@@ -68,6 +69,10 @@ extract(chunk_location_request& req, message_container const& container)
 	return true;
 }
 
+/* ========================================================
+ *                       chunk_server_heartbeat
+ * ========================================================
+ */
 // embeds a control message into a container that is
 // (typically) sent over the wire
 bool
@@ -94,6 +99,45 @@ extract(chunk_server_heartbeat&, message_container const& container)
 	return true;
 }
 
+/* ========================================================
+ *                       join_network_request
+ * ========================================================
+ */
+join_network_request::
+join_network_request(serverid server_id, uint64_t max_chunks,
+                     uint64_t chunk_count)
+{
+	server_id.serialize(std::back_inserter(*protobuf_.mutable_server_id()));
+	protobuf_.set_max_chunks(max_chunks);
+	protobuf_.set_chunk_count(chunk_count);
+}
+
+// embeds a control message into a container that is
+// (typically) sent over the wire
+bool
+embed(join_network_request const& req, message_container& container)
+{
+	// should this be in a try-catch block?
+	// msg.mutable_chunk_location_req() can throw if heap allocation fails
+	*container.mutable_join_network_req() = req.protobuf_;
+	return true;
+}
+
+// extracts a control message from a container that is
+// (typically) received over the wire
+bool
+extract(join_network_request& req, message_container const& container)
+{
+	if (msg_type_lookup.at(container.msg_case()) != join_network_request::type)
+	{
+		// cannot extract a msg that doesn't exist
+		return false;
+	}
+
+	// read join_network_request from message_container
+	req.protobuf_ = container.join_network_req();
+	return true;
+}
 } // master namespace
 } // msgs namespace
 } // sadfs namespace

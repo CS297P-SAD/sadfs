@@ -11,7 +11,7 @@ message chunk_location_request {
 }
 // request for file IO
 message join_network_request {
-	bytes  serverid    = 1;
+	bytes  server_id   = 1;
 	uint64 max_chunks  = 2;
 	uint64 chunk_count = 3;
 }
