@@ -1,67 +1,92 @@
 /* Code for the sadcd class */
 
 // sadfs-specific includes
+#include <sadfs/logger.hpp>
+#include <sadfs/sadcd/heart.hpp>
 #include <sadfs/sadcd/sadcd.hpp>
-#include <sadfs/comm/inet.hpp>
 
 // standard includes
-#include <array>
-#include <cstring>  // std::strerror
-#include <iostream>
-#include <string>
-#include <unistd.h> // read/write
+#include <chrono> // std::chrono_literals
+#include <future> // std::promise, std::future
 
-namespace sadfs {
-
-sadcd::
-sadcd(char const* ip, int port) : service_(ip, port)
+namespace sadfs
 {
-	// do nothing
+
+namespace
+{
+
+using namespace std::chrono_literals;
+auto ready = [](auto const &future, auto duration) {
+    return future.wait_for(duration) == std::future_status::ready;
+};
+
+} // unnamed namespace
+
+sadcd::sadcd(char const *ip, int port) : master_(ip, port)
+{
+    // do nothing
 }
 
-void sadcd::
-start()
+void
+sadcd::start()
 {
-	auto listener = comm::listener{service_};
-
-	while (true)
-	{
-		auto sock = listener.accept();
-		auto result = process_message(sock);
-
-		std::cout << result << "\n";
-		// perform some action based on result
-	}
+    // set up
+    run();
 }
 
-// reads the message from a socket that just received some data
-std::string sadcd::
-process_message(comm::socket const& sock)
+void
+sadcd::run()
 {
-	auto buf = std::array<char, 512>{};
-	auto len = 0;
-	auto result = std::string{};
-	while ((len = ::read(sock.descriptor(), buf.data(), buf.size())))
-	{
-		if (len == -1)
-		{
-			std::cerr << "read error\n";
-			std::cerr << std::strerror(errno) << std::endl;
-			std::exit(1);
-		}
-		if (::write(sock.descriptor(), buf.data(), len) == -1)
-		{
-			std::cerr << "write error\n";
-			std::exit(1);
-		}
-		for (auto i = 0; i < len; i++)
-		{
-			result += buf[i];
-		}
-		buf.fill({});
-	}
+    // kill_switch is a switch we flip to kill the main service thread
+    // *_death are "flags" child threads will use to indicate death
+    auto kill_switch      = std::promise<void>{};
+    auto main_thread_dead = std::future<void>{};
+    auto main_thread      = std::thread{};
+    {
+        // grab future that will indicate when the main thread dies
+        // due to an error
+        auto death       = std::promise<void>{};
+        main_thread_dead = death.get_future();
 
-	return result;
+        // start main thread
+        main_thread = std::thread{&sadcd::start_main, this, std::move(death),
+                                  kill_switch.get_future()};
+    }
+
+    // start heartbeat
+    auto heart = chunk::heart{master_};
+    heart.start();
+
+    // poll for failures
+    while (true)
+    {
+        if (ready(main_thread_dead, 1s))
+        {
+            // get threads to propagate error condition using futures
+            logger::error("main thread has died"sv);
+            main_thread_dead.get();
+            heart.stop();
+            break;
+        }
+        if (!heart.beating())
+        {
+            logger::error("heartbeats have stopped"sv);
+            kill_switch.set_value();
+            main_thread.join();
+            break;
+        }
+    }
 }
 
-} // sadfs namespace
+void
+sadcd::start_main(std::promise<void>       death,
+                  std::shared_future<void> kill_switch)
+{
+    while (!ready(kill_switch, 1s))
+    {
+        logger::info("chunk server working..."sv);
+    }
+    death.set_value(); // unnecessary, but doing this so we don't forget
+}
+
+} // namespace sadfs
