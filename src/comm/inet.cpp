@@ -5,7 +5,7 @@
 #include <sadfs/comm/defaults.hpp>
 
 // standard includes
-#include <arpa/inet.h>  // inet_aton, inet_ntoa, htons, ntohs
+#include <arpa/inet.h>  // inet_aton, htons
 #include <cerrno>       // errno
 #include <limits>       // std::numeric_limits
 #include <netinet/in.h> // in_addr
@@ -22,8 +22,8 @@ namespace {
 auto fmt_err = [](char const* msg, ip_addr const& ip, port_no const& port)
 {
 	return ""s // explicitly tell the compiler that we want a string
-	       + msg + inet_ntoa({ip.value()}) + ":"
-	       + std::to_string(ntohs(port.value()));
+	       + msg + to_string(ip) + ":"
+	       + std::to_string(to_int(port));
 };
 
 // verifies that an ip address in string format is valid,
@@ -46,7 +46,8 @@ parse_port_no(int port)
 {
 	if (port > std::numeric_limits<std::uint16_t>::max())
 	{
-		throw std::invalid_argument("invalid port number");
+		throw std::invalid_argument("invalid port number: "
+		                            + std::to_string(port));
 	}
 	return htons(static_cast<std::uint16_t>(port));
 }

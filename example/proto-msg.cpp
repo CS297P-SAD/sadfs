@@ -1,9 +1,11 @@
 /* example code for testing sending of protobuf message */
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/msgs/channel.hpp>
+#include <sadfs/msgs/client/deserializer.hpp>
 #include <sadfs/msgs/messages.hpp>
-#include <sadfs/msgs/deserializers.hpp>
-#include <sadfs/msgs/serializers.hpp>
+#include <sadfs/msgs/master/message_processor.hpp>
+#include <sadfs/msgs/master/serializer.hpp>
+#include <sadfs/uuid.hpp>
 
 #include <iostream>
 
@@ -21,6 +23,25 @@ print_chunk_location_req(msgs::master::chunk_location_request const& req)
 }
 
 void
+print_chunk_location_res(msgs::client::chunk_location_response const& res)
+{
+	std::cout << delim
+		<< "Chunk location request:"
+		<< "\nOK:           " << res.ok()
+		<< "\nChunk id:     " << to_string(res.chunk_id());
+	std::cout << "\n";
+	for (auto i = 0; i < res.locations_size(); i++)
+	{
+		auto service = res.service(i);
+		std::cout
+		<< "\nService "
+		<< i  << ": " << to_string(service.ip())
+		<< ':' << to_int(service.port());
+	}
+	std::cout << "\n" << delim << "\n";
+}
+
+void
 print_chunk_req(msgs::chunk::chunk_request const& req)
 {
 	std::cout << delim
@@ -32,6 +53,7 @@ print_chunk_req(msgs::chunk::chunk_request const& req)
 int
 main(int argc, char** argv)
 {
+	std::cout << std::boolalpha;
 	auto fr = msgs::master::chunk_location_request
 	{
 		msgs::io_type::read,
@@ -40,24 +62,36 @@ main(int argc, char** argv)
 	};
 	print_chunk_location_req(fr);
 
+	auto hb = msgs::master::chunk_server_heartbeat{};
+
+	/*
 	auto cr = msgs::chunk::chunk_request
 	{
 		msgs::io_type::read,
 		78234
 	};
 	print_chunk_req(cr);
+	*/
+
+	auto clr = msgs::client::chunk_location_response
+	{
+		true,
+		{{"10.0.0.13", 6666}},
+		uuid::generate(),
+		0 // version
+	};
+	print_chunk_location_res(clr);
 
 	auto establish_conn = []() -> msgs::channel
 	{
-		using namespace comm;
-		auto&& echod = service{constants::ip_localhost, 6666};
+		auto&& service = comm::service{comm::constants::ip_localhost, 6666};
 		try
 		{
-			return msgs::channel{echod.connect()};
+			return msgs::channel{service.connect()};
 		}
 		catch (std::system_error ex)
 		{
-			std::cerr << "[error]: failed to connect to echo server\n"
+			std::cerr << "[error]: failed to connect to the server\n"
 			          << ex.what() << "\n";
 			std::exit(1);
 		}
@@ -68,32 +102,44 @@ main(int argc, char** argv)
 	};
 
 	auto ch = establish_conn();
-	info("connection established with the echo server");
+	info("connection established with the server");
+
+	// send chunk_server_heartbeat
+	msgs::master::serializer{}.serialize(hb, ch);
+	info("sent chunk server heartbeat");
 
 	// send chunk_location_request
 	msgs::master::serializer{}.serialize(fr, ch);
 	info("sent chunk location request");
 
-	// send chunk_request
-	msgs::chunk::serializer{}.serialize(cr, ch);
-	info("sent chunk request");
+	// send chunk_location_request a second time to test
+	// deserialization
+	msgs::master::serializer{}.serialize(fr, ch);
+	info("sent chunk location request again");
 
 	// to make sure that the serialized msgs are sent,
-	// flush the channel
+	// flush the output buffer
 	ch.flush();
 
 	std::cout << "\n";
-	// receive chunk_location_request
-	auto new_fr = msgs::master::chunk_location_request{};
-	msgs::master::deserializer{}.deserialize(new_fr, ch);
-	info("received chunk location request");
-	print_chunk_location_req(new_fr);
+	// should receive 2 chunk_location_response s
+	auto new_clr1 = msgs::client::chunk_location_response{};
+	msgs::client::deserializer{}.deserialize(new_clr1, ch);
+	info("received chunk location response");
+	print_chunk_location_res(new_clr1);
+
+	auto new_clr2 = msgs::client::chunk_location_response{};
+	msgs::client::deserializer{}.deserialize(new_clr2, ch);
+	info("received chunk location response");
+	print_chunk_location_res(new_clr2);
 
 	// receive chunk_request
+	/*
 	auto new_cr = msgs::chunk::chunk_request{};
 	msgs::chunk::deserializer{}.deserialize(new_cr, ch);
 	info("received chunk request");
 	print_chunk_req(new_cr);
+	*/
 
 	return 0;
 }

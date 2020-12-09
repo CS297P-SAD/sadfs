@@ -3,7 +3,7 @@
 
 // sadfs-specific includes
 #include <sadfs/msgs/channel.hpp>
-#include <sadfs/msgs/messages.hpp>
+#include <sadfs/msgs/common.hpp>
 
 // external includes
 #include <google/protobuf/util/delimited_message_util.h>
@@ -48,16 +48,6 @@ serialize(gpio::ZeroCopyOutputStream* out) const
 	auto const serialize = gputil::SerializeDelimitedToZeroCopyStream;
 
 	return serialize(container_, out);
-}
-
-// define a serializer to send messages to the master server
-namespace master {
-using serializer = msgs::serializer<proto::master::message_container>;
-}
-
-// define a serializer to send messages to chunk servers
-namespace chunk {
-using serializer = msgs::serializer<proto::chunk::message_container>;
 }
 
 } // msgs namespace

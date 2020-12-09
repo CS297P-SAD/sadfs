@@ -5,7 +5,9 @@
 #include "socket.hpp"
 
 // standard includes
-#include <cstdint> // std::uint32_t, std::uint16_t
+#include <arpa/inet.h> // inet_ntoa, ntohs
+#include <cstdint>     // std::uint32_t, std::uint16_t
+#include <string>
 
 namespace sadfs { namespace comm {
 
@@ -24,6 +26,13 @@ private:
 	std::uint32_t const value_;
 };
 
+// returns the dotted-decimal representation of ip
+inline std::string
+to_string(ip_addr const& ip)
+{
+	return inet_ntoa({ip.value()});
+}
+
 // represents a port number
 class port_no
 {
@@ -34,6 +43,13 @@ public:
 private:
 	std::uint16_t const value_;
 };
+
+// returns the int representation of port
+inline int
+to_int(port_no const& port) noexcept
+{
+	return ntohs(port.value());
+}
 
 // represents a service on a host,
 // specified by an IP + port number

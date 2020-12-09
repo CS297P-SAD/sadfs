@@ -3,7 +3,7 @@
 
 // sadfs-specific includes
 #include <sadfs/msgs/channel.hpp>
-#include <sadfs/msgs/messages.hpp>
+#include <sadfs/msgs/common.hpp>
 
 // external includes
 #include <google/protobuf/util/delimited_message_util.h>
@@ -19,47 +19,44 @@ public:
 	deserializer(host_id id);
 
 	template <typename ControlMessage>
-	bool deserialize(ControlMessage&, channel const&);
+	std::pair<bool, bool> deserialize(ControlMessage&, channel const&);
 
-private:
+protected:
+	using container_type = Container;
 	Container container_{};
 
+private:
 	friend class msgs::channel;
-	bool deserialize(gpio::ZeroCopyInputStream*);
+	std::pair<bool, bool> deserialize(gpio::ZeroCopyInputStream*);
 };
 
 // template definitions
 template <typename Container>
 template <typename ControlMessage>
-bool msgs::deserializer<Container>::
+std::pair<bool, bool> msgs::deserializer<Container>::
 deserialize(ControlMessage& cm, channel const& ch)
 {
-	auto res =  ch.accept_deserializer(*this) && extract(cm, container_);
-	// we must not hold data after serialization
+	auto res =  ch.accept_deserializer(*this);
+	res.first = res.first && extract(cm, container_);
+
+	// we must not hold data after deserialization
 	container_.clear_msg();
 	return res;
 }
 
 template <typename Container>
-bool deserializer<Container>::
+std::pair<bool, bool> deserializer<Container>::
 deserialize(gpio::ZeroCopyInputStream* in)
 {
 	namespace gputil = google::protobuf::util;
 	auto const deserialize = gputil::ParseDelimitedFromZeroCopyStream;
 
-	// TODO: change API to return clean_eof
-	return deserialize(&container_, in, /*clean_eof=*/nullptr);
+	auto result = false, eof = false;
+	result = deserialize(&container_, in, &eof);
+
+	return {result, eof};
 }
 
-// define a deserializer to receive messages sent to the master server
-namespace master {
-using deserializer = msgs::deserializer<proto::master::message_container>;
-}
-
-// define a deserializer to receive messages sent to chunk servers
-namespace chunk {
-using deserializer = msgs::deserializer<proto::chunk::message_container>;
-}
 } // msgs namespace
 } // sadfs namespace
 

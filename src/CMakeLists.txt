@@ -1,7 +1,5 @@
 # src/CMakeLists.txt
 
-add_compile_options( -ggdb )
-
 # FindgRPC.cmake module location where function grpc_generate_cpp() is defined
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../cmake")
 find_package (Protobuf REQUIRED)
@@ -15,6 +13,7 @@ protobuf_generate_cpp (PROTO_SOURCE_FILES PROTO_HEADER_FILES
 	proto/common.proto
 	proto/master.proto
 	proto/chunk.proto
+	proto/client.proto
 	proto/internal.proto)
 # compile *.pb.cc files into a library
 add_library (sadfs_protobuf STATIC ${PROTO_SOURCE_FILES})
@@ -58,15 +57,20 @@ add_dependencies (sadfs_grpc sadfs_grpc_includes)
 # common components that almost all targets depend on
 set (COMMON_SOURCE_FILES
 	comm/inet.cpp comm/socket.cpp
-	msgs/master.cpp msgs/chunk.cpp msgs/channel.cpp)
+	msgs/master/messages.cpp
+	msgs/chunk/messages.cpp
+	msgs/client/messages.cpp)
 
 # add main targets
-foreach (TARGET sadmd sadcd)
-	add_executable (${TARGET}
-		${TARGET}/main.cpp
-		${TARGET}/${TARGET}.cpp
-		${COMMON_SOURCE_FILES})
-endforeach()
+add_executable (sadmd
+	sadmd/main.cpp
+	sadmd/sadmd.cpp
+	${COMMON_SOURCE_FILES})
+add_executable (sadcd
+	sadcd/main.cpp
+	sadcd/sadcd.cpp
+	sadcd/heart.cpp
+	${COMMON_SOURCE_FILES})
 
 # first, find the boost_program_options library. this sets
 # the Boost_INCLUDE_DIRS and Boost_LIBRARIES variables
@@ -137,4 +141,10 @@ target_sources (echod     PRIVATE comm/inet.cpp comm/socket.cpp)
 target_sources (msg       PRIVATE comm/inet.cpp comm/socket.cpp)
 target_sources (proto-msg PRIVATE ${COMMON_SOURCE_FILES})
 target_link_libraries (proto-msg PRIVATE sadfs_protobuf)
+target_sources (send-req PRIVATE ${COMMON_SOURCE_FILES})
+target_link_libraries (send-req PRIVATE sadfs_protobuf)
+target_sources (dummy-sadmd PRIVATE ${COMMON_SOURCE_FILES})
+target_link_libraries (dummy-sadmd PRIVATE sadfs_protobuf)
+target_sources (dummy-sadcd PRIVATE ${COMMON_SOURCE_FILES} sadcd/heart.cpp)
+target_link_libraries (dummy-sadcd PRIVATE sadfs_protobuf pthread)
 target_include_directories (uuid PRIVATE ${Boost_INCLUDE_DIRS})

@@ -4,6 +4,8 @@
 // sadfs specific includes
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/comm/socket.hpp>
+#include <sadfs/msgs/channel.hpp>
+#include <sadfs/msgs/messages.hpp>
 #include <sadfs/uuid.hpp>
 #include "util.hpp" // file_chunks object
 
@@ -21,6 +23,7 @@ namespace sadfs {
 using chunkid = sadfs::uuid;
 using serverid = sadfs::uuid;
 using time_point = std::chrono::steady_clock::rep;
+using version = unsigned int;
 
 // all the information needed about a chunk server
 struct chunk_server_info
@@ -36,6 +39,14 @@ struct file_info
 {
 	int ttl;
 	util::file_chunks chunkids;
+};
+
+// all the information needed about a chunk
+struct chunk_info
+{
+	version latest_version;
+	// all the places this chunk is stored and what version is there
+	std::vector<std::pair<chunk_server_info*, version> > locations;
 };
 
 class sadmd
@@ -67,6 +78,11 @@ private:
 
 	void append_chunk_to_file(std::string const&, chunkid);
 
+	// process a chunk_location_request and respond to channel it came in on
+	void process(msgs::channel&, msgs::master::chunk_location_request&);
+
+	void add_chunk_to_server(chunkid, version, serverid);
+
 	void reintroduce_chunks_to_network(util::file_chunks);
 
 	// returns true on success
@@ -80,8 +96,8 @@ private:
 	std::unordered_map<std::string, file_info> files_;
 	// metadata for each chunk server
 	std::unordered_map<serverid, chunk_server_info> chunk_server_metadata_;
-	// map from chunkid to list of chunk servers
-	std::unordered_map<chunkid, std::vector<chunk_server_info*> > chunk_locations_;
+	// map from chunkid to chunk info
+	std::unordered_map<chunkid, chunk_info> chunk_metadata_;
 	// persistent/on disk copy of files_
 	sqlite3* const files_db_;
 };
