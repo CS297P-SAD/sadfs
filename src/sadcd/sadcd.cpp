@@ -58,17 +58,23 @@ sadcd::run()
     heart.start();
 
     // poll for failures
-    while (!ready(main_thread_dead, 1s) && heart.beating())
+    while (true)
     {
-        // everything fine; do nothing
-    }
-
-    // something went wrong; engage the kill switch
-    kill_switch.set_value();
-    main_thread.join();
-    if (heart.beating())
-    {
-        heart.stop();
+        if (ready(main_thread_dead, 1s))
+        {
+            // get threads to propagate error condition using futures
+            logger::error("main thread has died"sv);
+            main_thread_dead.get();
+            heart.stop();
+            break;
+        }
+        if (!heart.beating())
+        {
+            logger::error("heartbeats have stopped"sv);
+            kill_switch.set_value();
+            main_thread.join();
+            break;
+        }
     }
 }
 
