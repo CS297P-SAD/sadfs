@@ -56,6 +56,16 @@ config_options()
 			"override configured ip address on which "
 			"the server listens for incoming connections")
 		;
+	desc.add_options()
+		("master_port", po::value<std::uint16_t>()->required(),
+			"override configured port number on which "
+			"the server listens for incoming connections")
+		;
+	desc.add_options()
+		("master_ipaddress", po::value<std::string>()->required(),
+			"override configured ip address on which "
+			"the server listens for incoming connections")
+		;
 
 	// adds options that can be passed only via the CLI
 	desc.add_options()
@@ -89,7 +99,13 @@ start_server(po::variables_map const& variables)
 		"--ipaddress"s,
 		variables["ipaddress"].as<std::string>(),
 		"--port"s,
-		std::to_string(variables["port"].as<std::uint16_t>())
+		std::to_string(variables["port"].as<std::uint16_t>()),
+		"--master_ipaddress"s,
+		variables["master_ipaddress"].as<std::string>(),
+		"--master_port"s,
+		std::to_string(variables["master_port"].as<std::uint16_t>()),
+		"--serverid"s,
+		variables["serverid"].as<std::string>(),
 	};
 
 	// allocate space for pointers, including terminating nullptr

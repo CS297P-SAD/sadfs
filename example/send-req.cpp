@@ -130,7 +130,7 @@ join_network()
 	auto ch = establish_conn();
 	info("connection established with the master server");
 
-	// send chunk_location_request
+	// send join_network_request
 	msgs::master::serializer{}.serialize(jr, ch);
 	info("sent join network request");
 	ch.flush();	
