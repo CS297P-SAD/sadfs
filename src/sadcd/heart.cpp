@@ -7,25 +7,66 @@
 
 namespace sadfs { namespace chunk {
 
+namespace {
+
+// heartbeat function
+void
+beat(comm::service master, std::promise<void> death, std::future<void> stop_token)
+{
+	auto msg          = msgs::master::chunk_server_heartbeat{};
+	auto serializer   = msgs::master::serializer{};
+	auto die = [&death]() { return death.set_value(); };
+
+	// send heartbeats until requested to stop
+	using namespace std::chrono_literals;
+	while (stop_token.wait_for(1s) != std::future_status::ready)
+	{
+		try
+		{
+			auto ch = msgs::channel{master.connect()};
+			if (serializer.serialize(msg, ch)) { continue; }
+			throw sadfs::operation_failure{"could not send heartbeat"};
+		}
+		catch (std::exception const&)
+		{
+			return die();
+		}
+	}
+
+	// stop requested
+	stop_token.get();
+	die();
+}
+
+} // unnamed namespace
+
 // starts the heartbeat in a concurrent thread
 void heart::
 start()
 {
-	if (stop_token_.valid())
+	if (beating())
 	{
 		throw sadfs::logic_error{"heart beating already"};
 	}
 
-	// start heartbeat
-	stop_token_ = stop_request_.get_future();
-	heartbeat_ = std::thread{[this](){ this->beat(); }};
+	auto death = std::promise<void>{};
+	stop_request_ = std::promise<void>{};
+	stopped_ = death.get_future();
+
+	heartbeat_ = std::thread
+	{
+		beat,
+		master_,
+		std::move(death),
+		stop_request_.get_future()
+	};
 }
 
-// stops the heartbeat
+// stops sending heartbeats
 void heart::
 stop()
 {
-	if (!stop_token_.valid())
+	if (!beating())
 	{
 		throw sadfs::logic_error{"heart not beating"};
 	}
@@ -33,32 +74,7 @@ stop()
 	// notify the heartbeat thread that we want it to stop :(
 	stop_request_.set_value();
 	heartbeat_.join();
-}
-
-// heartbeat function
-void heart::
-beat() const
-{
-	auto msg          = msgs::master::chunk_server_heartbeat{};
-	auto serializer   = msgs::master::serializer{};
-
-	// send heartbeats until requested to stop
-	while (true)
-	{
-		using namespace std::chrono_literals;
-		auto status = stop_token_.wait_for(1s);
-		if (status == std::future_status::ready)
-		{
-			// stop requested
-			return;
-		}
-
-		auto ch = msgs::channel{master_.connect()};
-		if (!serializer.serialize(msg, ch))
-		{
-			throw sadfs::operation_failure{"failed to send heartbeat"};
-		}
-	}
+	stopped_.get();
 }
 
 } // chunk namespace
