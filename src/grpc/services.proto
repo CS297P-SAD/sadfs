@@ -1,0 +1,15 @@
+/* defines remote procedure calls */
+syntax = "proto3";
+package sadfs.rpc;
+
+message sample_request {
+    string data = 1;
+}
+
+message sample_response {
+    string data = 1;
+}
+
+service transfer_data {
+    rpc read_chunk (sample_request) returns (sample_response) {}
+}
