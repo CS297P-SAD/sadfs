@@ -83,9 +83,9 @@ main(int argc, char** argv)
 	auto server_settings = read_command_line(argc, argv);
 	auto server = sadcd{server_settings.ip, 
 	                    server_settings.port, 
-						server_settings.master_ip, 
-						server_settings.master_port, 
-						server_settings.server_id}; 
+	                    server_settings.master_ip, 
+	                    server_settings.master_port, 
+	                    server_settings.server_id}; 
 
 	server.start();
 }

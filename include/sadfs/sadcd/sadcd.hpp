@@ -11,7 +11,8 @@ namespace sadfs {
 class sadcd
 {
 public:
-	sadcd(char const* ip, int port, char const* master_ip, int master_port, char const* server_id);
+	sadcd(char const* ip, int port, char const* master_ip, int master_port, 
+	      char const* server_id);
 
 	// starts server by opening a listener
 	void start();
