@@ -17,13 +17,14 @@ namespace chunk
 // sends heartbeats to the master server
 class heart
 {
-    comm::service master_;
-    std::thread heartbeat_{};
+    comm::service      master_;
+    std::thread        heartbeat_{};
     std::promise<void> stop_request_;
-    std::future<void> stopped_;
+    std::future<void>  stopped_;
 
-  public:
+public:
     heart(comm::service const &master) : master_{master} {}
+    ~heart();
 
     void start();
     void stop();
@@ -46,6 +47,18 @@ heart::beating()
         stopped_.get(); // avoid bugs
     }
     return beating;
+}
+
+inline heart::~heart()
+{
+    if (beating())
+    {
+        stop();
+    }
+    if (heartbeat_.joinable())
+    {
+        heartbeat_.join();
+    }
 }
 
 } // namespace chunk

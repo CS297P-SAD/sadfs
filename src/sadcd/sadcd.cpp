@@ -2,6 +2,7 @@
 
 // sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
+#include <sadfs/logger.hpp>
 #include <sadfs/sadcd/heart.hpp>
 #include <sadfs/sadcd/sadcd.hpp>
 
@@ -83,7 +84,7 @@ sadcd::start_main(std::promise<void>       death,
 {
     while (!ready(kill_switch, 1s))
     {
-        std::cout << "[INFO]: chunk server working...\n";
+        logger::info("chunk server working..."sv);
     }
     death.set_value(); // unnecessary, but doing this so we don't forget
 }
