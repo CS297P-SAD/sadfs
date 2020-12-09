@@ -104,12 +104,6 @@ chunk_number() const
 	return protobuf_.chunk_number();
 }
 
-inline uint64_t join_network_request::
-max_chunks() const
-{
-	return protobuf_.max_chunks();
-}
-
 inline serverid join_network_request::
 server_id() const
 {
@@ -128,6 +122,12 @@ inline uint64_t join_network_request::
 chunk_count() const
 {
 	return protobuf_.chunk_count();
+}
+
+inline uint64_t join_network_request::
+max_chunks() const
+{
+	return protobuf_.max_chunks();
 }
 
 } // master namespace
