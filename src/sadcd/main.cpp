@@ -57,7 +57,7 @@ main(int argc, char** argv)
 	// populate server_settings from command line args
 	auto server_settings = read_command_line(argc, argv);
 
-	auto master = sadcd{server_settings.ip, server_settings.port};
+	auto server = sadcd{server_settings.ip, server_settings.port};
 
-	master.start();
+	server.start();
 }

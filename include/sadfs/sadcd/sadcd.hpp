@@ -1,8 +1,12 @@
 #ifndef SADFS_SADCD_SADCD_HPP
 #define SADFS_SADCD_SADCD_HPP
+
+// sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/comm/socket.hpp>
 
+// standard includes
+#include <future>
 #include <string>
 
 namespace sadfs {
@@ -15,10 +19,14 @@ public:
 	// starts server by opening a listener
 	void start();
 private:
-	// reads the message from a socket that just received some data
-	std::string process_message(comm::socket const&);
+	// runs the chunk service
+	void run();
 
-	comm::service const service_;
+	// starts main server thread
+	// stops when asked to, indicates death via std::promise
+	void start_main(std::promise<void>, std::shared_future<void>);
+
+	comm::service const master_;
 };
 
 } // sadfs namespace
