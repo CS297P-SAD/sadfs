@@ -2,6 +2,7 @@
 #define SADFS_SADCD_SADCD_HPP
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/comm/socket.hpp>
+#include <sadfs/uuid.hpp>
 
 #include <string>
 
@@ -17,8 +18,10 @@ public:
 private:
 	// reads the message from a socket that just received some data
 	std::string process_message(comm::socket const&);
+	serverid set_server_id();
 
 	comm::service const service_;
+	serverid serverid_;
 };
 
 } // sadfs namespace
