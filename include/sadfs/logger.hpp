@@ -41,7 +41,7 @@ inline void
 error(std::string_view msg)
 {
     timestamp();
-    std::cout << " [ERROR]: " << msg << "\n";
+    std::cerr << " [ERROR]: " << msg << "\n";
 }
 
 inline void
