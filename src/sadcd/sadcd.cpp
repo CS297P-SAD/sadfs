@@ -1,19 +1,13 @@
 /* Code for the sadcd class */
 
 // sadfs-specific includes
-#include <sadfs/comm/inet.hpp>
 #include <sadfs/logger.hpp>
 #include <sadfs/sadcd/heart.hpp>
 #include <sadfs/sadcd/sadcd.hpp>
 
 // standard includes
-#include <array>
-#include <chrono>
-#include <cstring> // std::strerror
-#include <future>  // std::promise, std::future
-#include <iostream>
-#include <string>
-#include <unistd.h> // read/write
+#include <chrono> // std::chrono_literals
+#include <future> // std::promise, std::future
 
 namespace sadfs
 {
