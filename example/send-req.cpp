@@ -122,6 +122,7 @@ join_network()
 	auto jr = msgs::master::join_network_request
 	{
 		serverid::generate(),
+		comm::service{"127.0.0.1", 6668},
 		1000,
 		0
 	};

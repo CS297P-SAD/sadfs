@@ -104,10 +104,12 @@ extract(chunk_server_heartbeat&, message_container const& container)
  * ========================================================
  */
 join_network_request::
-join_network_request(serverid server_id, uint64_t max_chunks,
-                     uint64_t chunk_count)
+join_network_request(serverid server_id, comm::service service, 
+                     uint64_t max_chunks, uint64_t chunk_count)
 {
 	server_id.serialize(std::back_inserter(*protobuf_.mutable_server_id()));
+	protobuf_.set_ip(to_string(service.ip()));
+	protobuf_.set_port(to_int(service.port()));
 	protobuf_.set_max_chunks(max_chunks);
 	protobuf_.set_chunk_count(chunk_count);
 }

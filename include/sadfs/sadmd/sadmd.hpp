@@ -6,6 +6,7 @@
 #include <sadfs/comm/socket.hpp>
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/messages.hpp>
+#include <sadfs/msgs/master/message_processor.hpp>
 #include <sadfs/uuid.hpp>
 #include "util.hpp" // file_chunks object
 
@@ -46,21 +47,22 @@ public:
 	// starts server
 	void start();
 
-private:
-	// takes ownership of a channel and serves the request on it
-	void serve_requests(msgs::channel);
-	
 	// handles a chunk_location_request and responds to channel it came in on
 	bool handle(msgs::master::chunk_location_request const&, 
                 msgs::channel const&);
 
 	// handles a chunk_server_hearbeat
-	bool handle(msgs::master::chunk_server_heartbeat const&, 
-                msgs::channel const&);
+	//bool handle(msgs::master::chunk_server_heartbeat const&, 
+    //            msgs::channel const&);
 
 	// handles a join_network_request and responds to channel it came in on
 	bool handle(msgs::master::join_network_request const&, 
                 msgs::channel const&);
+private:
+	// takes ownership of a channel and serves the request on it
+	void serve_requests(msgs::channel);
+
+	//friend class msgs::master::processor;
 
 	// creates (the metadata for) a new file
 	void create_file(std::string const&);
@@ -87,7 +89,7 @@ private:
 	void reintroduce_chunks_to_network(util::file_chunks);
 
 	// returns true on success
-	bool add_server_to_network(serverid, char const*, int, uint64_t, uint64_t);
+	bool add_server_to_network(serverid, comm::service, uint64_t, uint64_t);
 	void remove_server_from_network(serverid) noexcept;
 	void register_server_heartbeat(serverid) noexcept;
 	bool is_active(serverid) const noexcept;

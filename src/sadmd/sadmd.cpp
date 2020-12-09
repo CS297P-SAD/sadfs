@@ -112,11 +112,11 @@ serve_requests(msgs::channel ch)
 		auto [result, eof] = processor.process_next(ch, *this);
 		if (result)
 		{
-			std::cout << "request served successfully\n";
+			//std::cout << "request served successfully\n";
 		}
 		else if (eof)
 		{
-			std::cout << "EOF\n";
+			//std::cout << "EOF\n";
 			break;
 		}
 		else
@@ -183,9 +183,12 @@ handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
 }
 
 bool sadmd::
-handle(msgs::master::join_network_request const& clr, msgs::channel const& ch)
+handle(msgs::master::join_network_request const& jnr, msgs::channel const& ch)
 {
-	std::cout << "Received join network request\n";
+	add_server_to_network(jnr.server_id(), 
+						  jnr.service(),
+						  jnr.max_chunks(), 
+						  jnr.chunk_count());
 	ch.flush();
 	return true;
 }
@@ -287,7 +290,7 @@ save_files() const noexcept
 }
 
 bool sadmd::
-add_server_to_network(serverid uuid, char const* ip, int port, 
+add_server_to_network(serverid uuid, comm::service service, 
 					  uint64_t max_chunks, uint64_t chunk_count)
 {
 	if (chunk_server_metadata_.count(uuid))
@@ -300,7 +303,7 @@ add_server_to_network(serverid uuid, char const* ip, int port,
 	chunk_server_metadata_.emplace(
 		uuid,
 		chunk_server_info{
-			comm::service(ip, port),
+			service,
 			max_chunks,
 			chunk_count,
 			time::from_now(time::server_ttl)

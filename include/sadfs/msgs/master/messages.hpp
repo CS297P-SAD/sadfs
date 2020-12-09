@@ -2,6 +2,7 @@
 #define SADFS_MSGS_MASTER_MESSAGES_HPP
 
 // sadfs-specific includes
+#include <sadfs/comm/inet.hpp>
 #include <sadfs/msgs/common.hpp>
 #include <sadfs/proto/master.pb.h>
 #include <sadfs/uuid.hpp>
@@ -67,10 +68,11 @@ class join_network_request
 {
 public:
 	join_network_request() = default;
-	join_network_request(serverid server_id, uint64_t max_chunks,
-                         uint64_t chunk_count);
+	join_network_request(serverid server_id, comm::service service,
+	                     uint64_t max_chunks, uint64_t chunk_count);
 
 	serverid server_id()   const;
+	comm::service service() const;
 	uint64_t max_chunks()  const;
 	uint64_t chunk_count() const;
 	
@@ -114,6 +116,12 @@ server_id() const
 	auto id = serverid{};
 	id.deserialize(protobuf_.server_id().data());
 	return id;
+}
+
+inline comm::service join_network_request::
+service() const
+{
+	return {protobuf_.ip().c_str(), protobuf_.port()};
 }
 
 inline uint64_t join_network_request::
