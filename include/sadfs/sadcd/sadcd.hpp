@@ -2,7 +2,7 @@
 #define SADFS_SADCD_SADCD_HPP
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/comm/socket.hpp>
-#include <sadfs/uuid.hpp>
+#include <sadfs/types.hpp>
 
 #include <string>
 
