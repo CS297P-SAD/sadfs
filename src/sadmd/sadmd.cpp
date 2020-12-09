@@ -144,6 +144,7 @@ handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
 	auto id = chunkid{};
 	auto servers = std::vector<comm::service>{};
 	auto const& filename = clr.filename();
+	auto version_num = version{0};
 
 	// lambda to check if a chunk number is valid for filename
 	auto validate = [&filename](auto it, auto chunk_number)
@@ -172,8 +173,10 @@ handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
 	else if (validate(it, clr.chunk_number()))
 	{
 		id = it->second.chunkids[clr.chunk_number()];
-		servers = valid_servers(chunk_locations_[id], 
-					clr.io_type() == sadfs::msgs::io_type::read); 
+		auto& chunk = chunk_metadata_[id];
+		servers = valid_servers(chunk, 
+				/*latest_only=*/clr.io_type() == sadfs::msgs::io_type::read); 
+		version_num = chunk.latest_version;
 		if (servers.size() <= 0)
 		{
 			std::cerr << "Error: list of server locations empty\n";
@@ -186,6 +189,7 @@ handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
 		servers.size() > 0,
 		servers,
 		id,
+		version_num
 	};
 
 	// send protobuf back over channel
