@@ -18,7 +18,7 @@ namespace sadfs {
 
 namespace constants {
 
-constexpr auto default_max_chunks = 1000;
+constexpr auto max_chunks = 1000;
 
 } // (local) constants namespace
 
@@ -27,9 +27,10 @@ sadcd(char const* ip, int port,
       char const* master_ip, int master_port, 
       char const* server_id) : 
       service_(ip, port) , 
-      master_(master_ip, master_port)
+      master_(master_ip, master_port),
+      serverid_(serverid::from_string(server_id))
 {
-	serverid_ = serverid::from_string(server_id);
+	// do nothing
 }
 
 void sadcd::
@@ -78,35 +79,37 @@ process_message(comm::socket const& sock)
 	return result;
 }
 
-void sadcd::
+bool sadcd::
 join_network()
 {
-	auto establish_conn = [*this]() -> msgs::channel
+	/*
+	//auto ch = channel{socket{domain::inet, type::stream, -1}}; // dummy channel
+	try
 	{
-		try
-		{
-			return msgs::channel{master_.connect()};
-		}
-		catch (std::system_error ex)
-		{
-			std::cerr << "[error]: failed to connect to master server\n"
-						<< ex.what() << "\n";
-			std::exit(1);
-		}
-	};
-	auto ch = establish_conn();
+		ch = msgs::channel{master_.connect()}
+	}
+	catch
+	{
+		// log error and return false
+		return false;
+	}
+	TODO: Replace next line  with above ^ once dummy channel returns !is_open()
+	*/
+
+	auto ch = msgs::channel{master_.connect()};
 
 	auto jr = msgs::master::join_network_request
 	{
 		serverid_,
 		service_,
-		constants::default_max_chunks,
+		constants::max_chunks,
 		/*chunk_count=*/ 0
 	};
 
 	// send join_network_request
 	msgs::master::serializer{}.serialize(jr, ch);
-	ch.flush();	
+	return true;
+
 }
 
 } // sadfs namespace

@@ -20,11 +20,11 @@ private:
 	// reads the message from a socket that just received some data
 	std::string process_message(comm::socket const&);
 
-	void join_network();
+	bool join_network();
 
 	comm::service const service_;
 	comm::service const master_;
-	serverid serverid_;
+	serverid const serverid_;
 };
 
 } // sadfs namespace
