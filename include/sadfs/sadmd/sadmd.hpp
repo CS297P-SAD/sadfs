@@ -6,8 +6,8 @@
 #include <sadfs/comm/socket.hpp>
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/messages.hpp>
-#include <sadfs/uuid.hpp>
-#include "util.hpp" // file_chunks object
+#include <sadfs/sadmd/util.hpp> // file_chunks
+#include <sadfs/types.hpp>
 
 // extrenal includes
 #include <sqlite3.h>

@@ -5,7 +5,7 @@
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/msgs/common.hpp>
 #include <sadfs/proto/master.pb.h>
-#include <sadfs/uuid.hpp>
+#include <sadfs/types.hpp>
 
 // standard includes
 #include <cstddef> // std::size_t
