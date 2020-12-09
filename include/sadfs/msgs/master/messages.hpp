@@ -119,15 +119,15 @@ service() const
 }
 
 inline uint64_t join_network_request::
-chunk_count() const
-{
-	return protobuf_.chunk_count();
-}
-
-inline uint64_t join_network_request::
 max_chunks() const
 {
 	return protobuf_.max_chunks();
+}
+
+inline uint64_t join_network_request::
+chunk_count() const
+{
+	return protobuf_.chunk_count();
 }
 
 } // master namespace

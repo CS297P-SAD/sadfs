@@ -6,7 +6,6 @@
 #include <sadfs/comm/socket.hpp>
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/messages.hpp>
-#include <sadfs/msgs/master/message_processor.hpp>
 #include <sadfs/uuid.hpp>
 #include "util.hpp" // file_chunks object
 
@@ -61,8 +60,10 @@ public:
                 msgs::channel const&);
 
 	// handles a chunk_server_hearbeat
-	//bool handle(msgs::master::chunk_server_heartbeat const&, 
-    //            msgs::channel const&);
+	/* TODO
+	bool handle(msgs::master::chunk_server_heartbeat const&, 
+                msgs::channel const&);
+	*/
 
 	// handles a join_network_request and responds to channel it came in on
 	bool handle(msgs::master::join_network_request const&, 
@@ -70,8 +71,6 @@ public:
 private:
 	// takes ownership of a channel and serves the request on it
 	void serve_requests(msgs::channel);
-
-	//friend class msgs::master::processor;
 
 	// creates (the metadata for) a new file
 	void create_file(std::string const&);
