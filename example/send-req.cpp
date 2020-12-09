@@ -18,9 +18,9 @@ for (auto file : files_)
 	auto ids = file.second.chunkids;
 	for (auto i = 0; i < ids.size(); i++)
 	{
-		add_chunk_to_server(ids[i], server1);
-		add_chunk_to_server(ids[i], server2);
-		add_chunk_to_server(ids[i], server3);
+		add_chunk_to_server(ids[i], 0, server1);
+		add_chunk_to_server(ids[i], 0, server2);
+		add_chunk_to_server(ids[i], 1, server3);
 	}
 }
 
@@ -55,8 +55,8 @@ print_chunk_location_res(msgs::client::chunk_location_response const& res)
 	std::cout << delim
 		<< "Chunk location request:"
 		<< "\nOK:           " << res.ok()
-		<< "\nChunk id:     " << to_string(res.chunk_id());
-	std::cout << "\n";
+		<< "\nChunk id:     " << to_string(res.chunk_id())
+		<< "\nVersion:      " << res.version_num();
 	for (auto i = 0; i < res.locations_size(); i++)
 	{
 		auto service = res.service(i);

@@ -5,10 +5,11 @@ import "common.proto";
 
 // response for a chunk_location_request
 message chunk_location_response {
-	bool            ok         = 1;
-	repeated string server_ips = 2;
-	repeated int32  ports      = 3;  // not uint32 for sadfs code compatibility
-	bytes           chunk_id   = 4;
+	bool            ok          = 1;
+	repeated string server_ips  = 2;
+	repeated int32  ports       = 3;  // not uint32 for sadfs code compatibility
+	bytes           chunk_id    = 4;
+	int32           version_num = 5;
 }
 
 // container for all control messages sent to clients

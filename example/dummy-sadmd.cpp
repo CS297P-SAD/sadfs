@@ -54,7 +54,8 @@ struct sadmd
 		{
 			/*ok=*/true,
 			{{"10.0.0.13", 6666}},
-			uuid::generate()
+			uuid::generate(),
+			0 // version
 		};
 		auto result = msgs::client::serializer{}.serialize(response, ch);
 		ch.flush();
