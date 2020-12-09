@@ -33,6 +33,7 @@ for (auto file : files_)
 #include <sadfs/msgs/messages.hpp>
 #include <sadfs/msgs/master/message_processor.hpp>
 #include <sadfs/msgs/master/serializer.hpp>
+#include <sadfs/types.hpp>
 
 #include <iostream>
 

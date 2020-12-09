@@ -4,6 +4,7 @@
 // sadfs-specific includes
 #include <sadfs/msgs/common.hpp>
 #include <sadfs/proto/chunk.pb.h>
+#include <sadfs/types.hpp>
 
 // standard includes
 #include <cstddef> // std::size_t
