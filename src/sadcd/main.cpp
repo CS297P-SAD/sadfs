@@ -20,6 +20,7 @@ struct settings
 {
 	const char* ip;
 	int         port;
+	const char* server_id;
 };
 
 // returns settings based on command-line arguments
@@ -28,8 +29,10 @@ read_command_line(int argc, char *argv[])
 {
 	constexpr auto port_switch = "--port"sv;
 	constexpr auto ip_switch = "--ipaddress"sv;
+	constexpr auto serverid_switch = "--serverid"sv;
 	auto port = "";
 	auto ip   = "";
+	auto server_id = "";
 	for (auto i = 1; i < argc - 1; i ++)
 	{
 		if (port_switch == argv[i])
@@ -43,9 +46,14 @@ read_command_line(int argc, char *argv[])
 			i++;
 			ip = argv[i];
 		}
+		else if (serverid_switch == argv[i])
+		{
+			i++;
+			server_id = argv[i];
+		}
 	}
 
-	return {ip, std::stoi(port)};
+	return {ip, std::stoi(port), server_id};
 }
 
 } // sadfs namespace
@@ -57,7 +65,7 @@ main(int argc, char** argv)
 	// populate server_settings from command line args
 	auto server_settings = read_command_line(argc, argv);
 
-	auto master = sadcd{server_settings.ip, server_settings.port};
+	auto master = sadcd{server_settings.ip, server_settings.port, server_settings.server_id};
 
 	master.start();
 }

@@ -14,10 +14,9 @@
 namespace sadfs {
 
 sadcd::
-sadcd(char const* ip, int port) : service_(ip, port)
+sadcd(char const* ip, int port, char const* server_id) : service_(ip, port)
 {
-	// do nothing
-	serverid_ = set_server_id();
+	serverid_ = serverid::from_string(server_id);
 }
 
 void sadcd::
@@ -33,21 +32,6 @@ start()
 		std::cout << result << "\n";
 		// perform some action based on result
 	}
-}
-
-serverid
-sadcd::set_server_id()
-{
-	if (false) // saved serverid
-	{
-
-	}
-	else
-	{
-		return serverid::generate();
-		// save serverid
-	}
-	
 }
 
 // reads the message from a socket that just received some data

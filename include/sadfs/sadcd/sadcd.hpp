@@ -11,14 +11,13 @@ namespace sadfs {
 class sadcd
 {
 public:
-	sadcd(char const* ip, int port);
+	sadcd(char const* ip, int port, char const* server_id);
 
 	// starts server by opening a listener
 	void start();
 private:
 	// reads the message from a socket that just received some data
 	std::string process_message(comm::socket const&);
-	serverid set_server_id();
 
 	comm::service const service_;
 	serverid serverid_;

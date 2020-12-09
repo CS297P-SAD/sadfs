@@ -25,6 +25,19 @@ namespace po = boost::program_options;
 
 namespace {
 
+po::options_description
+config_file_only_options()
+{
+	po::options_description desc;
+	// options that can only be configured in the config file
+	desc.add_options()
+	("serverid", po::value<std::string>()->required(),
+		"UUID for this server")
+	;
+
+	return desc;
+}
+
 // returns a boost::options_description containing
 // all configuration options
 po::options_description
@@ -114,6 +127,10 @@ main(int argc, char const** argv)
 		display_help(options);
 		return 0;
 	}
+
+	// add these options because we only want them to be pulled from the config
+	// file
+	options.add(config_file_only_options());
 
 	// read options not specified via the CLI
 	sadfs::bootstrap::parse_config_file(variables, options);
