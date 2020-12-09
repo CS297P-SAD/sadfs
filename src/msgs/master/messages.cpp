@@ -120,7 +120,7 @@ bool
 embed(join_network_request const& req, message_container& container)
 {
 	// should this be in a try-catch block?
-	// msg.mutable_chunk_location_req() can throw if heap allocation fails
+	// msg.mutable_join_network_req() can throw if heap allocation fails
 	*container.mutable_join_network_req() = req.protobuf_;
 	return true;
 }

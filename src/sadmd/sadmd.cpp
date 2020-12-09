@@ -205,7 +205,6 @@ handle(msgs::master::join_network_request const& jnr, msgs::channel const& ch)
 						  jnr.service(),
 						  jnr.max_chunks(), 
 						  jnr.chunk_count());
-	ch.flush();
 	return true;
 }
 
