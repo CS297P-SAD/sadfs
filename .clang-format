@@ -1,12 +1,16 @@
 ---
 BasedOnStyle: LLVM
-BreakBeforeBraces: Allman # Always
+ColumnLimit: 79
 IndentWidth: 4
 UseTab: Never # :(
-AlwaysBreakAfterReturnType: TopLevelDefinitions
 ---
 Language: Cpp
+AlignConsecutiveAssignments: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: Never
 AllowShortLambdasOnASingleLine: All
+AlwaysBreakAfterReturnType: TopLevelDefinitions
+BreakBeforeBraces: Allman # Always
 ---
 Language: Proto
 # disable formatting of .proto files

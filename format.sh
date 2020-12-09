@@ -16,4 +16,4 @@ if [ ! "$#" -gt 0 ] ; then
 fi
 
 echo "running clang-format on files: $@"
-clang-format --style=file "$@"
+clang-format -i --style=file "$@"
