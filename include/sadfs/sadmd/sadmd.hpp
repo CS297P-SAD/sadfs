@@ -22,6 +22,7 @@
 namespace sadfs {
 
 using time_point = std::chrono::steady_clock::rep;
+using version = unsigned int;
 
 // all the information needed about a chunk server
 struct chunk_server_info
@@ -37,6 +38,14 @@ struct file_info
 {
 	int ttl;
 	util::file_chunks chunkids;
+};
+
+// all the information needed about a chunk
+struct chunk_info
+{
+	version latest_version;
+	// all the places this chunk is stored and what version is there
+	std::vector<std::pair<chunk_server_info*, version> > locations;
 };
 
 class sadmd
@@ -84,7 +93,7 @@ private:
 
 	void append_chunk_to_file(std::string const&, chunkid);
 
-	void add_chunk_to_server(chunkid, serverid);
+	void add_chunk_to_server(chunkid, version, serverid);
 
 	void reintroduce_chunks_to_network(util::file_chunks);
 
@@ -99,10 +108,8 @@ private:
 	std::unordered_map<std::string, file_info> files_;
 	// metadata for each chunk server
 	std::unordered_map<serverid, chunk_server_info> chunk_server_metadata_;
-	// map from chunkid to list of chunk servers
-	// TODO: make chunk_locations_.second include latest version number and a 
-	//       version number associated with each server
-	std::unordered_map<chunkid, std::vector<chunk_server_info*> > chunk_locations_;
+	// map from chunkid to chunk info
+	std::unordered_map<chunkid, chunk_info> chunk_metadata_;
 	// persistent/on disk copy of files_
 	sqlite3* const files_db_;
 };

@@ -12,6 +12,7 @@
 // standard includes
 #include <array>
 #include <cstring>  // std::strerror
+#include <functional>
 #include <iostream>
 #include <iterator>
 #include <sstream>  // std::osstream
@@ -64,18 +65,29 @@ open_db()
 }
 
 std::vector<comm::service>
-valid_servers(std::vector<chunk_server_info*> const& servers, bool latest_only)
+valid_servers(chunk_info& info, bool latest_only)
 {
-	auto services = std::vector<comm::service>{};
-	services.reserve(servers.size());
-	// TODO: make decision more complicated....
-	// TODO: wrap this in if block, only include servers with 
-	// latest version if latest_only == true
-	for (auto server : servers)
+	auto is_active = [&info](auto location)
+	{ 
+		return location.first->valid_until > time::now();
+	};
+	auto is_active_latest_version = [&info](auto location){ 
+		return location.first->valid_until > time::now() && 
+		      location.second == info.latest_version;
+	};
+	auto filter = [&](auto location)
 	{
-		if (server->valid_until > time::now())
+		if (latest_only) { return is_active_latest_version(location); }
+		return is_active(location);
+	};
+
+	auto services = std::vector<comm::service>{};
+	services.reserve(info.locations.size());
+	for (auto location : info.locations)
+	{
+		if (filter(location))
 		{
-			services.push_back(server->service);
+			services.push_back(location.first->service);
 		}
 	}
 	return services;
@@ -356,7 +368,7 @@ append_chunk_to_file(std::string const& filename, chunkid new_chunkid)
 		return;
 	}
 	files_[filename].chunkids.add_chunk(new_chunkid);
-	chunk_locations_.emplace(new_chunkid, std::vector<chunk_server_info*>{});
+	chunk_metadata_.emplace(new_chunkid, chunk_info{});
 }
 
 void sadmd::
@@ -364,16 +376,20 @@ reintroduce_chunks_to_network(util::file_chunks ids)
 {
 	for (auto i = 0; i < ids.size(); i++)
 	{
-		chunk_locations_.emplace(ids[i], std::vector<chunk_server_info*>{});
+		chunk_metadata_.emplace(ids[i], chunk_info{});
 	}
 }
 
 void sadmd::
-add_chunk_to_server(chunkid cid, serverid sid)
+add_chunk_to_server(chunkid cid, version v, serverid sid)
 {
 	if (!is_active(sid)) return;	
 	auto server_ptr = &(chunk_server_metadata_.at(sid));
-	chunk_locations_[cid].push_back(server_ptr);
+	auto& info = chunk_metadata_[cid];
+	// add server to chunk's locations
+	info.locations.emplace_back(server_ptr, v);
+	// make sure latest version is correct
+	info.latest_version = std::max<version>(info.latest_version, v);
 }
-
+  
 } // sadfs namespace
