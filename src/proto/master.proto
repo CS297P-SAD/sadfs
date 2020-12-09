@@ -9,6 +9,14 @@ message chunk_location_request {
 	string  filename     = 2;
 	uint64  chunk_number = 3;
 }
+// request for file IO
+message join_network_request {
+	bytes  server_id   = 1;
+	string ip          = 2;
+	int32  port        = 3;
+	uint64 max_chunks  = 4;
+	uint64 chunk_count = 5;
+}
 
 // chunk server chunk_server_heartbeat
 message chunk_server_heartbeat {
@@ -21,5 +29,6 @@ message message_container {
 	oneof               msg {
 		chunk_location_request chunk_location_req     = 11;
 		chunk_server_heartbeat chunk_server_heartbeat = 12;
+		join_network_request   join_network_req       = 13;
 	}
 }

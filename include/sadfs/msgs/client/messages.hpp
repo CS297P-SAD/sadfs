@@ -5,11 +5,10 @@
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/msgs/common.hpp>
 #include <sadfs/proto/client.pb.h>
-#include <sadfs/uuid.hpp>
+#include <sadfs/types.hpp>
 
 namespace sadfs { namespace msgs { namespace client {
 using proto::client::message_container;
-using chunkid = uuid;
 using version = unsigned int;
 
 // enumerates types of control messages sent to clients

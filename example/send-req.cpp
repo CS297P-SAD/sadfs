@@ -33,6 +33,7 @@ for (auto file : files_)
 #include <sadfs/msgs/messages.hpp>
 #include <sadfs/msgs/master/message_processor.hpp>
 #include <sadfs/msgs/master/serializer.hpp>
+#include <sadfs/types.hpp>
 
 #include <iostream>
 
@@ -101,7 +102,7 @@ request_chunk(std::string filename, size_t offset, char rw)
 	};
 	
 	auto ch = establish_conn();
-	info("connection established with the echo server");
+	info("connection established with the master server");
 
 	// send chunk_location_request
 	msgs::master::serializer{}.serialize(fr, ch);
@@ -116,6 +117,26 @@ request_chunk(std::string filename, size_t offset, char rw)
 	std::cout << "\n";
 }
 
+void
+join_network()
+{
+	auto jr = msgs::master::join_network_request
+	{
+		serverid::generate(),
+		comm::service{"127.0.0.1", 6668},
+		1000,
+		0
+	};
+
+	auto ch = establish_conn();
+	info("connection established with the master server");
+
+	// send chunk_location_request
+	msgs::master::serializer{}.serialize(jr, ch);
+	info("sent join network request");
+	ch.flush();	
+}
+
 int
 main(int argc, char** argv)
 {
@@ -124,6 +145,7 @@ main(int argc, char** argv)
 	request_chunk("/mnt/a/file.dat", 1, 'w');
 	request_chunk("/mnt/a/file.dat", 2, 'r');
 	request_chunk("/mnt/a/file.da", 0, 'r');
+	join_network();
 
 	return 0;
 }

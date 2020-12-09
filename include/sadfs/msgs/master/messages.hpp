@@ -2,8 +2,10 @@
 #define SADFS_MSGS_MASTER_MESSAGES_HPP
 
 // sadfs-specific includes
+#include <sadfs/comm/inet.hpp>
 #include <sadfs/msgs/common.hpp>
 #include <sadfs/proto/master.pb.h>
+#include <sadfs/types.hpp>
 
 // standard includes
 #include <cstddef> // std::size_t
@@ -18,6 +20,7 @@ enum class msg_type
 	unknown,
 	chunk_location_request,
 	chunk_server_heartbeat,
+	join_network_request
 };
 
 class chunk_location_request
@@ -61,6 +64,31 @@ private:
 bool embed(chunk_server_heartbeat const&, message_container&);
 bool extract(chunk_server_heartbeat&, message_container const&);
 
+class join_network_request
+{
+public:
+	join_network_request() = default;
+	join_network_request(serverid server_id, comm::service service,
+	                     uint64_t max_chunks, uint64_t chunk_count);
+
+	serverid server_id()   const;
+	comm::service service() const;
+	uint64_t max_chunks()  const;
+	uint64_t chunk_count() const;
+	
+	inline static msg_type type{msg_type::join_network_request};
+private:
+	proto::master::join_network_request protobuf_{};
+
+	// provide embed/extract functions access to private members
+	friend bool embed(join_network_request const&, message_container&);
+	friend bool extract(join_network_request&, message_container const&);
+};
+
+// declarations
+bool embed(join_network_request const&, message_container&);
+bool extract(join_network_request&, message_container const&);
+
 // ==================================================================
 //                     inline function definitions
 // ==================================================================
@@ -74,6 +102,32 @@ inline std::size_t chunk_location_request::
 chunk_number() const
 {
 	return protobuf_.chunk_number();
+}
+
+inline serverid join_network_request::
+server_id() const
+{
+	auto id = serverid{};
+	id.deserialize(protobuf_.server_id().data());
+	return id;
+}
+
+inline comm::service join_network_request::
+service() const
+{
+	return {protobuf_.ip().c_str(), protobuf_.port()};
+}
+
+inline uint64_t join_network_request::
+max_chunks() const
+{
+	return protobuf_.max_chunks();
+}
+
+inline uint64_t join_network_request::
+chunk_count() const
+{
+	return protobuf_.chunk_count();
 }
 
 } // master namespace

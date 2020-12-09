@@ -61,7 +61,6 @@ std::string to_string(uuid const& u)
 	return boost::uuids::to_string(u.value);
 }
 
-
 } // sadfs namespace
 
 // define std::hash for sadfs::uuid
