@@ -27,11 +27,11 @@ target_link_libraries (sadfs_protobuf
 # can actually be #include-d
 set (PROTO_HEADER_FILES_DIR ${BUILD_INCLUDE_DIR}/sadfs/proto)
 add_custom_target (sadfs_proto_includes
-    DEPENDS ${PROTO_HEADER_FILES}
+	DEPENDS ${PROTO_HEADER_FILES}
 	COMMAND ${CMAKE_COMMAND} -E
-    make_directory ${PROTO_HEADER_FILES_DIR}
+	make_directory ${PROTO_HEADER_FILES_DIR}
 	COMMAND ${CMAKE_COMMAND} -E
-    copy ${PROTO_HEADER_FILES} ${PROTO_HEADER_FILES_DIR})
+	copy ${PROTO_HEADER_FILES} ${PROTO_HEADER_FILES_DIR})
 add_dependencies (sadfs_protobuf sadfs_proto_includes)
 
 # generate *.grpc.pb.cc and *.grpc.pb.h files
@@ -40,19 +40,19 @@ grpc_generate_cpp (GRPC_SOURCE_FILES GRPC_HEADER_FILES
 # compile *.pb.grpc.cc files into a library
 add_library (sadfs_grpc STATIC ${GRPC_SOURCE_FILES})
 target_include_directories (sadfs_grpc PUBLIC
-    ${gRPC_INCLUDE_DIR}
+	${gRPC_INCLUDE_DIR}
 	${BUILD_INCLUDE_DIR})
 target_link_libraries (sadfs_grpc
-    gRPC::grpc++)
+	gRPC::grpc++)
 # copy *.pb.h into BUILD_INCLUDE_DIR before the library is built so that they
 # can actually be #include-d
 set (GRPC_HEADER_FILES_DIR ${BUILD_INCLUDE_DIR}/sadfs/grpc)
 add_custom_target (sadfs_grpc_includes
-    DEPENDS ${GRPC_HEADER_FILES}
+	DEPENDS ${GRPC_HEADER_FILES}
 	COMMAND ${CMAKE_COMMAND} -E
-    make_directory ${GRPC_HEADER_FILES_DIR}
+	make_directory ${GRPC_HEADER_FILES_DIR}
 	COMMAND ${CMAKE_COMMAND} -E
-    copy ${GRPC_HEADER_FILES} ${GRPC_HEADER_FILES_DIR})
+	copy ${GRPC_HEADER_FILES} ${GRPC_HEADER_FILES_DIR})
 add_dependencies (sadfs_grpc sadfs_grpc_includes)
 
 # common components that almost all targets depend on
@@ -61,14 +61,12 @@ set (COMMON_SOURCE_FILES
 	msgs/master.cpp msgs/chunk.cpp msgs/channel.cpp)
 
 # add main targets
-add_executable (sadmd
-	sadmd/main.cpp
-	sadmd/sadmd.cpp
-	${COMMON_SOURCE_FILES})
-add_executable (sadcd
-	sadcd/main.cpp
-	sadcd/sadcd.cpp
-	${COMMON_SOURCE_FILES})
+foreach (TARGET sadmd sadcd)
+	add_executable (${TARGET}
+		${TARGET}/main.cpp
+		${TARGET}/${TARGET}.cpp
+		${COMMON_SOURCE_FILES})
+endforeach()
 
 # first, find the boost_program_options library. this sets
 # the Boost_INCLUDE_DIRS and Boost_LIBRARIES variables
@@ -90,21 +88,25 @@ foreach (TARGET sadmd sadcd sadfsd)
 		PRIVATE ${Boost_LIBRARIES})
 endforeach()
 
-# for sadmd and sadcd, do the following
-# 1. mark their bootstrap targets as dependencies
-# 2. mark sadfs_protobuf and sadfs_grpc as a dependency
-foreach(TARGET sadmd sadcd)
-	add_dependencies (${TARGET} ${TARGET}-bootstrap)
-	target_link_libraries (${TARGET} PRIVATE sadfs_protobuf
-                                     PRIVATE sadfs_grpc)
-endforeach()
-
 # source files for sadfsd-bootstrap
 target_sources (sadfsd-bootstrap
-    PRIVATE sadfsd/sadfilesys.cpp
-    PRIVATE ${COMMON_SOURCE_FILES})
-target_link_libraries (sadfsd-bootstrap PRIVATE sadfs_protobuf
-                                        PRIVATE sadfs_grpc)
+	PRIVATE sadfsd/sadfilesys.cpp
+	PRIVATE ${COMMON_SOURCE_FILES})
+
+# for sadmd and sadcd, mark their bootstrap targets as dependencies
+foreach (TARGET sadmd sadcd)
+	add_dependencies (${TARGET} ${TARGET}-bootstrap)
+endforeach()
+
+# link with the sadfs_protobuf library
+foreach (TARGET sadmd sadcd sadfsd-bootstrap)
+	target_link_libraries (${TARGET} PRIVATE sadfs_protobuf)
+endforeach()
+
+# link with the sadfs_grpc library
+foreach (TARGET sadcd sadfsd-bootstrap)
+	target_link_libraries (${TARGET} PRIVATE sadfs_grpc)
+endforeach()
 
 # find fuse library. this sets the FUSE_INCLUDE_DIRS and FUSE_LIBRARIES
 # variables
@@ -112,11 +114,11 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(FUSE REQUIRED fuse)
 
 target_include_directories (sadfsd-bootstrap
-    SYSTEM PRIVATE ${FUSE_INCLUDE_DIRS})
+	SYSTEM PRIVATE ${FUSE_INCLUDE_DIRS})
 target_link_libraries (sadfsd-bootstrap
-    PRIVATE ${FUSE_LINK_LIBRARIES})
+	PRIVATE ${FUSE_LINK_LIBRARIES})
 target_compile_options(sadfsd-bootstrap
-    PRIVATE ${FUSE_CFLAGS})
+	PRIVATE ${FUSE_CFLAGS})
 
 # find the SQLite3 library. this sets
 # the SQLite3_INCLUDE_DIRS and SQLite3_LIBRARIES variables
