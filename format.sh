@@ -15,5 +15,8 @@ if [ ! "$#" -gt 0 ] ; then
 	exit 1
 fi
 
-echo "running clang-format on files: $@"
-clang-format -i --style=file "$@"
+STYLE_FLAG="--style=file"
+INLINE_FLAG=${INLINE:+"-i"}
+
+echo "running command: clang-format ${INLINE_FLAG} ${STYLE_FLAG} $@"
+clang-format ${INLINE_FLAG} ${STYLE_FLAG} "$@"

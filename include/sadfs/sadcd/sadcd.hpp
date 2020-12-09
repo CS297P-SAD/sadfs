@@ -9,26 +9,28 @@
 #include <future>
 #include <string>
 
-namespace sadfs {
+namespace sadfs
+{
 
 class sadcd
 {
 public:
-	sadcd(char const* ip, int port);
+    sadcd(char const *ip, int port);
 
-	// starts server by opening a listener
-	void start();
+    // starts server by opening a listener
+    void start();
+
 private:
-	// runs the chunk service
-	void run();
+    // runs the chunk service
+    void run();
 
-	// starts main server thread
-	// stops when asked to, indicates death via std::promise
-	void start_main(std::promise<void>, std::shared_future<void>);
+    // starts main server thread
+    // stops when asked to, indicates death via std::promise
+    void start_main(std::promise<void>, std::shared_future<void>);
 
-	comm::service const master_;
+    comm::service const master_;
 };
 
-} // sadfs namespace
+} // namespace sadfs
 
 #endif // SADFS_SADCD_SADCD_HPP

@@ -5,7 +5,10 @@ IndentWidth: 4
 UseTab: Never # :(
 ---
 Language: Cpp
+AccessModifierOffset: -4 # -(IndentWidth)
 AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignTrailingComments: true
 AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLambdasOnASingleLine: All
