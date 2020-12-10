@@ -26,11 +26,15 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y \
-        libprotobuf-dev libboost-program-options-dev protobuf-compiler libfuse-dev
+        libprotobuf-dev \
+        libboost-program-options-dev \
+        protobuf-compiler \
+        libfuse-dev \
+        libsqlite3-dev
     - name: Run CMake
       run: cmake -B build/
     - name: Build
-      run: cmake --build build/ -j `cat /proc/cpuinfo | grep processor | wc -l`
+      run: cmake --build build/ -j `nproc`
         
   build_osx:
     name: Build job on MacOS
@@ -44,7 +48,7 @@ jobs:
         ref: ${{ github.ref }}
     - name: Install dependencies
       run: |
-          brew install protobuf boost
+          brew install protobuf boost sqlite3
           brew cask install osxfuse
     - name: Run CMake
       run: cmake -B build/
