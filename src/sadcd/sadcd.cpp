@@ -3,6 +3,9 @@
 // sadfs-specific includes
 #include <sadfs/sadcd/sadcd.hpp>
 #include <sadfs/comm/inet.hpp>
+#include <sadfs/msgs/messages.hpp>
+#include <sadfs/msgs/channel.hpp>
+#include <sadfs/msgs/master/serializer.hpp>
 
 // standard includes
 #include <array>
@@ -13,8 +16,19 @@
 
 namespace sadfs {
 
+namespace constants {
+
+constexpr auto max_chunks = 1000;
+
+} // (local) constants namespace
+
 sadcd::
-sadcd(char const* ip, int port) : service_(ip, port)
+sadcd(char const* ip, int port, 
+      char const* master_ip, int master_port, 
+      char const* server_id) : 
+      service_(ip, port) , 
+      master_(master_ip, master_port),
+      serverid_(serverid::from_string(server_id))
 {
 	// do nothing
 }
@@ -22,6 +36,7 @@ sadcd(char const* ip, int port) : service_(ip, port)
 void sadcd::
 start()
 {
+	join_network();
 	auto listener = comm::listener{service_};
 
 	while (true)
@@ -62,6 +77,39 @@ process_message(comm::socket const& sock)
 	}
 
 	return result;
+}
+
+bool sadcd::
+join_network()
+{
+	/*
+	//auto ch = channel{socket{domain::inet, type::stream, -1}}; // dummy channel
+	try
+	{
+		ch = msgs::channel{master_.connect()}
+	}
+	catch
+	{
+		// log error and return false
+		return false;
+	}
+	TODO: Replace next line  with above ^ once dummy channel returns !is_open()
+	*/
+
+	auto ch = msgs::channel{master_.connect()};
+
+	auto jr = msgs::master::join_network_request
+	{
+		serverid_,
+		service_,
+		constants::max_chunks,
+		/*chunk_count=*/ 0
+	};
+
+	// send join_network_request
+	msgs::master::serializer{}.serialize(jr, ch);
+	return true;
+
 }
 
 } // sadfs namespace
