@@ -103,6 +103,7 @@ sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 void sadmd::
 start()
 {
+	create_file("/mnt/a/file.dat");
 	auto listener = comm::listener{service_};
 	while (true)
 	{
@@ -210,6 +211,7 @@ handle(msgs::master::chunk_write_notification const& cwn, msgs::channel const& c
 {
 	auto chunk = cwn.chunk_id();
 	auto server = cwn.server_id();
+	if (!is_active(server)) return false;
 
 	auto it = chunk_metadata_.end();
 	if ((it = chunk_metadata_.find(chunk)) != chunk_metadata_.end())
@@ -419,7 +421,6 @@ reintroduce_chunks_to_network(util::file_chunks ids)
 bool sadmd::
 add_chunk_to_server(chunkid cid, version v, serverid sid)
 {
-	if (!is_active(sid)) return false;
 	auto& info = chunk_metadata_[cid];
 	// add server to chunk's locations
 	info.locations.emplace(sid, v);
