@@ -211,12 +211,14 @@ handle(msgs::master::chunk_write_notification const& cwn, msgs::channel const& c
 	auto chunk = cwn.chunk_id();
 	auto server = cwn.server_id();
 
-	if (chunk_metadata_.count(chunk))
+	auto it = chunk_metadata_.end();
+	if ((it = chunk_metadata_.find(chunk)) != chunk_metadata_.end())
 	{
 		// chunk is already registerd - update version info
-		auto& info = chunk_metadata_[chunk];
+		auto& info = it->second;
 		info.latest_version = std::max<version>(info.latest_version, cwn.version());
-		if (info.locations.count(server))
+		auto location = info.locations.end();
+		if ((location = info.locations.find(server)) != info.locations.end())
 		{
 			// chunk was already stored on this server - update version info
 			info.locations[server] = cwn.version();

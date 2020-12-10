@@ -126,6 +126,7 @@ notify_master_of_write(chunkid chunk, version version_num, std::string const& fi
 	};
 
 	msgs::master::serializer{}.serialize(cwn, ch);
+	// TODO: confirm from master that the write went through
 	return true;
 }
 
