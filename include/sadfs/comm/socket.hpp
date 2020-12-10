@@ -10,7 +10,7 @@ public:
 	enum class type { stream, datagram };
 
 	// creates a new socket
-	socket(domain const, type const);
+	socket(domain const, type const) noexcept;
 
 	// creates a representation of an existing socket
 	// does not create a new socket
@@ -45,10 +45,10 @@ private:
 };
 
 // inline functions
-socket::
+inline socket::
 socket() noexcept : domain_(domain::inet), type_(type::stream) { }
 
-bool socket::
+inline bool socket::
 valid() const noexcept
 {
 	return descriptor_ != -1;
