@@ -26,7 +26,7 @@ namespace constants {
 // columns in our SQLite database
 constexpr auto filename_col = 0;
 constexpr auto chunkid_str_col = 1;
-constexpr auto bytes_per_chunk = 67108864; // 64 MB
+constexpr auto bytes_per_chunk = 64 * 1024 * 1024; // 64 MB
 
 } // (local) constants namespace
 
