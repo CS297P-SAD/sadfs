@@ -18,11 +18,11 @@ using namespace std::string_view_literals;
 // struct to hold info needed to set up a server
 struct settings
 {
-	const char* ip;
+	char const* ip;
 	int         port;
-	const char* master_ip;
+	char const* master_ip;
 	int         master_port;
-	const char* server_id;
+	char const* server_id;
 };
 
 // returns settings based on command-line arguments
