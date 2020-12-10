@@ -18,9 +18,31 @@ using message_container = proto::master::message_container;
 enum class msg_type
 {
 	unknown,
+	chunk_write_notification,
 	chunk_location_request,
 	chunk_server_heartbeat,
 	join_network_request
+};
+
+class chunk_write_notification
+{
+public:
+	chunk_write_notification() = default;
+	chunk_write_notification(serverid server_id, chunkid chunk_id, 
+                             uint64_t version, std::string const& filename);
+
+	serverid           server_id() const;
+	chunkid            chunk_id()  const;
+	uint64_t           version()   const;
+	std::string const& filename()  const;
+	
+	inline static msg_type type{msg_type::chunk_write_notification};
+private:
+	proto::master::chunk_write_notification protobuf_{};
+
+	// provide embed/extract functions access to private members
+	friend bool embed(chunk_write_notification const&, message_container&);
+	friend bool extract(chunk_write_notification&, message_container const&);
 };
 
 class chunk_location_request
@@ -92,6 +114,35 @@ bool extract(join_network_request&, message_container const&);
 // ==================================================================
 //                     inline function definitions
 // ==================================================================
+
+inline serverid chunk_write_notification::
+server_id() const
+{
+	auto id = serverid{};
+	id.deserialize(protobuf_.server_id().data());
+	return id;
+}
+
+inline chunkid chunk_write_notification::
+chunk_id() const
+{
+	auto id = chunkid{};
+	id.deserialize(protobuf_.chunk_id().data());
+	return id;
+}
+
+inline uint64_t chunk_write_notification::
+version() const
+{
+	return protobuf_.version();
+}
+
+inline std::string const& chunk_write_notification::
+filename() const
+{
+	return protobuf_.filename();
+}
+
 inline std::string const& chunk_location_request::
 filename() const
 {
