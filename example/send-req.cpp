@@ -118,11 +118,11 @@ request_chunk(std::string filename, size_t offset, char rw)
 }
 
 void
-join_network()
+join_network(serverid id)
 {
 	auto jr = msgs::master::join_network_request
 	{
-		serverid::generate(),
+		id,
 		comm::service{"127.0.0.1", 6668},
 		1000,
 		0
@@ -137,15 +137,47 @@ join_network()
 	ch.flush();	
 }
 
+void
+notify_chunk(serverid sid, chunkid cid, version v, uint32_t num_bytes)
+{
+	auto cwn = msgs::master::chunk_write_notification
+	{
+		sid,
+		cid,
+		v,
+		"/mnt/a/file.dat",
+		num_bytes
+	};
+
+	auto ch = establish_conn();
+	info("connection established with the master server");
+
+	// send chunk_write_notification
+	msgs::master::serializer{}.serialize(cwn, ch);
+	info("sent chunk write notification");
+	ch.flush();	
+}
+
 int
 main(int argc, char** argv)
 {
 	std::cout << std::boolalpha;
+	auto sid1 = serverid::generate();
+	auto sid2 = serverid::generate();
+	auto cid1 = chunkid::generate();
+	auto cid2 = chunkid::generate();
+	join_network(sid1);
+	join_network(sid2);
+	notify_chunk(sid1, cid1, 0, 200);
+	notify_chunk(sid2, cid1, 1, 250);
+	notify_chunk(sid1, cid2, 0, 0);
+	notify_chunk(sid1, cid1, 1, 250);
+	notify_chunk(sid2, cid2, 0, 100);
+	notify_chunk(sid2, cid2, 2, 36);
 	request_chunk("/mnt/a/file.dat", 0, 'r');
 	request_chunk("/mnt/a/file.dat", 1, 'w');
 	request_chunk("/mnt/a/file.dat", 2, 'r');
 	request_chunk("/mnt/a/file.da", 0, 'r');
-	join_network();
 
 	return 0;
 }

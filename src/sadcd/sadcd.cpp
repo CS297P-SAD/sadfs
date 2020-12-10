@@ -124,4 +124,29 @@ sadcd::join_network()
     return true;
 }
 
+bool sadcd::
+notify_master_of_write(chunkid chunk, version version_num, std::string const& filename, uint32_t new_chunk_size)
+{
+	auto sock = master_.connect();
+    if (!sock.valid())
+    {
+        return false;
+    }
+
+    auto ch = msgs::channel{std::move(sock)};
+
+	auto cwn = msgs::master::chunk_write_notification
+	{
+		serverid_,
+		chunk,
+		version_num,
+		filename,
+		new_chunk_size
+	};
+
+	msgs::master::serializer{}.serialize(cwn, ch);
+	// TODO: confirm from master that the write went through
+	return true;
+}
+
 } // namespace sadfs

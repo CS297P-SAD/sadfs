@@ -15,12 +15,56 @@ namespace {
 auto const msg_type_lookup = msg_type_map
 {
 	{MsgCase::MSG_NOT_SET,           msg_type::unknown},
+	{MsgCase::kChunkWriteNotify,     msg_type::chunk_write_notification},
 	{MsgCase::kChunkLocationReq,     msg_type::chunk_location_request},
 	{MsgCase::kChunkServerHeartbeat, msg_type::chunk_server_heartbeat},
 	{MsgCase::kJoinNetworkReq,       msg_type::join_network_request},
 };
 
 } // unnamed namespace
+
+/* ========================================================
+ *                       chunk_write_notification
+ * ========================================================
+ */
+chunk_write_notification::
+chunk_write_notification(serverid server_id, chunkid chunk_id, 
+                         uint64_t version, std::string const& filename, 
+                         uint32_t new_size)
+{
+	server_id.serialize(std::back_inserter(*protobuf_.mutable_server_id()));
+	chunk_id.serialize(std::back_inserter(*protobuf_.mutable_chunk_id()));
+	protobuf_.set_version(version);
+	protobuf_.set_filename(filename);
+	protobuf_.set_new_size(new_size);
+}
+
+// embeds a control message into a container that is
+// (typically) sent over the wire
+bool
+embed(chunk_write_notification const& req, message_container& container)
+{
+	// should this be in a try-catch block?
+	// msg.mutable_chunk_write_notify() can throw if heap allocation fails
+	*container.mutable_chunk_write_notify() = req.protobuf_;
+	return true;
+}
+
+// extracts a control message from a container that is
+// (typically) received over the wire
+bool
+extract(chunk_write_notification& req, message_container const& container)
+{
+	if (msg_type_lookup.at(container.msg_case()) != chunk_write_notification::type)
+	{
+		// cannot extract a msg that doesn't exist
+		return false;
+	}
+
+	// read chunk_write_notification from message_container
+	req.protobuf_ = container.chunk_write_notify();
+	return true;
+}
 
 /* ========================================================
  *                       chunk_location_request
