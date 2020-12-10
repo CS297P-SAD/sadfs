@@ -100,6 +100,7 @@ private:
 
 	void reintroduce_chunks_to_network(util::file_chunks);
 
+	// must be a class member to have access to chunk_metadata_
 	std::vector<comm::service> valid_servers(chunk_info&, bool);
 
 	// returns true on success

@@ -68,18 +68,14 @@ open_db()
 std::vector<comm::service> sadmd::
 valid_servers(chunk_info& info, bool latest_only)
 {
-	auto is_active_ = [&info](auto valid_until)
-	{ 
-		return valid_until > time::now();
-	};
 	auto is_active_latest_version = [&info](auto version, auto valid_until){ 
 		return valid_until > time::now() && 
-		      version == info.latest_version;
+		       version == info.latest_version;
 	};
 	auto filter = [&](auto version, auto valid_until)
 	{
 		if (latest_only) { return is_active_latest_version(version, valid_until); }
-		return is_active_(valid_until);
+		return valid_until > time::now();
 	};
 
 	auto services = std::vector<comm::service>{};
@@ -87,7 +83,7 @@ valid_servers(chunk_info& info, bool latest_only)
 	for (auto location : info.locations)
 	{
 		auto server = chunk_server_metadata_.at(location.first);
-		if (filter(location.second, server.valid_until))
+		if (filter(location.second/*=version*/, server.valid_until))
 		{
 			services.push_back(server.service);
 		}
