@@ -35,7 +35,7 @@ struct chunk_server_info
 // all the information needed about a file
 struct file_info
 {
-	int ttl;
+	time_point locked_until;
 	util::file_chunks chunkids;
 };
 

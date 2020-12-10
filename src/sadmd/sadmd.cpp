@@ -65,6 +65,22 @@ open_db()
 }
 
 std::vector<comm::service>
+choose_three(std::unordered_map<serverid, chunk_server_info>& server_map)
+{
+	auto services = std::vector<comm::service>{};
+	for (auto server : server_map)
+	{
+		if (server.second.valid_until > time::now())
+		{
+			services.push_back(server.second.service);
+		}
+		if (services.size() >= 3) break;
+	}
+
+	return services;
+}
+
+std::vector<comm::service>
 valid_servers(chunk_info& info, bool latest_only)
 {
 	auto is_active = [&info](auto location)
@@ -166,9 +182,18 @@ handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
 	auto it = files_.find(filename);
 	if (it == files_.end())
 	{
-		std::cerr << "Error: request for chunk location in nonexistant file "
-				  << filename
-				  << '\n';
+		if (clr.io_type() == sadfs::msgs::io_type::write)
+		{
+			id = chunkid::generate();
+			servers = choose_three(chunk_server_metadata_);
+			// leave version_num = 0;
+		}
+		else
+		{
+			std::cerr << "Error: request for chunk location in nonexistant file "
+					<< filename
+					<< '\n';
+		}
 	}
 	else if (validate(it, clr.chunk_number()))
 	{
@@ -181,6 +206,11 @@ handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
 		{
 			std::cerr << "Error: list of server locations empty\n";
 		}
+	}
+
+	if (servers.size() > 0 && clr.io_type() == sadfs::msgs::io_type::write)
+	{
+		it->second.locked_until = time::from_now(time::file_ttl);
 	}
 		
 	// create the response protobuf
