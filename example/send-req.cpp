@@ -161,21 +161,21 @@ int
 main(int argc, char** argv)
 {
 	std::cout << std::boolalpha;
-	//request_chunk("/mnt/a/file.dat", 0, 'r');
-	//request_chunk("/mnt/a/file.dat", 1, 'w');
-	//request_chunk("/mnt/a/file.dat", 2, 'r');
-	//request_chunk("/mnt/a/file.da", 0, 'r');
 	auto sid1 = serverid::generate();
 	auto sid2 = serverid::generate();
 	auto cid1 = chunkid::generate();
 	auto cid2 = chunkid::generate();
-	//join_network(sid1);
+	join_network(sid1);
 	join_network(sid2);
-	notify_chunk(sid1, cid1, 0);\
-	//notify_chunk(sid2, cid1, 1);
-	//notify_chunk(sid1, cid2, 0);
-	//notify_chunk(sid2, cid2, 1);
-	//notify_chunk(sid2, cid2, 2);
+	notify_chunk(sid1, cid1, 0);
+	notify_chunk(sid2, cid1, 1);
+	notify_chunk(sid1, cid2, 0);
+	notify_chunk(sid2, cid2, 1);
+	notify_chunk(sid2, cid2, 2);
+	request_chunk("/mnt/a/file.dat", 0, 'r');
+	request_chunk("/mnt/a/file.dat", 1, 'w');
+	request_chunk("/mnt/a/file.dat", 2, 'r');
+	request_chunk("/mnt/a/file.da", 0, 'r');
 
 	return 0;
 }
