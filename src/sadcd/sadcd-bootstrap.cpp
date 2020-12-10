@@ -25,6 +25,19 @@ namespace po = boost::program_options;
 
 namespace {
 
+po::options_description
+config_file_only_options()
+{
+	po::options_description desc;
+	// options that can only be configured in the config file
+	desc.add_options()
+	("serverid", po::value<std::string>()->required(),
+		"UUID for this server")
+	;
+
+	return desc;
+}
+
 // returns a boost::options_description containing
 // all configuration options
 po::options_description
@@ -40,6 +53,16 @@ config_options()
 		;
 	desc.add_options()
 		("ipaddress,i", po::value<std::string>()->required(),
+			"override configured ip address on which "
+			"the server listens for incoming connections")
+		;
+	desc.add_options()
+		("master_port", po::value<std::uint16_t>()->required(),
+			"override configured port number on which "
+			"the server listens for incoming connections")
+		;
+	desc.add_options()
+		("master_ipaddress", po::value<std::string>()->required(),
 			"override configured ip address on which "
 			"the server listens for incoming connections")
 		;
@@ -76,7 +99,13 @@ start_server(po::variables_map const& variables)
 		"--ipaddress"s,
 		variables["ipaddress"].as<std::string>(),
 		"--port"s,
-		std::to_string(variables["port"].as<std::uint16_t>())
+		std::to_string(variables["port"].as<std::uint16_t>()),
+		"--master_ipaddress"s,
+		variables["master_ipaddress"].as<std::string>(),
+		"--master_port"s,
+		std::to_string(variables["master_port"].as<std::uint16_t>()),
+		"--serverid"s,
+		variables["serverid"].as<std::string>(),
 	};
 
 	// allocate space for pointers, including terminating nullptr
@@ -114,6 +143,10 @@ main(int argc, char const** argv)
 		display_help(options);
 		return 0;
 	}
+
+	// add these options because we only want them to be pulled from the config
+	// file
+	options.add(config_file_only_options());
 
 	// read options not specified via the CLI
 	sadfs::bootstrap::parse_config_file(variables, options);
