@@ -138,14 +138,15 @@ join_network(serverid id)
 }
 
 void
-notify_chunk(serverid sid, chunkid cid, version v)
+notify_chunk(serverid sid, chunkid cid, version v, uint32_t num_bytes)
 {
 	auto cwn = msgs::master::chunk_write_notification
 	{
 		sid,
 		cid,
 		v,
-		"/mnt/a/file.dat"
+		"/mnt/a/file.dat",
+		num_bytes
 	};
 
 	auto ch = establish_conn();
@@ -167,11 +168,12 @@ main(int argc, char** argv)
 	auto cid2 = chunkid::generate();
 	join_network(sid1);
 	join_network(sid2);
-	notify_chunk(sid1, cid1, 0);
-	notify_chunk(sid2, cid1, 1);
-	notify_chunk(sid1, cid2, 0);
-	notify_chunk(sid2, cid2, 1);
-	notify_chunk(sid2, cid2, 2);
+	notify_chunk(sid1, cid1, 0, 200);
+	notify_chunk(sid2, cid1, 1, 250);
+	notify_chunk(sid1, cid2, 0, 0);
+	notify_chunk(sid1, cid1, 1, 250);
+	notify_chunk(sid2, cid2, 0, 100);
+	notify_chunk(sid2, cid2, 2, 36);
 	request_chunk("/mnt/a/file.dat", 0, 'r');
 	request_chunk("/mnt/a/file.dat", 1, 'w');
 	request_chunk("/mnt/a/file.dat", 2, 'r');

@@ -29,12 +29,14 @@ class chunk_write_notification
 public:
 	chunk_write_notification() = default;
 	chunk_write_notification(serverid server_id, chunkid chunk_id, 
-                             uint64_t version, std::string const& filename);
+                             uint64_t version, std::string const& filename, 
+                             uint32_t new_size);
 
-	serverid           server_id() const;
-	chunkid            chunk_id()  const;
-	uint64_t           version()   const;
-	std::string const& filename()  const;
+	serverid           server_id()  const;
+	chunkid            chunk_id()   const;
+	uint64_t           version()    const;
+	std::string const& filename()   const;
+	uint32_t           new_size() const;
 	
 	inline static msg_type type{msg_type::chunk_write_notification};
 private:
@@ -141,6 +143,12 @@ inline std::string const& chunk_write_notification::
 filename() const
 {
 	return protobuf_.filename();
+}
+
+inline uint32_t chunk_write_notification::
+new_size() const
+{
+	return protobuf_.new_size();
 }
 
 inline std::string const& chunk_location_request::
