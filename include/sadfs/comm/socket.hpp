@@ -16,6 +16,10 @@ public:
 	// does not create a new socket
 	socket(domain const, type const, int const) noexcept;
 
+	// constructs a socket that owns no file descriptor
+	// calling comm_domain() and socket_type() is undefined
+	socket() noexcept;
+
 	// support move operations
 	socket(socket&&) noexcept;
 	socket& operator=(socket&&) noexcept;
@@ -31,11 +35,24 @@ public:
 	type   socket_type() const noexcept;
 	int    descriptor()  const noexcept;
 
+	// returns true if socket owns a valid descriptor
+	bool   valid()       const noexcept;
+
 private:
 	domain domain_;
 	type   type_;
 	int    descriptor_;
 };
+
+// inline functions
+socket::
+socket() noexcept : domain_(domain::inet), type_(type::stream) { }
+
+bool socket::
+valid() const noexcept
+{
+	return descriptor_ != -1;
+}
 
 } // comm namespace
 } // sadfs namespace

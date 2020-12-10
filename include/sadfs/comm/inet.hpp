@@ -59,7 +59,7 @@ public:
 	service(char const* ip, int port);
 
 	// sets up a connection to the service
-	socket connect() const;
+	socket connect() const noexcept;
 
 	// accessors
 	ip_addr ip()   const noexcept;

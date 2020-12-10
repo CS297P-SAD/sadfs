@@ -2,10 +2,12 @@
 
 // sadfs-specific includes
 #include <sadfs/comm/socket.hpp>
+#include <sadfs/logger.hpp>
 
 // standard includes
+#include <cerrno>       // errno
+#include <cstring>      // std::strerror
 #include <stdexcept>    // std::invalid_argument
-#include <system_error> // std::system_error, std::system_category
 #include <sys/socket.h> // ::socket
 #include <unistd.h>     // ::close
 
@@ -41,31 +43,28 @@ lookup(socket::type const type)
 } // unnamed namespace
 
 socket::
-socket(domain const domain, type const type)
+socket(domain const domain, type const type) noexcept
+	: domain_{domain}, type_{type}
 {
 	// let the OS choose protocol by passing 0
 	descriptor_ = ::socket(lookup(domain), lookup(type), /* protocol */ 0);
 	if (descriptor_ == -1)
 	{
-		throw std::system_error(errno, std::system_category(),
-		                        "socket creation failed");
+		logger::error(std::strerror(errno));
 	}
-
-	domain_ = domain;
-	type_ = type;
 }
 
 socket::
 socket(domain const domain, type const type, int const descriptor) noexcept
-	: domain_(domain), type_(type), descriptor_(descriptor)
+	: domain_{domain}, type_{type}, descriptor_{descriptor}
 {
 	// TODO: verify parameters
 }
 
 socket::
 socket(socket&& other) noexcept
-	: domain_(other.domain_), type_(other.type_),
-	  descriptor_(other.descriptor_)
+	: domain_{other.domain_}, type_{other.type_},
+	  descriptor_{other.descriptor_}
 {
 	// prevent other's destructor from closing the descriptor
 	other.descriptor_ = -1;

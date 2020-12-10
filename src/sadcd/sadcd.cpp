@@ -107,28 +107,20 @@ sadcd::start_main(std::promise<void>       death,
 bool
 sadcd::join_network()
 {
-    /*
-    //auto ch = channel{socket{domain::inet, type::stream, -1}}; // dummy
-    channel try
+    auto sock = master_.connect();
+    if (!sock.valid())
     {
-            ch = msgs::channel{master_.connect()}
+        return false;
     }
-    catch
-    {
-            // log error and return false
-            return false;
-    }
-    TODO: Replace next line  with above ^ once dummy channel returns !is_open()
-    */
 
-    auto ch = msgs::channel{master_.connect()};
-
+    auto ch = msgs::channel{std::move(sock)};
     auto jr = msgs::master::join_network_request{serverid_, service_,
                                                  constants::max_chunks,
                                                  /*chunk_count=*/0};
 
     // send join_network_request
     msgs::master::serializer{}.serialize(jr, ch);
+    // TODO: verify success
     return true;
 }
 

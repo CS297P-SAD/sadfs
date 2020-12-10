@@ -3,10 +3,12 @@
 // sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/comm/defaults.hpp>
+#include <sadfs/logger.hpp>
 
 // standard includes
 #include <arpa/inet.h>  // inet_aton, htons
 #include <cerrno>       // errno
+#include <cstring>      // std::strerror
 #include <limits>       // std::numeric_limits
 #include <netinet/in.h> // in_addr
 #include <string>
@@ -109,23 +111,28 @@ port() const noexcept
 }
 
 socket service::
-connect() const
+connect() const noexcept
 {
 	// create a socket
 	auto sock = socket{socket::domain::inet, socket::type::stream};
+	if (!sock.valid())
+	{
+		return sock; // nothing can be done with this socket
+	}
+
+	// connect to service using sock
 	auto addr = sockaddr_in{};
 	addr.sin_family = AF_INET;
 	addr.sin_port   = port_.value();
 	addr.sin_addr   = {ip_.value()};
-
-	// connect to service using sock
 	if (::connect(sock.descriptor(),
 	              reinterpret_cast<sockaddr const*>(&addr),
 	              sizeof(addr)) == -1)
 	{
-		throw std::system_error(errno, std::system_category(),
-		          fmt_err("failed to connect to: ", ip_, port_));
+		logger::error(std::strerror(errno));
+		return {}; // invalid, default constructed socket
 	}
+
 	return sock;
 }
 
@@ -135,9 +142,14 @@ connect() const
  */
 listener::
 listener(service const& s)
-	: service_(s),
-	  socket_(socket::domain::inet, socket::type::stream)
+	: service_{s},
+	  socket_{socket::domain::inet, socket::type::stream}
 {
+	if (!socket_.valid())
+	{
+		throw std::system_error(errno, std::system_category(),
+		          "failed to open socket");
+	}
 	// bind to ip + port
 	auto const& ip = service_.ip();
 	auto const& port = service_.port();
