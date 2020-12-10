@@ -113,7 +113,7 @@ join_network()
 }
 
 bool sadcd::
-notify_master_of_write(chunkid chunk, version version_num, std::string const& filename)
+notify_master_of_write(chunkid chunk, version version_num, std::string const& filename, uint32_t new_chunk_size)
 {
 	auto ch = msgs::channel{master_.connect()};
 
@@ -122,7 +122,8 @@ notify_master_of_write(chunkid chunk, version version_num, std::string const& fi
 		serverid_,
 		chunk,
 		version_num,
-		filename
+		filename,
+		new_chunk_size
 	};
 
 	msgs::master::serializer{}.serialize(cwn, ch);

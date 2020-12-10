@@ -22,7 +22,7 @@ private:
 
 	bool join_network();
 
-	bool notify_master_of_write(chunkid, version, std::string const&);
+	bool notify_master_of_write(chunkid, version, std::string const&, uint32_t);
 
 	comm::service const service_;
 	comm::service const master_;
