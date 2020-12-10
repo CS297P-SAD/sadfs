@@ -36,6 +36,7 @@ struct file_info
 {
 	int ttl;
 	util::file_chunks chunkids;
+	uint32_t size;
 };
 
 // all the information needed about a chunk

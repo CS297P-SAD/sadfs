@@ -26,6 +26,7 @@ namespace constants {
 // columns in our SQLite database
 constexpr auto filename_col = 0;
 constexpr auto chunkid_str_col = 1;
+constexpr auto bytes_per_chunk = 67108864; // 64 MB
 
 } // (local) constants namespace
 
@@ -210,6 +211,8 @@ handle(msgs::master::chunk_write_notification const& cwn, msgs::channel const& c
 {
 	auto chunk = cwn.chunk_id();
 	auto server = cwn.server_id();
+	// should update the size IF this is the latest version of the last chunk in the file
+	auto update_size = false;
 
 	if (chunk_metadata_.count(chunk))
 	{
@@ -226,6 +229,7 @@ handle(msgs::master::chunk_write_notification const& cwn, msgs::channel const& c
 			// chunk was not previously on this server
 			add_chunk_to_server(chunk, cwn.version(), server);
 		}
+		update_size = info.latest_version == cwn.version();
 	}
 	else
 	{
@@ -233,6 +237,17 @@ handle(msgs::master::chunk_write_notification const& cwn, msgs::channel const& c
 		if (add_chunk_to_server(chunk, cwn.version(), server))
 		{
 			append_chunk_to_file(cwn.filename(), chunk);
+			update_size = true;
+		}
+	}
+	if (update_size){
+		auto& file_info_ = files_[cwn.filename()];
+		auto num_chunks = file_info_.chunkids.size();
+		// check that this is the last chunk in the file
+		if (chunk == file_info_.chunkids[num_chunks - 1])
+		{
+			file_info_.size = ((num_chunks - 1) * constants::bytes_per_chunk) 
+                              + cwn.num_bytes();
 		}
 	}
 	
