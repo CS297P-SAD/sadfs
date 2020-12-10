@@ -112,4 +112,21 @@ join_network()
 
 }
 
+bool sadcd::
+notify_master_of_write(chunkid chunk, version version_num, std::string const& filename)
+{
+	auto ch = msgs::channel{master_.connect()};
+
+	auto cwn = msgs::master::chunk_write_notification
+	{
+		serverid_,
+		chunk,
+		version_num,
+		filename
+	};
+
+	msgs::master::serializer{}.serialize(cwn, ch);
+	return true;
+}
+
 } // sadfs namespace
