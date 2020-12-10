@@ -127,7 +127,13 @@ sadcd::join_network()
 bool sadcd::
 notify_master_of_write(chunkid chunk, version version_num, std::string const& filename)
 {
-	auto ch = msgs::channel{master_.connect()};
+	auto sock = master_.connect();
+    if (!sock.valid())
+    {
+        return false;
+    }
+
+    auto ch = msgs::channel{std::move(sock)};
 
 	auto cwn = msgs::master::chunk_write_notification
 	{
