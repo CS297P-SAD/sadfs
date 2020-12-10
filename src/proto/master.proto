@@ -9,7 +9,7 @@ message chunk_write_notification {
 	bytes  chunk_id    = 2;
 	uint64 version     = 3;
 	string filename    = 4;
-	uint32 num_bytes   = 5; // number of bytes in this chunk
+	uint32 new_size  = 5; // number of bytes in this chunk
 }
 
 // request for chunk location

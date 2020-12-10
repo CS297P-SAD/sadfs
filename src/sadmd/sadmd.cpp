@@ -247,7 +247,7 @@ handle(msgs::master::chunk_write_notification const& cwn, msgs::channel const& c
 		if (chunk == file_info_.chunkids[num_chunks - 1])
 		{
 			file_info_.size = ((num_chunks - 1) * constants::bytes_per_chunk) 
-                              + cwn.num_bytes();
+                              + cwn.new_size();
 		}
 	}
 	
