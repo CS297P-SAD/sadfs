@@ -41,6 +41,27 @@ inline auto const io_type_lookup = io_type_map
 	{proto::io_type::WRITE, io_type::write},
 };
 
+// ==================================================================
+//                            acknowledgement
+// ==================================================================
+template <typename MessageContainer, typename Type, Type msg_type>
+class acknowledgement
+{
+public:
+	acknowledgement() = default;
+	acknowledgement(bool ok) { protobuf_.set_ok(ok); }
+
+	bool ok() const noexcept { return protobuf_.ok(); }
+
+	inline static Type type{msg_type};
+private:
+	proto::common::acknowledgement protobuf_{};
+
+	// provide embed/extract functions access to private members
+	friend bool embed(acknowledgement const&, MessageContainer&);
+	friend bool extract(acknowledgement&, MessageContainer const&);
+};
+
 } // msgs namespace
 } // sadfs namespace
 

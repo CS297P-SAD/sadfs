@@ -15,9 +15,13 @@ using message_container = proto::chunk::message_container;
 
 enum class msg_type
 {
+	acknowledgement,
 	chunk_request,
 	unknown,
 };
+
+using acknowledgement = msgs::acknowledgement<message_container,
+	                                          msg_type::acknowledgement>
 
 class chunk_request
 {
