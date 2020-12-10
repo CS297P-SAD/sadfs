@@ -63,36 +63,37 @@ open_db()
 	}
 	return db;
 }
+} // unnamed namespace
 
-std::vector<comm::service>
+std::vector<comm::service> sadmd::
 valid_servers(chunk_info& info, bool latest_only)
 {
-	auto is_active = [&info](auto location)
+	auto is_active_ = [&info](auto valid_until)
 	{ 
-		return location.first->valid_until > time::now();
+		return valid_until > time::now();
 	};
-	auto is_active_latest_version = [&info](auto location){ 
-		return location.first->valid_until > time::now() && 
-		      location.second == info.latest_version;
+	auto is_active_latest_version = [&info](auto version, auto valid_until){ 
+		return valid_until > time::now() && 
+		      version == info.latest_version;
 	};
-	auto filter = [&](auto location)
+	auto filter = [&](auto version, auto valid_until)
 	{
-		if (latest_only) { return is_active_latest_version(location); }
-		return is_active(location);
+		if (latest_only) { return is_active_latest_version(version, valid_until); }
+		return is_active_(valid_until);
 	};
 
 	auto services = std::vector<comm::service>{};
 	services.reserve(info.locations.size());
 	for (auto location : info.locations)
 	{
-		if (filter(location))
+		auto server = chunk_server_metadata_.at(location.first);
+		if (filter(location.second, server.valid_until))
 		{
-			services.push_back(location.first->service);
+			services.push_back(server.service);
 		}
 	}
 	return services;
 }
-} // unnamed namespace
 
 sadmd::
 sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
@@ -205,6 +206,40 @@ handle(msgs::master::join_network_request const& jnr, msgs::channel const& ch)
 						  jnr.service(),
 						  jnr.max_chunks(), 
 						  jnr.chunk_count());
+	return true;
+}
+
+bool sadmd::
+handle(msgs::master::chunk_write_notification const& cwn, msgs::channel const& ch)
+{
+	auto chunk = cwn.chunk_id();
+	auto server = cwn.server_id();
+
+	if (chunk_metadata_.count(chunk))
+	{
+		// chunk is already registerd - update version info
+		auto& info = chunk_metadata_[chunk];
+		info.latest_version = std::max<version>(info.latest_version, cwn.version());
+		if (info.locations.count(server))
+		{
+			// chunk was already stored on this server - update version info
+			info.locations[server] = cwn.version();
+		}
+		else
+		{
+			// chunk was not previously on this server
+			add_chunk_to_server(chunk, cwn.version(), server);
+		}
+	}
+	else
+	{
+		// new chunk - add to file and record its location
+		if (add_chunk_to_server(chunk, cwn.version(), server))
+		{
+			append_chunk_to_file(cwn.filename(), chunk);
+		}
+	}
+	
 	return true;
 }
 
@@ -383,16 +418,16 @@ reintroduce_chunks_to_network(util::file_chunks ids)
 	}
 }
 
-void sadmd::
+bool sadmd::
 add_chunk_to_server(chunkid cid, version v, serverid sid)
 {
-	if (!is_active(sid)) return;	
-	auto server_ptr = &(chunk_server_metadata_.at(sid));
+	if (!is_active(sid)) return false;
 	auto& info = chunk_metadata_[cid];
 	// add server to chunk's locations
-	info.locations.emplace_back(server_ptr, v);
+	info.locations.emplace(sid, v);
 	// make sure latest version is correct
 	info.latest_version = std::max<version>(info.latest_version, v);
+	return true;
 }
   
 } // sadfs namespace

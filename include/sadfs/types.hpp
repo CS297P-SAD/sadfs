@@ -6,6 +6,7 @@
 namespace sadfs {
 using chunkid  = uuid;
 using serverid = uuid;
+using version = unsigned int;
 } // sadfs namespace
 
 #endif // SADFS_TYPES_HPP
