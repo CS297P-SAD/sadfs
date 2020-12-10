@@ -8,6 +8,7 @@ message chunk_write_notification {
 	bytes  server_id   = 1;
 	bytes  chunk_id    = 2;
 	uint64 version     = 3;
+	string filename    = 4;
 }
 
 // request for chunk location
