@@ -1,32 +1,42 @@
 #ifndef SADFS_SADCD_SADCD_HPP
 #define SADFS_SADCD_SADCD_HPP
+
+// sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/comm/socket.hpp>
 #include <sadfs/types.hpp>
 
+// standard includes
+#include <future>
 #include <string>
 
-namespace sadfs {
+namespace sadfs
+{
 
 class sadcd
 {
 public:
-	sadcd(char const* ip, int port, char const* master_ip, int master_port, 
-	      char const* server_id);
+    sadcd(char const *ip, int port, char const *master_ip, int master_port,
+          char const *server_id);
 
-	// starts server by opening a listener
-	void start();
+    // starts server by opening a listener
+    void start();
+
 private:
-	// reads the message from a socket that just received some data
-	std::string process_message(comm::socket const&);
+    // runs the chunk service
+    void run();
 
-	bool join_network();
+    // starts main server thread
+    // stops when asked to, indicates death via std::promise
+    void start_main(std::promise<void>, std::shared_future<void>);
 
-	comm::service const service_;
-	comm::service const master_;
-	serverid const serverid_;
+    bool join_network();
+
+    comm::service const service_;
+    comm::service const master_;
+    serverid const      serverid_;
 };
 
-} // sadfs namespace
+} // namespace sadfs
 
 #endif // SADFS_SADCD_SADCD_HPP

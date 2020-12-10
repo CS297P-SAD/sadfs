@@ -5,29 +5,63 @@
 #include <sadfs/comm/inet.hpp> // comm::service
 
 // standard includes
+#include <chrono>
 #include <future>
 #include <thread>
 
-namespace sadfs { namespace chunk {
+namespace sadfs
+{
+namespace chunk
+{
 
 // sends heartbeats to the master server
 class heart
 {
-	comm::service       master_;
-	std::thread         heartbeat_{};
-	std::promise<void>  stop_request_{};
-	std::future<void>   stop_token_{};
-
-	void beat() const;
+    comm::service      master_;
+    std::thread        heartbeat_{};
+    std::promise<void> stop_request_;
+    std::future<void>  stopped_;
 
 public:
-	heart(comm::service const& master) : master_{master} { }
+    heart(comm::service const &master) : master_{master} {}
+    ~heart();
 
-	void start();
-	void stop();
+    void start();
+    void stop();
+    bool beating();
 };
 
-} // chunk namespace
-} // sadfs namespace
+inline bool
+heart::beating()
+{
+    if (!stopped_.valid())
+    {
+        return false;
+    }
+
+    using namespace std::chrono_literals;
+    auto beating = stopped_.wait_for(0ms) != std::future_status::ready;
+
+    if (!beating)
+    {
+        stopped_.get(); // avoid bugs
+    }
+    return beating;
+}
+
+inline heart::~heart()
+{
+    if (beating())
+    {
+        stop();
+    }
+    if (heartbeat_.joinable())
+    {
+        heartbeat_.join();
+    }
+}
+
+} // namespace chunk
+} // namespace sadfs
 
 #endif // SADFS_SADCD_HEART_HPP
