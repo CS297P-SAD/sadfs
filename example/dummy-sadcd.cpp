@@ -12,24 +12,24 @@ auto info = [](std::string msg) { std::cout << "[INFO]: " << msg << "\n"; };
 using namespace sadfs;
 struct sadcd
 {
-	void run(comm::service const& master)
-	{
-		auto heart = chunk::heart{master};
-		info("starting heartbeat...");
-		heart.start();
-		info("started");
+    void run(comm::service const &master)
+    {
+        auto heart = chunk::heart{master};
+        info("starting heartbeat...");
+        heart.start();
+        info("started");
 
-		using namespace std::chrono_literals;
-		std::this_thread::sleep_for(5s);
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(5s);
 
-		info("stopping heartbeat...");
-		heart.stop();
-		info("stopped");
-	}
+        info("stopping heartbeat...");
+        heart.stop();
+        info("stopped");
+    }
 };
 
 int
 main()
 {
-	sadcd{}.run({comm::constants::ip_localhost, 6666});
+    sadcd{}.run({comm::constants::ip_localhost, 6666});
 }

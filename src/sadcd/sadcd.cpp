@@ -1,115 +1,127 @@
 /* Code for the sadcd class */
 
 // sadfs-specific includes
-#include <sadfs/sadcd/sadcd.hpp>
 #include <sadfs/comm/inet.hpp>
-#include <sadfs/msgs/messages.hpp>
+#include <sadfs/logger.hpp>
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/master/serializer.hpp>
+#include <sadfs/msgs/messages.hpp>
+#include <sadfs/sadcd/heart.hpp>
+#include <sadfs/sadcd/sadcd.hpp>
 
 // standard includes
-#include <array>
-#include <cstring>  // std::strerror
-#include <iostream>
-#include <string>
-#include <unistd.h> // read/write
+#include <chrono> // std::chrono_literals
+#include <future> // std::promise, std::future
 
-namespace sadfs {
+namespace sadfs
+{
 
-namespace constants {
+namespace
+{
+
+using namespace std::chrono_literals;
+auto ready = [](auto const &future, auto duration) {
+    return future.wait_for(duration) == std::future_status::ready;
+};
+
+} // unnamed namespace
+
+namespace constants
+{
 
 constexpr auto max_chunks = 1000;
 
-} // (local) constants namespace
+} // namespace constants
 
-sadcd::
-sadcd(char const* ip, int port, 
-      char const* master_ip, int master_port, 
-      char const* server_id) : 
-      service_(ip, port) , 
-      master_(master_ip, master_port),
+sadcd::sadcd(char const *ip, int port, char const *master_ip, int master_port,
+             char const *server_id)
+    : service_(ip, port), master_(master_ip, master_port),
       serverid_(serverid::from_string(server_id))
 {
-	// do nothing
+    // do nothing
 }
 
-void sadcd::
-start()
+void
+sadcd::start()
 {
-	join_network();
-	auto listener = comm::listener{service_};
-
-	while (true)
-	{
-		auto sock = listener.accept();
-		auto result = process_message(sock);
-
-		std::cout << result << "\n";
-		// perform some action based on result
-	}
+    join_network();
+    // set up
+    run();
 }
 
-// reads the message from a socket that just received some data
-std::string sadcd::
-process_message(comm::socket const& sock)
+void
+sadcd::run()
 {
-	auto buf = std::array<char, 512>{};
-	auto len = 0;
-	auto result = std::string{};
-	while ((len = ::read(sock.descriptor(), buf.data(), buf.size())))
-	{
-		if (len == -1)
-		{
-			std::cerr << "read error\n";
-			std::cerr << std::strerror(errno) << std::endl;
-			std::exit(1);
-		}
-		if (::write(sock.descriptor(), buf.data(), len) == -1)
-		{
-			std::cerr << "write error\n";
-			std::exit(1);
-		}
-		for (auto i = 0; i < len; i++)
-		{
-			result += buf[i];
-		}
-		buf.fill({});
-	}
+    // kill_switch is a switch we flip to kill the main service thread
+    // *_death are "flags" child threads will use to indicate death
+    auto kill_switch      = std::promise<void>{};
+    auto main_thread_dead = std::future<void>{};
+    auto main_thread      = std::thread{};
+    {
+        // grab future that will indicate when the main thread dies
+        // due to an error
+        auto death       = std::promise<void>{};
+        main_thread_dead = death.get_future();
 
-	return result;
+        // start main thread
+        main_thread = std::thread{&sadcd::start_main, this, std::move(death),
+                                  kill_switch.get_future()};
+    }
+
+    // start heartbeat
+    auto heart = chunk::heart{master_};
+    heart.start();
+
+    // poll for failures
+    while (true)
+    {
+        if (ready(main_thread_dead, 1s))
+        {
+            // get threads to propagate error condition using futures
+            logger::error("main thread has died"sv);
+            main_thread_dead.get();
+            heart.stop();
+            break;
+        }
+        if (!heart.beating())
+        {
+            logger::error("heartbeats have stopped"sv);
+            kill_switch.set_value();
+            main_thread.join();
+            break;
+        }
+    }
 }
 
-bool sadcd::
-join_network()
+void
+sadcd::start_main(std::promise<void>       death,
+                  std::shared_future<void> kill_switch)
 {
-	/*
-	//auto ch = channel{socket{domain::inet, type::stream, -1}}; // dummy channel
-	try
-	{
-		ch = msgs::channel{master_.connect()}
-	}
-	catch
-	{
-		// log error and return false
-		return false;
-	}
-	TODO: Replace next line  with above ^ once dummy channel returns !is_open()
-	*/
+    while (!ready(kill_switch, 1s))
+    {
+        logger::info("chunk server working..."sv);
+    }
+    death.set_value(); // unnecessary, but doing this so we don't forget
+}
 
-	auto ch = msgs::channel{master_.connect()};
+bool
+sadcd::join_network()
+{
+    auto sock = master_.connect();
+    if (!sock.valid())
+    {
+        return false;
+    }
 
-	auto jr = msgs::master::join_network_request
-	{
-		serverid_,
-		service_,
-		constants::max_chunks,
-		/*chunk_count=*/ 0
-	};
+    auto ch = msgs::channel{std::move(sock)};
+    auto jr = msgs::master::join_network_request{serverid_, service_,
+                                                 constants::max_chunks,
+                                                 /*chunk_count=*/0};
 
-	// send join_network_request
-	msgs::master::serializer{}.serialize(jr, ch);
-	return true;
-
+    // send join_network_request
+    msgs::master::serializer{}.serialize(jr, ch);
+    // TODO: verify success
+    return true;
 }
 
 bool sadcd::
@@ -130,4 +142,4 @@ notify_master_of_write(chunkid chunk, version version_num, std::string const& fi
 	return true;
 }
 
-} // sadfs namespace
+} // namespace sadfs
