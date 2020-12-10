@@ -8,37 +8,36 @@
 #include <cstddef> // std::size_t
 #include <string>
 
-namespace sadfs { namespace msgs {
+namespace sadfs
+{
+namespace msgs
+{
 
 enum class io_type
 {
-	unknown,
-	read,
-	write,
+    unknown,
+    read,
+    write,
 };
 
 // uniquely identifies a host
 struct host_id
 {
-	std::size_t uuid;
+    std::size_t uuid;
 };
 
-using io_type_map = std::unordered_map<proto::io_type,
-                                       io_type>;
-using proto_io_type_map = std::unordered_map<io_type,
-                                             proto::io_type>;
-inline auto const proto_io_type_lookup = proto_io_type_map
-{
-	{io_type::unknown, proto::io_type::UNKNOWN},
-	{io_type::read, proto::io_type::READ},
-	{io_type::write, proto::io_type::WRITE},
+using io_type_map       = std::unordered_map<proto::io_type, io_type>;
+using proto_io_type_map = std::unordered_map<io_type, proto::io_type>;
+inline auto const proto_io_type_lookup = proto_io_type_map{
+    {io_type::unknown, proto::io_type::UNKNOWN},
+    {io_type::read, proto::io_type::READ},
+    {io_type::write, proto::io_type::WRITE},
 };
 
-inline auto const io_type_lookup = io_type_map
-{
-	{proto::io_type::UNKNOWN, io_type::unknown},
-	{proto::io_type::READ, io_type::read},
-	{proto::io_type::WRITE, io_type::write},
+inline auto const io_type_lookup = io_type_map{
+    {proto::io_type::UNKNOWN, io_type::unknown},
+    {proto::io_type::READ, io_type::read},
+    {proto::io_type::WRITE, io_type::write},
 };
 
 // ==================================================================
@@ -48,21 +47,22 @@ template <typename MessageContainer, typename Type, Type msg_type>
 class acknowledgement
 {
 public:
-	acknowledgement() = default;
-	acknowledgement(bool ok) { protobuf_.set_ok(ok); }
+    acknowledgement() = default;
+    acknowledgement(bool ok) { protobuf_.set_ok(ok); }
 
-	bool ok() const noexcept { return protobuf_.ok(); }
+    bool ok() const noexcept { return protobuf_.ok(); }
 
-	inline static Type type{msg_type};
+    inline static Type type{msg_type};
+
 private:
-	proto::common::acknowledgement protobuf_{};
+    proto::acknowledgement protobuf_{};
 
-	// provide embed/extract functions access to private members
-	friend bool embed(acknowledgement const&, MessageContainer&);
-	friend bool extract(acknowledgement&, MessageContainer const&);
+    // provide embed/extract functions access to private members
+    friend bool embed(acknowledgement const &, MessageContainer &);
+    friend bool extract(acknowledgement &, MessageContainer const &);
 };
 
-} // msgs namespace
-} // sadfs namespace
+} // namespace msgs
+} // namespace sadfs
 
 #endif // SADFS_MSGS_COMMON_HPP

@@ -1,5 +1,6 @@
 /* dummy implementation of sadcd that sends heartbeats for 5 seconds */
 #include <sadfs/comm/inet.hpp>
+#include <sadfs/logger.hpp>
 #include <sadfs/sadcd/heart.hpp>
 
 #include <chrono>
@@ -7,24 +8,22 @@
 #include <string>
 #include <thread>
 
-auto info = [](std::string msg) { std::cout << "[INFO]: " << msg << "\n"; };
-
 using namespace sadfs;
 struct sadcd
 {
     void run(comm::service const &master)
     {
         auto heart = chunk::heart{master};
-        info("starting heartbeat...");
+        logger::debug("starting heartbeat...");
         heart.start();
-        info("started");
+        logger::debug("started");
 
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(5s);
 
-        info("stopping heartbeat...");
+        logger::debug("stopping heartbeat...");
         heart.stop();
-        info("stopped");
+        logger::debug("stopped");
     }
 };
 
