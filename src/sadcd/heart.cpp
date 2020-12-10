@@ -5,61 +5,80 @@
 #include <sadfs/msgs/master/serializer.hpp>
 #include <sadfs/sadcd/heart.hpp>
 
-namespace sadfs { namespace chunk {
-
-// starts the heartbeat in a concurrent thread
-void heart::
-start()
+namespace sadfs
 {
-	if (stop_token_.valid())
-	{
-		throw sadfs::logic_error{"heart beating already"};
-	}
-
-	// start heartbeat
-	stop_token_ = stop_request_.get_future();
-	heartbeat_ = std::thread{[this](){ this->beat(); }};
-}
-
-// stops the heartbeat
-void heart::
-stop()
+namespace chunk
 {
-	if (!stop_token_.valid())
-	{
-		throw sadfs::logic_error{"heart not beating"};
-	}
 
-	// notify the heartbeat thread that we want it to stop :(
-	stop_request_.set_value();
-	heartbeat_.join();
-}
+namespace
+{
 
 // heartbeat function
-void heart::
-beat() const
+void
+beat(comm::service master, std::promise<void> death,
+     std::future<void> stop_token)
 {
-	auto msg          = msgs::master::chunk_server_heartbeat{};
-	auto serializer   = msgs::master::serializer{};
+    auto msg        = msgs::master::chunk_server_heartbeat{};
+    auto serializer = msgs::master::serializer{};
+    auto die        = [&death]() { return death.set_value(); };
 
-	// send heartbeats until requested to stop
-	while (true)
-	{
-		using namespace std::chrono_literals;
-		auto status = stop_token_.wait_for(1s);
-		if (status == std::future_status::ready)
-		{
-			// stop requested
-			return;
-		}
+    // send heartbeats until requested to stop
+    using namespace std::chrono_literals;
+    while (stop_token.wait_for(1s) != std::future_status::ready)
+    {
+        try
+        {
+            auto ch = msgs::channel{master.connect()};
+            if (serializer.serialize(msg, ch))
+            {
+                continue;
+            }
+            throw sadfs::operation_failure{"could not send heartbeat"};
+        }
+        catch (std::exception const &)
+        {
+            return die();
+        }
+    }
 
-		auto ch = msgs::channel{master_.connect()};
-		if (!serializer.serialize(msg, ch))
-		{
-			throw sadfs::operation_failure{"failed to send heartbeat"};
-		}
-	}
+    // stop requested
+    stop_token.get();
+    die();
 }
 
-} // chunk namespace
-} // sadfs namespace
+} // unnamed namespace
+
+// starts the heartbeat in a concurrent thread
+void
+heart::start()
+{
+    if (beating())
+    {
+        throw sadfs::logic_error{"heart beating already"};
+    }
+
+    auto death    = std::promise<void>{};
+    stop_request_ = std::promise<void>{};
+    stopped_      = death.get_future();
+
+    heartbeat_ = std::thread{beat, master_, std::move(death),
+                             stop_request_.get_future()};
+}
+
+// stops sending heartbeats
+void
+heart::stop()
+{
+    if (!beating())
+    {
+        throw sadfs::logic_error{"heart not beating"};
+    }
+
+    // notify the heartbeat thread that we want it to stop :(
+    stop_request_.set_value();
+    heartbeat_.join();
+    stopped_.get();
+}
+
+} // namespace chunk
+} // namespace sadfs

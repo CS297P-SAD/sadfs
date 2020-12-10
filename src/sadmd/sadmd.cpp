@@ -104,6 +104,7 @@ sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 void sadmd::
 start()
 {
+	create_file("/mnt/a/file.dat");
 	auto listener = comm::listener{service_};
 	while (true)
 	{
@@ -209,17 +210,21 @@ handle(msgs::master::join_network_request const& jnr, msgs::channel const& ch)
 bool sadmd::
 handle(msgs::master::chunk_write_notification const& cwn, msgs::channel const& ch)
 {
-	auto chunk = cwn.chunk_id();
 	auto server = cwn.server_id();
+	if (!is_active(server)) return false;
+  
+	auto chunk = cwn.chunk_id();
 	// should update the size IF this is the latest version of the last chunk in the file
 	auto update_size = false;
 
-	if (chunk_metadata_.count(chunk))
+	auto it = chunk_metadata_.end();
+	if ((it = chunk_metadata_.find(chunk)) != chunk_metadata_.end())
 	{
 		// chunk is already registerd - update version info
-		auto& info = chunk_metadata_[chunk];
+		auto& info = it->second;
 		info.latest_version = std::max<version>(info.latest_version, cwn.version());
-		if (info.locations.count(server))
+		auto location = info.locations.end();
+		if ((location = info.locations.find(server)) != info.locations.end())
 		{
 			// chunk was already stored on this server - update version info
 			info.locations[server] = cwn.version();
@@ -432,7 +437,6 @@ reintroduce_chunks_to_network(util::file_chunks ids)
 bool sadmd::
 add_chunk_to_server(chunkid cid, version v, serverid sid)
 {
-	if (!is_active(sid)) return false;
 	auto& info = chunk_metadata_[cid];
 	// add server to chunk's locations
 	info.locations.emplace(sid, v);

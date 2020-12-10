@@ -45,7 +45,6 @@ struct chunk_info
 	version latest_version;
 	// all the places this chunk is stored and what version is there
 	std::unordered_map<serverid, version> locations;
-	//std::vector<std::pair<chunk_server_info*, version> > locations;
 };
 
 class sadmd

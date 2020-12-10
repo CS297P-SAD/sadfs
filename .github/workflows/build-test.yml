@@ -26,7 +26,11 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y \
-        libprotobuf-dev libboost-program-options-dev protobuf-compiler libfuse-dev libgrpc++-dev protobuf-compiler-grpc libsqlite3-dev
+        libprotobuf-dev \
+        libboost-program-options-dev \
+        protobuf-compiler \
+        libfuse-dev \
+        libsqlite3-dev
     - name: Run CMake
       run: cmake -B build/
     - name: Build
@@ -44,7 +48,7 @@ jobs:
         ref: ${{ github.ref }}
     - name: Install dependencies
       run: |
-          brew install protobuf boost grpc sqlite3
+          brew install protobuf boost sqlite3
           brew cask install osxfuse
     - name: Run CMake
       run: cmake -B build/
