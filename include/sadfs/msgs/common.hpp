@@ -43,6 +43,19 @@ inline auto const io_type_lookup = io_type_map{
 // ==================================================================
 //                            acknowledgement
 // ==================================================================
+// forward declarations
+template <typename MessageContainer, typename Type, Type msg_type>
+class acknowledgement;
+
+template <typename MessageContainer, typename Type, Type msg_type>
+bool embed(acknowledgement<MessageContainer, Type, msg_type> const&,
+           MessageContainer&);
+
+template <typename MessageContainer, typename Type, Type msg_type>
+bool extract(acknowledgement<MessageContainer, Type, msg_type>&,
+             MessageContainer const&);
+
+// class declaration
 template <typename MessageContainer, typename Type, Type msg_type>
 class acknowledgement
 {
@@ -58,8 +71,12 @@ private:
     proto::acknowledgement protobuf_{};
 
     // provide embed/extract functions access to private members
-    friend bool embed(acknowledgement const &, MessageContainer &);
-    friend bool extract(acknowledgement &, MessageContainer const &);
+    // one-to-one relationship
+    //
+    // further reading:
+    // https://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Making_New_Friends
+    friend bool embed<>(acknowledgement const&, MessageContainer&);
+    friend bool extract<>(acknowledgement&, MessageContainer const&);
 };
 
 } // namespace msgs
