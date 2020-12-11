@@ -1,6 +1,8 @@
 /* implements the chunk::heart class */
 // sadfs-specific includes
 #include <sadfs/exceptions.hpp>
+#include <sadfs/msgs/chunk/deserializer.hpp>
+#include <sadfs/msgs/chunk/messages.hpp>
 #include <sadfs/msgs/master/messages.hpp>
 #include <sadfs/msgs/master/serializer.hpp>
 #include <sadfs/sadcd/heart.hpp>
@@ -18,9 +20,10 @@ void
 beat(comm::service master, std::promise<void> death,
      std::future<void> stop_token)
 {
-    auto msg        = msgs::master::chunk_server_heartbeat{};
-    auto serializer = msgs::master::serializer{};
-    auto die        = [&death]() { return death.set_value(); };
+    auto msg          = msgs::master::chunk_server_heartbeat{};
+    auto serializer   = msgs::master::serializer{};
+    auto deserializer = msgs::chunk::deserializer{};
+    auto die          = [&death]() { return death.set_value(); };
 
     // send heartbeats until requested to stop
     using namespace std::chrono_literals;
@@ -28,8 +31,14 @@ beat(comm::service master, std::promise<void> death,
     {
         try
         {
-            auto ch = msgs::channel{master.connect()};
-            if (serializer.serialize(msg, ch))
+            auto ch    = msgs::channel{master.connect()};
+            auto ack   = msgs::chunk::acknowledgement{};
+            auto flush = [](auto const &ch) {
+                ch.flush();
+                return true;
+            };
+            if (serializer.serialize(msg, ch) && flush(ch) &&
+                deserializer.deserialize(ack, ch).first && ack.ok())
             {
                 continue;
             }

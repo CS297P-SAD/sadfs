@@ -13,6 +13,7 @@ message chunk_request {
 message message_container {
 	sadfs.proto.host_id sender = 1;
 	oneof               msg {
-		chunk_request chunk_req = 11;
+		sadfs.proto.acknowledgement ack       = 6;
+		chunk_request               chunk_req = 7;
 	}
 }

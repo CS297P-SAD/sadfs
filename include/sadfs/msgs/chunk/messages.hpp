@@ -10,49 +10,59 @@
 #include <cstddef> // std::size_t
 #include <string>
 
-namespace sadfs { namespace msgs { namespace chunk {
+namespace sadfs
+{
+namespace msgs
+{
+namespace chunk
+{
 using message_container = proto::chunk::message_container;
 
 enum class msg_type
 {
-	chunk_request,
-	unknown,
+    acknowledgement,
+    chunk_request,
+    unknown,
 };
+
+using acknowledgement = msgs::acknowledgement<message_container, msg_type,
+                                              msg_type::acknowledgement>;
 
 class chunk_request
 {
 public:
-	// constructors
-	chunk_request() = default;
-	chunk_request(msgs::io_type, std::size_t);
+    // constructors
+    chunk_request() = default;
+    chunk_request(msgs::io_type, std::size_t);
 
-	msgs::io_type io_type()  const;
-	std::size_t   chunk_id() const;
+    msgs::io_type io_type() const;
+    std::size_t   chunk_id() const;
 
-	inline static msg_type type{msg_type::chunk_request};
+    inline static msg_type type{msg_type::chunk_request};
+
 private:
-	proto::chunk::chunk_request protobuf_{};
+    proto::chunk::chunk_request protobuf_{};
 
-	// provide embed/extract functions access to private members
-	friend bool embed(chunk_request const&, message_container&);
-	friend bool extract(chunk_request&, message_container const&);
+    // provide embed/extract functions access to private members
+    friend bool embed(chunk_request const &, message_container &);
+    friend bool extract(chunk_request &, message_container const &);
 };
 
 // declarations
-bool embed(chunk_request const&, message_container&);
-bool extract(chunk_request&, message_container const&);
+bool embed(chunk_request const &, message_container &);
+bool extract(chunk_request &, message_container const &);
 
 // ==================================================================
 //                      inline function definitions
 // ==================================================================
-inline std::size_t chunk_request::
-chunk_id() const
+inline std::size_t
+chunk_request::chunk_id() const
 {
-	return protobuf_.chunk_id();
+    return protobuf_.chunk_id();
 }
 
-} // chunk namespace
-} // msgs namespace
-} // sadfs namespace
+} // namespace chunk
+} // namespace msgs
+} // namespace sadfs
 
 #endif // SADFS_MSGS_CHUNK_MESSAGES_HPP
