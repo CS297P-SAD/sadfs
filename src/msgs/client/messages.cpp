@@ -17,6 +17,7 @@ auto const msg_type_lookup = msg_type_map
 {
 	{MsgCase::MSG_NOT_SET,       msg_type::unknown},
 	{MsgCase::kChunkLocationRes, msg_type::chunk_location_response},
+	{MsgCase::kFileMetadataRes,  msg_type::file_metadata_response},
 };
 
 } // unnamed namespace
@@ -65,6 +66,42 @@ extract(chunk_location_response& res, message_container const& cm)
 	return true;
 }
 
+// ==================================================================
+//                     file_metadata_response
+// ==================================================================
+file_metadata_response::
+file_metadata_response(bool ok, uint32_t size)
+{
+	protobuf_.set_ok(ok);
+	protobuf_.set_size(size);
+}
+
+// embeds a control message into a container that is
+// (typically) sent over the wire
+bool
+embed(file_metadata_response const& res, message_container& cm)
+{
+	// should this be in a try-catch block?
+	// msg.mutable_file_metadata_res() can throw if heap allocation fails
+	*cm.mutable_file_metadata_res() = res.protobuf_;
+	return true;
+}
+
+// extracts a control message from a container that is
+// (typically) received over the wire
+bool
+extract(file_metadata_response& res, message_container const& cm)
+{
+	if (msg_type_lookup.at(cm.msg_case()) != file_metadata_response::type)
+	{
+		// cannot extract a msg that doesn't exist
+		return false;
+	}
+
+	// read file_metadata_response from message_container
+	res.protobuf_ = cm.file_metadata_res();
+	return true;
+}
 
 } // client namespace
 } // msgs namespace

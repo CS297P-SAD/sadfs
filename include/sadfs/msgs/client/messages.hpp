@@ -16,6 +16,7 @@ enum class msg_type
 {
 	unknown,
 	chunk_location_response,
+	file_metadata_response,
 };
 
 class chunk_location_response
@@ -42,6 +43,27 @@ private:
 // declarations
 bool embed(chunk_location_response const&, message_container&);
 bool extract(chunk_location_response&, message_container const&);
+
+class file_metadata_response
+{
+public:
+	file_metadata_response() = default;
+	file_metadata_response(bool ok, uint32_t size);
+
+	bool               ok()             const noexcept;
+	uint32_t           size()    	    const noexcept;
+
+	inline static msg_type type{msg_type::file_metadata_response};
+private:
+	proto::client::file_metadata_response protobuf_{};
+
+	friend bool embed(file_metadata_response const&, message_container&);
+	friend bool extract(file_metadata_response&, message_container const&);
+};
+
+// declarations
+bool embed(file_metadata_response const&, message_container&);
+bool extract(file_metadata_response&, message_container const&);
 
 // ==================================================================
 //                     inline function definitions
@@ -78,6 +100,18 @@ version_num() const
 	return protobuf_.version_num();
 }
   
+inline bool file_metadata_response::
+ok() const noexcept
+{
+	return protobuf_.ok();
+}
+
+inline uint32_t file_metadata_response::
+size() const noexcept
+{
+	return protobuf_.size();
+}
+
 } // client namespace
 } // msgs namespace
 } // sadfs namespace

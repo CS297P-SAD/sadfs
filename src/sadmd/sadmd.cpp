@@ -199,6 +199,22 @@ handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
 }
 
 bool sadmd::
+handle(msgs::master::file_metadata_request const& fmr, msgs::channel const& ch)
+{
+	auto const& filename	= fmr.filename();
+	auto it		    	= files_.find(filename);
+	auto response	    	= msgs::client::file_metadata_response
+	{
+		it != files_.end(),		/* ok */
+		it == files_.end() ? 0u : 1024u	/* size */ // TODO
+	};
+	
+	auto result = msgs::client::serializer{}.serialize(response, ch);	
+	ch.flush();
+	return result;
+}
+
+bool sadmd::
 handle(msgs::master::join_network_request const& jnr, msgs::channel const& ch)
 {
 	add_server_to_network(jnr.server_id(), 

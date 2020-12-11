@@ -20,6 +20,7 @@ enum class msg_type
 	unknown,
 	chunk_location_request,
 	chunk_server_heartbeat,
+	file_metadata_request,
 	join_network_request
 };
 
@@ -64,6 +65,27 @@ private:
 bool embed(chunk_server_heartbeat const&, message_container&);
 bool extract(chunk_server_heartbeat&, message_container const&);
 
+class file_metadata_request
+{
+public:
+	file_metadata_request() = default;
+	file_metadata_request(std::string const& filename);
+
+	std::string const& filename()	const;
+
+	inline static msg_type type{msg_type::file_metadata_request};
+private:
+	proto::master::file_metadata_request protobuf_{};
+
+	// provide embed/extract functions access to private members
+	friend bool embed(file_metadata_request const&, message_container&);
+	friend bool extract(file_metadata_request&, message_container const&);
+};
+
+// declarations
+bool embed(file_metadata_request const&, message_container&);
+bool extract(file_metadata_request&, message_container const&);
+
 class join_network_request
 {
 public:
@@ -102,6 +124,12 @@ inline std::size_t chunk_location_request::
 chunk_number() const
 {
 	return protobuf_.chunk_number();
+}
+
+inline std::string const& file_metadata_request::
+filename() const
+{
+	return protobuf_.filename();
 }
 
 inline serverid join_network_request::

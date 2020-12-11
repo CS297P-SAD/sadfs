@@ -104,7 +104,11 @@ main(int argc, char const** argv)
 	auto filesys_args = std::array
 	{
 		std::string(),
-		variables["mountpoint"].as<std::string>()
+		variables["mountpoint"].as<std::string>(),
+		std::string("-odirect_io"), // direct_io mode
+#ifndef NDEBUG
+		std::string("-f")	// fuse runs in foreground
+#endif
 	};
 
 	// allocate space for pointers, including terminating nullptr

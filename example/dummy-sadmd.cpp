@@ -61,6 +61,19 @@ struct sadmd
 		ch.flush();
 		return result;
 	}
+
+	using fmr = msgs::master::file_metadata_request;
+	bool handle(fmr const& req, msgs::channel const& ch)
+	{
+		auto response = msgs::client::file_metadata_response
+		{
+			true	/* ok */,
+			10	/* size */
+		};
+		auto result = msgs::client::serializer{}.serialize(response, ch);
+		ch.flush();
+		return result;
+	}
 };
 
 int

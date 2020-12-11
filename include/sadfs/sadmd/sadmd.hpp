@@ -65,6 +65,10 @@ public:
                 msgs::channel const&);
 	*/
 
+	// handles file_metadata_request and responds to channel it came in on
+	bool handle(msgs::master::file_metadata_request const&,
+		msgs::channel const&);
+
 	// handles a join_network_request and responds to channel it came in on
 	bool handle(msgs::master::join_network_request const&, 
                 msgs::channel const&);

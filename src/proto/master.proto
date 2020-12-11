@@ -23,12 +23,18 @@ message chunk_server_heartbeat {
 
 }
 
+// request for file metadata
+message file_metadata_request {
+	string filename	= 1;
+}
+
 // container for control messages
 message message_container {
 	sadfs.proto.host_id sender = 1;
 	oneof               msg {
 		chunk_location_request chunk_location_req     = 11;
 		chunk_server_heartbeat chunk_server_heartbeat = 12;
-		join_network_request   join_network_req       = 13;
+		file_metadata_request  file_metadata_req      = 13;
+		join_network_request   join_network_req       = 14;
 	}
 }

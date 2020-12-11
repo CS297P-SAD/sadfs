@@ -65,6 +65,22 @@ process_next(channel const& ch, Handler& h)
 				res = false;
 			}
 			break;
+		case container_type::MsgCase::kFileMetadataReq:
+			if constexpr (is_detected_v<can_handle,
+						   Handler,
+						   file_metadata_request>)
+			{
+				auto msg = file_metadata_request{};
+				res = res
+				      && extract(msg, container_)
+				      && h.handle(msg, ch);
+			}
+			else
+			{
+				// cannot handle this message
+				res = false;
+			}
+			break;
 		case container_type::MsgCase::kJoinNetworkReq:
 			if constexpr (is_detected_v<can_handle,
 			                            Handler,

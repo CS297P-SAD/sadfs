@@ -12,10 +12,17 @@ message chunk_location_response {
 	int32           version_num = 5;
 }
 
+// response for a file_metadata_request
+message file_metadata_response {
+	bool		ok	    = 1;
+	uint32		size	    = 2;
+}
+
 // container for all control messages sent to clients
 message message_container {
 	sadfs.proto.host_id sender = 1;
 	oneof               msg {
 		chunk_location_response chunk_location_res = 11;
+		file_metadata_response file_metadata_res = 12;
 	}
 }

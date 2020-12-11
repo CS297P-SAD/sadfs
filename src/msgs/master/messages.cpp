@@ -17,6 +17,7 @@ auto const msg_type_lookup = msg_type_map
 	{MsgCase::MSG_NOT_SET,           msg_type::unknown},
 	{MsgCase::kChunkLocationReq,     msg_type::chunk_location_request},
 	{MsgCase::kChunkServerHeartbeat, msg_type::chunk_server_heartbeat},
+	{MsgCase::kFileMetadataReq,	 msg_type::file_metadata_request},
 	{MsgCase::kJoinNetworkReq,       msg_type::join_network_request},
 };
 
@@ -96,6 +97,41 @@ extract(chunk_server_heartbeat&, message_container const& container)
 	}
 
 	// nothing to extract
+	return true;
+}
+
+/* ========================================================
+ *                       file_metadata_request
+ * ========================================================
+ */
+file_metadata_request::
+file_metadata_request(std::string const& filename)
+{
+	protobuf_.set_filename(filename);
+}
+
+// embeds a control message into a container that is
+// (typically) sent over the wire
+bool
+embed(file_metadata_request const& req, message_container& container)
+{
+	*container.mutable_file_metadata_req() = req.protobuf_;
+	return true;
+}
+
+// extracts a control message from a container that is
+// (typically) received over the wire
+bool
+extract(file_metadata_request& req, message_container const& container)
+{
+	if (msg_type_lookup.at(container.msg_case()) !=
+	    file_metadata_request::type)
+	{
+		// cannot extract a msg that doesn't exist
+		return false;
+	}
+
+	req.protobuf_ = container.file_metadata_req();
 	return true;
 }
 

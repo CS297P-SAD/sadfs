@@ -2,6 +2,11 @@
 
 // sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
+#include <sadfs/logger.hpp>
+#include <sadfs/msgs/client/deserializer.hpp>
+#include <sadfs/msgs/client/messages.hpp>
+#include <sadfs/msgs/master/messages.hpp>
+#include <sadfs/msgs/master/serializer.hpp>
 #include <sadfs/sadfsd/sadfilesys.hpp>
 
 namespace sadfs {
@@ -53,8 +58,54 @@ load_operations()
 int sadfilesys::
 getattr(char const* path, struct stat* stbuf)
 {
-    // TODO
-    return -ENOENT;
+    logger::debug("gettattr() called at " + std::string(path));
+
+    auto result{0};
+    // base directory where filesystem is mounted
+    if (strcmp(path, "/") == 0)
+    {
+	logger::debug("path identified as base directory"sv);
+    	stbuf->st_mode	= S_IFDIR | 0755;
+	return result;
+    }
+
+    auto filename	= std::string{path};
+    auto request	= msgs::master::file_metadata_request{filename};
+    auto response	= msgs::client::file_metadata_response{};
+    auto serializer	= msgs::master::serializer{};
+    auto deserializer	= msgs::client::deserializer{};
+    auto ch		= msgs::channel{master_service_.connect()};
+
+    auto flush		= [](auto const &ch) {
+   	ch.flush();
+   	return true;
+    };
+
+    if (!(serializer.serialize(request, ch) && flush(ch) &&
+          deserializer.deserialize(response, ch).first))
+    {
+    	// Protocol error, modify it to something more apt
+    	result = -EPROTO;	
+    }
+    else if (!response.ok())
+    {
+    	result = -ENOENT;  // No such file or directory
+    }
+    else
+    {
+    	stbuf->st_mode	= S_IFREG | 0666;
+	stbuf->st_size  = response.size();
+    }
+
+    if (result < 0)
+    {
+    	logger::debug("gettattr() failed with error " + std::to_string(result));
+    }
+    else
+    {
+    	logger::debug("path identified as valid filename"sv);
+    }
+    return result;
 }
 
 int sadfilesys::
@@ -69,7 +120,7 @@ int sadfilesys::
 open(char const* path, fuse_file_info* fi)
 {
     // TODO
-    return -ENOENT;
+    return 0;
 }
 
 int sadfilesys::
