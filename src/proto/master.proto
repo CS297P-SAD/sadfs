@@ -42,10 +42,16 @@ message file_metadata_request {
 	string filename	= 1;
 }
 
+// notification of release of write lock
+message release_lock {
+	string filename	= 1;
+}
+
 // container for control messages
 message message_container {
 	sadfs.proto.header  header = 1;
 	oneof               msg {
+		release_lock release_lock = 5;
 		chunk_location_request chunk_location_req     = 6;
 		chunk_server_heartbeat chunk_server_heartbeat = 7;
 	    	chunk_write_notification chunk_write_notify   = 8;

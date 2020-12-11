@@ -124,6 +124,19 @@ processor::process_next(channel const& ch, Handler& h)
             res = false;
         }
         break;
+    case container_type::MsgCase::kReleaseLock:
+        if constexpr (is_detected_v<can_handle, Handler, release_lock>)
+        {
+            auto msg = release_lock{};
+            res      = res && extract_header() && extract(msg, container_) &&
+                  h.handle(msg, header, ch);
+        }
+        else
+        {
+            // cannot handle this message
+            res = false;
+        }
+        break;
     case container_type::MsgCase::MSG_NOT_SET:
         // nothing to handle
         res = false;
