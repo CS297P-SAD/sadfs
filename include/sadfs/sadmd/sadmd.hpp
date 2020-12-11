@@ -58,29 +58,29 @@ public:
 
     // handles a chunk_write_notification
     bool handle(msgs::master::chunk_write_notification const &,
-                msgs::channel const &);
+                msgs::message_header const &, msgs::channel const &);
 
     // handles a chunk_location_request and responds to channel it came in on
     bool handle(msgs::master::chunk_location_request const &,
-                msgs::channel const &);
+                msgs::message_header const &, msgs::channel const &);
 
     // handles a chunk_server_hearbeat
     /* TODO
     bool handle(msgs::master::chunk_server_heartbeat const&,
-            msgs::channel const&);
+                msgs::message_header const &, msgs::channel const &);
     */
 
     // handles a join_network_request and responds to channel it came in on
     bool handle(msgs::master::join_network_request const &,
-                msgs::channel const &);
+                msgs::message_header const &, msgs::channel const &);
 
     // handles a create_file_request
     bool handle(msgs::master::create_file_request const &,
-                msgs::channel const &);
+                msgs::message_header const &, msgs::channel const &);
 
     // handles a file_info_request
     bool handle(msgs::master::file_info_request const &,
-                msgs::channel const &);
+                msgs::message_header const &, msgs::channel const &);
 
 private:
     // takes ownership of a channel and serves the request on it

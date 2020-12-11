@@ -20,6 +20,7 @@ using version = unsigned int;
 enum class msg_type
 {
     unknown,
+    acknowledgement,
     file_info_response,
     chunk_location_response,
 };
@@ -46,12 +47,16 @@ private:
 bool embed(file_info_response const &, message_container &);
 bool extract(file_info_response &, message_container const &);
 
+// instantiate client::acknowledgement
+using acknowledgement = msgs::acknowledgement<message_container, msg_type,
+                                              msg_type::acknowledgement>;
+
 class chunk_location_response
 {
 public:
     chunk_location_response() = default;
     chunk_location_response(bool                              ok,
-                            std::vector<comm::service> const &services,
+                            std::vector<comm::service> const& services,
                             chunkid chunk_id, version version_num);
 
     bool          ok() const noexcept;
@@ -65,8 +70,8 @@ public:
 private:
     proto::client::chunk_location_response protobuf_{};
 
-    friend bool embed(chunk_location_response const &, message_container &);
-    friend bool extract(chunk_location_response &, message_container const &);
+    friend bool embed(chunk_location_response const&, message_container&);
+    friend bool extract(chunk_location_response&, message_container const&);
 };
 
 // declarations

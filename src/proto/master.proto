@@ -43,7 +43,7 @@ message join_network_request {
 
 // container for control messages
 message message_container {
-	sadfs.proto.host_id sender = 1;
+	sadfs.proto.header  header = 1;
 	oneof               msg {
 	    file_info_request        file_info_req          = 8;
 	    create_file_request      create_file_req        = 9;

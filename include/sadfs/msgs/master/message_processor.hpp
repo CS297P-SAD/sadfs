@@ -27,6 +27,7 @@ public:
 template <typename Handler, typename MessageType>
 using can_handle = decltype(
     std::declval<Handler>().handle(std::declval<MessageType const &>(),
+                                   std::declval<message_header const &>(),
                                    std::declval<msgs::channel const &>()));
 
 // template definitions
@@ -34,6 +35,11 @@ template <typename Handler>
 std::pair<bool, bool>
 processor::process_next(channel const &ch, Handler &h)
 {
+    auto header         = message_header{};
+    auto extract_header = [&header, this]() {
+        header.host_id.deserialize(container_.header().host_id().data());
+        return true;
+    };
     auto [res, eof] = ch.accept_deserializer(*this);
     switch (container_.msg_case())
     {
@@ -41,7 +47,8 @@ processor::process_next(channel const &ch, Handler &h)
         if constexpr (is_detected_v<can_handle, Handler, file_info_request>)
         {
             auto msg = file_info_request{};
-            res      = res && extract(msg, container_) && h.handle(msg, ch);
+            res      = res && extract_header() && extract(msg, container_) &&
+                  h.handle(msg, header, ch);
         }
         else
         {
@@ -53,7 +60,8 @@ processor::process_next(channel const &ch, Handler &h)
         if constexpr (is_detected_v<can_handle, Handler, create_file_request>)
         {
             auto msg = create_file_request{};
-            res      = res && extract(msg, container_) && h.handle(msg, ch);
+            res      = res && extract_header() && extract(msg, container_) &&
+                  h.handle(msg, header, ch);
         }
         else
         {
@@ -66,7 +74,8 @@ processor::process_next(channel const &ch, Handler &h)
                                     chunk_write_notification>)
         {
             auto msg = chunk_write_notification{};
-            res      = res && extract(msg, container_) && h.handle(msg, ch);
+            res      = res && extract_header() && extract(msg, container_) &&
+                  h.handle(msg, header, ch);
         }
         else
         {
@@ -79,7 +88,8 @@ processor::process_next(channel const &ch, Handler &h)
                                     chunk_location_request>)
         {
             auto msg = chunk_location_request{};
-            res      = res && extract(msg, container_) && h.handle(msg, ch);
+            res      = res && extract_header() && extract(msg, container_) &&
+                  h.handle(msg, header, ch);
         }
         else
         {
@@ -92,7 +102,8 @@ processor::process_next(channel const &ch, Handler &h)
                                     chunk_server_heartbeat>)
         {
             auto msg = chunk_server_heartbeat{};
-            res      = res && extract(msg, container_) && h.handle(msg, ch);
+            res      = res && extract_header() && extract(msg, container_) &&
+                  h.handle(msg, header, ch);
         }
         else
         {
@@ -104,7 +115,8 @@ processor::process_next(channel const &ch, Handler &h)
         if constexpr (is_detected_v<can_handle, Handler, join_network_request>)
         {
             auto msg = join_network_request{};
-            res      = res && extract(msg, container_) && h.handle(msg, ch);
+            res      = res && extract_header() && extract(msg, container_) &&
+                  h.handle(msg, header, ch);
         }
         else
         {

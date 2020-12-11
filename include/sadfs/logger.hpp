@@ -22,14 +22,14 @@ auto timestamp = []() {
 }
 
 inline void
-info(std::string_view msg)
+info(std::string_view const msg)
 {
     timestamp();
     std::cout << " [INFO]: " << msg << "\n";
 }
 
 inline void
-debug(std::string_view msg)
+debug(std::string_view const msg)
 {
 #ifndef NDEBUG
     timestamp();
@@ -38,10 +38,28 @@ debug(std::string_view msg)
 }
 
 inline void
-error(std::string_view msg)
+error(std::string_view const msg)
 {
     timestamp();
     std::cerr << " [ERROR]: " << msg << "\n";
+}
+
+inline void
+info(std::string const& msg)
+{
+	info(std::string_view{msg});
+}
+
+inline void
+debug(std::string const& msg)
+{
+	debug(std::string_view{msg});
+}
+
+inline void
+error(std::string const& msg)
+{
+	error(std::string_view{msg});
 }
 
 } // namespace logger

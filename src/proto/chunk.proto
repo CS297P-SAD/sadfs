@@ -11,7 +11,7 @@ message chunk_request {
 
 // container for control messages
 message message_container {
-	sadfs.proto.host_id sender = 1;
+	sadfs.proto.header  header = 1;
 	oneof               msg {
 		sadfs.proto.acknowledgement ack       = 6;
 		chunk_request               chunk_req = 7;

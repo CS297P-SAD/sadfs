@@ -165,7 +165,7 @@ sadmd::serve_requests(msgs::channel ch)
 
 bool
 sadmd::handle(msgs::master::file_info_request const &fir,
-              msgs::channel const &                  ch)
+              msgs::message_header const &, msgs::channel const &ch)
 {
     auto it       = files_.find(fir.filename());
     auto response = msgs::client::file_info_response{
@@ -178,7 +178,7 @@ sadmd::handle(msgs::master::file_info_request const &fir,
 
 bool
 sadmd::handle(msgs::master::create_file_request const &cfr,
-              msgs::channel const &                    ch)
+              msgs::message_header const &, msgs::channel const &ch)
 {
     return create_file(cfr.filename());
     // TODO: send ack
@@ -186,7 +186,7 @@ sadmd::handle(msgs::master::create_file_request const &cfr,
 
 bool
 sadmd::handle(msgs::master::chunk_location_request const &clr,
-              msgs::channel const &                       ch)
+              msgs::message_header const &, msgs::channel const &ch)
 {
     auto        id          = chunkid{};
     auto        servers     = std::vector<comm::service>{};
@@ -274,7 +274,7 @@ sadmd::handle(msgs::master::chunk_location_request const &clr,
 
 bool
 sadmd::handle(msgs::master::join_network_request const &jnr,
-              msgs::channel const &                     ch)
+              msgs::message_header const &, msgs::channel const &ch)
 {
     add_server_to_network(jnr.server_id(), jnr.service(), jnr.max_chunks(),
                           jnr.chunk_count());
@@ -283,7 +283,7 @@ sadmd::handle(msgs::master::join_network_request const &jnr,
 
 bool
 sadmd::handle(msgs::master::chunk_write_notification const &cwn,
-              msgs::channel const &                         ch)
+              msgs::message_header const &, msgs::channel const &ch)
 {
     auto server = cwn.server_id();
     // validate request - TODO: Add error logging
