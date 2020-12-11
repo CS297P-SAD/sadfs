@@ -18,9 +18,9 @@ struct sadmd
         auto listener = comm::listener{{comm::constants::ip_localhost, 6666}};
         while (true)
         {
-            logger::debug("waiting for connections...");
+            logger::debug("waiting for connections..."sv);
             auto sock = listener.accept();
-            logger::debug("accepted connection");
+            logger::debug("accepted connection"sv);
             serve_requests(std::move(sock));
         }
     }
@@ -34,16 +34,16 @@ struct sadmd
             auto [result, eof] = processor.process_next(ch, *this);
             if (result)
             {
-                logger::debug("request served successfully");
+                logger::debug("request served successfully"sv);
             }
             else if (eof)
             {
-                logger::debug("EOF");
+                logger::debug("EOF"sv);
                 break;
             }
             else
             {
-                logger::debug("request service failed");
+                logger::debug("request service failed"sv);
             }
         }
     }

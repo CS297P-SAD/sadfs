@@ -44,6 +44,24 @@ error(std::string_view msg)
     std::cerr << " [ERROR]: " << msg << "\n";
 }
 
+inline void
+info(std::string msg)
+{
+	info(std::string_view{msg});
+}
+
+inline void
+debug(std::string msg)
+{
+	debug(std::string_view{msg});
+}
+
+inline void
+error(std::string msg)
+{
+	error(std::string_view{msg});
+}
+
 } // namespace logger
 } // namespace sadfs
 
