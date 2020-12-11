@@ -3,6 +3,7 @@
 
 // sadfs-specific includes
 #include <sadfs/proto/common.pb.h>
+#include <sadfs/uuid.hpp>
 
 // standard includes
 #include <cstddef> // std::size_t
@@ -20,10 +21,10 @@ enum class io_type
     write,
 };
 
-// uniquely identifies a host
-struct host_id
+// header of every control message
+struct message_header
 {
-    std::size_t uuid;
+    uuid host_id;
 };
 
 using io_type_map       = std::unordered_map<proto::io_type, io_type>;

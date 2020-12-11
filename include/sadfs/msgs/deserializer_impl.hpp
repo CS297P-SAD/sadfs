@@ -8,56 +8,58 @@
 // external includes
 #include <google/protobuf/util/delimited_message_util.h>
 
-namespace sadfs { namespace msgs {
+namespace sadfs
+{
+namespace msgs
+{
 
 // Container refers to a container for control messages
-template <typename Container>
-class deserializer
+template <typename Container> class deserializer
 {
 public:
-	deserializer() = default; // TODO: remove
-	deserializer(host_id id);
+    deserializer() = default; // TODO: remove
 
-	template <typename ControlMessage>
-	std::pair<bool, bool> deserialize(ControlMessage&, channel const&);
+    template <typename ControlMessage>
+    std::pair<bool, bool> deserialize(ControlMessage &, channel const &);
 
 protected:
-	using container_type = Container;
-	Container container_{};
+    using container_type = Container;
+    Container container_{};
 
 private:
-	friend class msgs::channel;
-	std::pair<bool, bool> deserialize(gpio::ZeroCopyInputStream*);
+    friend class msgs::channel;
+    std::pair<bool, bool> deserialize(gpio::ZeroCopyInputStream *);
 };
 
 // template definitions
 template <typename Container>
 template <typename ControlMessage>
-std::pair<bool, bool> msgs::deserializer<Container>::
-deserialize(ControlMessage& cm, channel const& ch)
+std::pair<bool, bool>
+msgs::deserializer<Container>::deserialize(ControlMessage &cm,
+                                           channel const & ch)
 {
-	auto res =  ch.accept_deserializer(*this);
-	res.first = res.first && extract(cm, container_);
+    auto res  = ch.accept_deserializer(*this);
+    res.first = res.first && extract(cm, container_);
 
-	// we must not hold data after deserialization
-	container_.clear_msg();
-	return res;
+    // we must not hold data after deserialization
+    container_.clear_msg();
+    return res;
 }
 
 template <typename Container>
-std::pair<bool, bool> deserializer<Container>::
-deserialize(gpio::ZeroCopyInputStream* in)
+std::pair<bool, bool>
+deserializer<Container>::deserialize(gpio::ZeroCopyInputStream *in)
 {
-	namespace gputil = google::protobuf::util;
-	auto const deserialize = gputil::ParseDelimitedFromZeroCopyStream;
+    namespace gputil       = google::protobuf::util;
+    auto const deserialize = gputil::ParseDelimitedFromZeroCopyStream;
 
-	auto result = false, eof = false;
-	result = deserialize(&container_, in, &eof);
+    auto result = false, eof = false;
+    result = deserialize(&container_, in, &eof);
 
-	return {result, eof};
+    return {result, eof};
 }
 
-} // msgs namespace
-} // sadfs namespace
+} // namespace msgs
+} // namespace sadfs
 
 #endif // SADFS_MSGS_DESERIALIZERS_HPP

@@ -49,8 +49,11 @@ struct sadmd
     }
 
     using clr = msgs::master::chunk_location_request;
-    bool handle(clr const &req, msgs::channel const &ch)
+    bool handle(clr const &req, msgs::message_header const &header,
+                msgs::channel const &ch)
     {
+        logger::debug(std::string_view{"received req. from: " +
+                                       to_string(header.host_id)});
         auto response = msgs::client::chunk_location_response{
             /*ok=*/true,
             {{"10.0.0.13", 6666}},
@@ -63,8 +66,11 @@ struct sadmd
     }
 
     using hb = msgs::master::chunk_server_heartbeat;
-    bool handle(hb const &hb, msgs::channel const &ch)
+    bool handle(hb const &hb, msgs::message_header const &header,
+                msgs::channel const &ch)
     {
+        logger::debug(std::string_view{"received req. from: " +
+                                       to_string(header.host_id)});
         auto response = msgs::chunk::acknowledgement{/*ok=*/true};
         auto result   = msgs::chunk::serializer{}.serialize(response, ch);
         ch.flush();
