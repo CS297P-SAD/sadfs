@@ -22,10 +22,47 @@ namespace
 auto const msg_type_lookup = msg_type_map{
     {MsgCase::MSG_NOT_SET, msg_type::unknown},
     {MsgCase::kAck, msg_type::acknowledgement},
+    {MsgCase::kFileInfoRes, msg_type::file_info_response},
     {MsgCase::kChunkLocationRes, msg_type::chunk_location_response},
 };
 
 } // unnamed namespace
+
+// ==================================================================
+//                     file_info_response
+// ==================================================================
+file_info_response::file_info_response(bool exists, uint64_t size)
+{
+    protobuf_.set_exists(exists);
+    protobuf_.set_size(size);
+}
+
+// embeds a control message into a container that is
+// (typically) sent over the wire
+bool
+embed(file_info_response const &res, message_container &container)
+{
+    // should this be in a try-catch block?
+    // msg.mutable_chunk_location_res() can throw if heap allocation fails
+    *container.mutable_file_info_res() = res.protobuf_;
+    return true;
+}
+
+// extracts a control message from a container that is
+// (typically) received over the wire
+bool
+extract(file_info_response &res, message_container const &container)
+{
+    if (msg_type_lookup.at(container.msg_case()) != file_info_response::type)
+    {
+        // cannot extract a msg that doesn't exist
+        return false;
+    }
+
+    // read file_info_response from message_container
+    res.protobuf_ = container.file_info_res();
+    return true;
+}
 
 // ==================================================================
 //                     chunk_location_response
@@ -74,6 +111,7 @@ extract(chunk_location_response& res, message_container const& container)
 }
 
 } // namespace client
+
 /* ========================================================
  *                  client::acknowledgement
  *

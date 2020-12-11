@@ -3,6 +3,14 @@ syntax = "proto3";
 package sadfs.proto.master;
 import "common.proto";
 
+message file_info_request {
+	string filename    = 1;
+}
+
+message create_file_request {
+	string filename    = 1;
+}
+
 // notification of successful write
 message chunk_write_notification {
 	bytes  server_id   = 1;
@@ -37,6 +45,8 @@ message join_network_request {
 message message_container {
 	sadfs.proto.header  header = 1;
 	oneof               msg {
+	    file_info_request        file_info_req          = 8;
+	    create_file_request      create_file_req        = 9;
 	    chunk_write_notification chunk_write_notify     = 10;
 		chunk_location_request   chunk_location_req     = 11;
 		chunk_server_heartbeat   chunk_server_heartbeat = 12;

@@ -35,7 +35,7 @@ struct chunk_server_info
 // all the information needed about a file
 struct file_info
 {
-    int               ttl;
+    time_point        locked_until;
     util::file_chunks chunkids;
     uint32_t          size;
 };
@@ -75,16 +75,24 @@ public:
     bool handle(msgs::master::join_network_request const &,
                 msgs::message_header const &, msgs::channel const &);
 
+    // handles a create_file_request
+    bool handle(msgs::master::create_file_request const &,
+                msgs::message_header const &, msgs::channel const &);
+
+    // handles a file_info_request
+    bool handle(msgs::master::file_info_request const &,
+                msgs::message_header const &, msgs::channel const &);
+
 private:
     // takes ownership of a channel and serves the request on it
     void serve_requests(msgs::channel);
 
     // creates (the metadata for) a new file
-    void create_file(std::string const &);
+    bool create_file(std::string const &);
 
     // loads file metadata from disk
     void load_files();
-    void load_file(std::string const &, std::string const &);
+    bool load_file(std::string const &, std::string const &);
 
     // copies in-memory files into database
     void save_files() const noexcept;

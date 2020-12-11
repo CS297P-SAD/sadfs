@@ -3,11 +3,16 @@ syntax = "proto3";
 package sadfs.proto.client;
 import "common.proto";
 
+message file_info_response {
+	bool   exists = 1;
+	uint64 size   = 2;
+}
+
 // response for a chunk_location_request
 message chunk_location_response {
 	bool            ok          = 1;
 	repeated string server_ips  = 2;
-	repeated int32  ports       = 3;  // not uint32 for sadfs code compatibility
+	repeated int32  ports       = 3;  // not uint32 for compatibility
 	bytes           chunk_id    = 4;
 	int32           version_num = 5;
 }
@@ -18,5 +23,6 @@ message message_container {
 	oneof               msg {
 		sadfs.proto.acknowledgement ack                = 6;
 		chunk_location_response     chunk_location_res = 7;
+		file_info_response          file_info_res      = 8;
 	}
 }

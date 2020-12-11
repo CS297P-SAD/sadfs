@@ -73,6 +73,25 @@ open_db()
 } // unnamed namespace
 
 std::vector<comm::service>
+choose_servers(int                                              num_servers,
+               std::unordered_map<serverid, chunk_server_info> &server_map)
+{
+    auto services = std::vector<comm::service>{};
+    // TODO : this decision process should be randomized
+    for (auto server : server_map)
+    {
+        if (server.second.valid_until > time::now())
+        {
+            services.push_back(server.second.service);
+        }
+        if (services.size() >= num_servers)
+            break;
+    }
+
+    return services;
+}
+
+std::vector<comm::service>
 sadmd::valid_servers(chunk_info &info, bool latest_only)
 {
     auto is_active_latest_version = [&info](auto version, auto valid_until) {
@@ -112,7 +131,6 @@ sadmd::sadmd(char const *ip, int port)
 void
 sadmd::start()
 {
-    create_file("/mnt/a/file.dat");
     auto listener = comm::listener{service_};
     while (true)
     {
@@ -146,8 +164,29 @@ sadmd::serve_requests(msgs::channel ch)
 }
 
 bool
+sadmd::handle(msgs::master::file_info_request const &fir,
+              msgs::message_header const &, msgs::channel const& ch)
+{
+    auto it       = files_.find(fir.filename());
+    auto response = msgs::client::file_info_response{
+        /*exists=*/it != files_.end(),
+        /*size =*/it == files_.end() ? 0 : it->second.size};
+    auto result = msgs::client::serializer{}.serialize(response, ch);
+    ch.flush();
+    return result;
+}
+
+bool
+sadmd::handle(msgs::master::create_file_request const &cfr,
+              msgs::message_header const &, msgs::channel const& ch)
+{
+    return create_file(cfr.filename());
+    // TODO: send ack
+}
+
+bool
 sadmd::handle(msgs::master::chunk_location_request const &clr,
-              msgs::message_header const &, msgs::channel const &ch)
+              msgs::message_header const &, msgs::channel const& ch)
 {
     auto        id          = chunkid{};
     auto        servers     = std::vector<comm::service>{};
@@ -155,39 +194,75 @@ sadmd::handle(msgs::master::chunk_location_request const &clr,
     auto        version_num = version{0};
 
     // lambda to check if a chunk number is valid for filename
-    auto validate = [&filename](auto it, auto chunk_number) {
+    auto validate = [](auto it, auto chunk_number) {
         // safe since we don't validate if iterator is invalid
         if (chunk_number >= it->second.chunkids.size())
         {
             std::cerr << "Error: request for too large chunk number: chunk "
-                      << chunk_number << " of " << filename << '\n';
+                      << chunk_number << " of " << it->first // filename
+                      << '\n';
             return false;
         }
         return true;
     };
 
-    // look up relevant info
+    // validate file name
     auto it = files_.find(filename);
     if (it == files_.end())
     {
         std::cerr << "Error: request for chunk location in nonexistant file "
                   << filename << '\n';
     }
-    else if (validate(it, clr.chunk_number()))
+    else if (clr.io_type() == sadfs::msgs::io_type::write)
     {
-        id          = it->second.chunkids[clr.chunk_number()];
-        auto &chunk = chunk_metadata_[id];
-        servers     = valid_servers(chunk,
-                                /*latest_only=*/clr.io_type() ==
-                                    sadfs::msgs::io_type::read);
-        version_num = chunk.latest_version;
-        if (servers.size() <= 0)
+        if (it->second.locked_until > time::now())
         {
-            std::cerr << "Error: list of server locations empty\n";
+            std::cerr << "File locked\n";
+        }
+        else if (clr.chunk_number() == it->second.chunkids.size())
+        {
+            // request to write just after last chunk - generate new info
+            id      = chunkid::generate();
+            servers = choose_servers(3, chunk_server_metadata_);
+            // (version num is already 0)
+            it->second.locked_until = time::from_now(time::file_ttl);
+        }
+        else if (validate(it, clr.chunk_number()))
+        {
+            // request to write to last chunk - lookup info
+            id          = it->second.chunkids[clr.chunk_number()];
+            auto &chunk = chunk_metadata_[id];
+            servers     = valid_servers(chunk, /*latest_only=*/false);
+            version_num = chunk.latest_version;
+            if (servers.size() <= 0)
+            {
+                std::cerr << "Error: list of server locations empty\n";
+            }
+            it->second.locked_until = time::from_now(time::file_ttl);
+        }
+        else
+        {
+            // All other chunk numbers are invalid
+            std::cerr << "Error: attempt to write to chunk "
+                      << clr.chunk_number() << " of " << filename
+                      << " which is not the last chunk\n";
+        }
+    }
+    else
+    {
+        if (validate(it, clr.chunk_number()))
+        {
+            id          = it->second.chunkids[clr.chunk_number()];
+            auto &chunk = chunk_metadata_[id];
+            servers     = valid_servers(chunk, /*latest_only=*/true);
+            version_num = chunk.latest_version;
+            if (servers.size() <= 0)
+            {
+                std::cerr << "Error: list of server locations empty\n";
+            }
         }
     }
 
-    // create the response protobuf
     auto response = msgs::client::chunk_location_response{
         servers.size() > 0, servers, id, version_num};
 
@@ -199,19 +274,20 @@ sadmd::handle(msgs::master::chunk_location_request const &clr,
 
 bool
 sadmd::handle(msgs::master::join_network_request const &jnr,
-              msgs::message_header const &, msgs::channel const &ch)
+              msgs::message_header const &, msgs::channel const& ch)
 {
-    add_server_to_network(jnr.server_id(), // header.host_id,
-                          jnr.service(), jnr.max_chunks(), jnr.chunk_count());
+    add_server_to_network(jnr.server_id(), jnr.service(), jnr.max_chunks(),
+                          jnr.chunk_count());
     return true;
 }
 
 bool
 sadmd::handle(msgs::master::chunk_write_notification const &cwn,
-              msgs::message_header const &, msgs::channel const &ch)
+              msgs::message_header const &, msgs::channel const& ch)
 {
-    auto server = cwn.server_id(); // header.host_id;
-    if (!is_active(server))
+    auto server = cwn.server_id();
+    // validate request - TODO: Add error logging
+    if (!is_active(server) || !files_.count(cwn.filename()))
         return false;
 
     auto chunk = cwn.chunk_id();
@@ -263,13 +339,13 @@ sadmd::handle(msgs::master::chunk_write_notification const &cwn,
     return true;
 }
 
-void
+bool
 sadmd::create_file(std::string const &filename)
 {
-    load_file(filename, {});
+    return load_file(filename, {});
 }
 
-void
+bool
 sadmd::load_file(std::string const &filename,
                  std::string const &existing_chunks)
 {
@@ -277,12 +353,13 @@ sadmd::load_file(std::string const &filename,
     {
         std::cerr << "Error: attempt to load " << filename
                   << ": file already exists\n";
-        return;
+        return false;
     }
     files_.emplace(filename, file_info{});
     auto &file_chunkids = files_[filename].chunkids;
     file_chunkids.deserialize(existing_chunks);
     reintroduce_chunks_to_network(file_chunkids);
+    return true;
 }
 
 void
