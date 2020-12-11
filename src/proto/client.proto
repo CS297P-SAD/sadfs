@@ -21,7 +21,8 @@ message chunk_location_response {
 message message_container {
 	sadfs.proto.host_id sender = 1;
 	oneof               msg {
-		file_info_response      file_info_res      = 10;
-		chunk_location_response chunk_location_res = 11;
+		sadfs.proto.acknowledgement ack                = 6;
+		chunk_location_response     chunk_location_res = 7;
+		file_info_response          file_info_res      = 8;
 	}
 }

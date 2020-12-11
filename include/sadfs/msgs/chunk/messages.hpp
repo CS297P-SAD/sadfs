@@ -20,11 +20,12 @@ using message_container = proto::chunk::message_container;
 
 enum class msg_type
 {
+    unknown,
     acknowledgement,
     chunk_request,
-    unknown,
 };
 
+// acknowledgement chunk::acknowledgement
 using acknowledgement = msgs::acknowledgement<message_container, msg_type,
                                               msg_type::acknowledgement>;
 
@@ -44,13 +45,13 @@ private:
     proto::chunk::chunk_request protobuf_{};
 
     // provide embed/extract functions access to private members
-    friend bool embed(chunk_request const &, message_container &);
-    friend bool extract(chunk_request &, message_container const &);
+    friend bool embed(chunk_request const&, message_container&);
+    friend bool extract(chunk_request&, message_container const&);
 };
 
 // declarations
-bool embed(chunk_request const &, message_container &);
-bool extract(chunk_request &, message_container const &);
+bool embed(chunk_request const&, message_container&);
+bool extract(chunk_request&, message_container const&);
 
 // ==================================================================
 //                      inline function definitions
