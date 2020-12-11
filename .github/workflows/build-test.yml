@@ -4,12 +4,6 @@ on:
   push: # run on every push
     paths-ignore: # do not run when only these files are modified
       - 'doc/**'
-  pull_request:
-    branches:
-      - master
-      - dev
-    paths-ignore: # do not run when only these files are modified
-      - 'doc/**'
 
 jobs:
   build_ubuntu:
