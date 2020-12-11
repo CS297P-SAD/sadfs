@@ -3,10 +3,6 @@ syntax = "proto3";
 package sadfs.proto.client;
 import "common.proto";
 
-message file_info_response {
-	bool   exists = 1;
-	uint64 size   = 2;
-}
 
 // response for a chunk_location_request
 message chunk_location_response {
@@ -21,7 +17,6 @@ message chunk_location_response {
 message message_container {
 	sadfs.proto.host_id sender = 1;
 	oneof               msg {
-		file_info_response      file_info_res      = 10;
 		chunk_location_response chunk_location_res = 11;
 	}
 }

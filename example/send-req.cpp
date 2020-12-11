@@ -147,29 +147,11 @@ create_file(std::string filename)
     ch.flush();
 }
 
-bool
-file_exists(std::string filename)
-{
-    auto fir = msgs::master::file_info_request{filename};
-
-    auto ch = establish_conn();
-
-    // send chunk_write_notification
-    msgs::master::serializer{}.serialize(fir, ch);
-    ch.flush();
-
-    auto response = msgs::client::file_info_response{};
-    msgs::client::deserializer{}.deserialize(response, ch);
-    return response.exists();
-}
-
 int
 main(int argc, char **argv)
 {
     std::cout << std::boolalpha;
     create_file("/mnt/a/file.dat");
-    if (file_exists("/mnt/a/file.dat"))
-    {
         auto sid1 = serverid::generate();
         auto sid2 = serverid::generate();
         auto cid1 = chunkid::generate();
@@ -187,7 +169,6 @@ main(int argc, char **argv)
         request_chunk("/mnt/a/file.dat", 0, 'w');
         request_chunk("/mnt/a/file.dat", 2, 'w');
         request_chunk("/mnt/a/file.da", 0, 'r');
-    }
 
     return 0;
 }

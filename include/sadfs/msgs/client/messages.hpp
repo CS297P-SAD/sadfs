@@ -20,31 +20,8 @@ using version = unsigned int;
 enum class msg_type
 {
     unknown,
-    file_info_response,
     chunk_location_response,
 };
-
-class file_info_response
-{
-public:
-    file_info_response() = default;
-    file_info_response(bool exists, uint64_t size);
-
-    bool     exists() const noexcept;
-    uint64_t size() const;
-
-    inline static msg_type type{msg_type::file_info_response};
-
-private:
-    proto::client::file_info_response protobuf_{};
-
-    friend bool embed(file_info_response const &, message_container &);
-    friend bool extract(file_info_response &, message_container const &);
-};
-
-// declarations
-bool embed(file_info_response const &, message_container &);
-bool extract(file_info_response &, message_container const &);
 
 class chunk_location_response
 {
@@ -76,17 +53,6 @@ bool extract(chunk_location_response &, message_container const &);
 // ==================================================================
 //                     inline function definitions
 // ==================================================================
-inline bool
-file_info_response::exists() const noexcept
-{
-    return protobuf_.exists();
-}
-
-inline uint64_t
-file_info_response::size() const
-{
-    return protobuf_.size();
-}
 
 inline bool
 chunk_location_response::ok() const noexcept

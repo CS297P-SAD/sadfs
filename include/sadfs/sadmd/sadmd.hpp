@@ -78,10 +78,6 @@ public:
     bool handle(msgs::master::create_file_request const &,
                 msgs::channel const &);
 
-    // handles a file_info_request
-    bool handle(msgs::master::file_info_request const &,
-                msgs::channel const &);
-
 private:
     // takes ownership of a channel and serves the request on it
     void serve_requests(msgs::channel);
