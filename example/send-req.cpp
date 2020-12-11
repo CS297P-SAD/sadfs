@@ -141,11 +141,10 @@ int
 main(int argc, char** argv)
 {
 	std::cout << std::boolalpha;
-	request_chunk("/mnt/a/file.dat", 0, 'r');
-	request_chunk("/mnt/a/file.dat", 1, 'w');
-	request_chunk("/mnt/a/file.dat", 2, 'r');
-	request_chunk("/mnt/a/file.da", 0, 'r');
 	join_network();
+	request_chunk("/mnt/a/file.dat", 0, 'r');
+	request_chunk("/mnt/a/file.dat", 0, 'w');
+	request_chunk("/mnt/a/file.dat", 0, 'r');
 
 	return 0;
 }

@@ -69,6 +69,11 @@ public:
 	bool handle(msgs::master::join_network_request const&, 
                 msgs::channel const&);
 private:
+
+void handle_read(std::unordered_map<std::string, file_info>::iterator, uint64_t, msgs::client::chunk_location_response&);
+void handle_write(std::unordered_map<std::string, file_info>::iterator, uint64_t, msgs::client::chunk_location_response&);
+
+
 	// takes ownership of a channel and serves the request on it
 	void serve_requests(msgs::channel);
 

@@ -122,6 +122,7 @@ sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 void sadmd::
 start()
 {
+	//create_file("/mnt/a/file.dat");
 	auto listener = comm::listener{service_};
 	while (true)
 	{
@@ -163,7 +164,7 @@ handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
 	auto version_num = version{0};
 
 	// lambda to check if a chunk number is valid for filename
-	auto validate = [&filename](auto it, auto chunk_number)
+	auto validate = [](auto it, auto chunk_number)
 	{
 		 // safe since we don't validate if iterator is invalid
 		if (chunk_number >= it->second.chunkids.size())
@@ -171,48 +172,72 @@ handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
 			std::cerr << "Error: request for too large chunk number: chunk "
 					<< chunk_number
 					<< " of "
-					<< filename
+					<< it->first //filename
 					<< '\n';
 			return false;
 		}
 		return true;
 	};
 
-	// look up relevant info
+	//validate file name
 	auto it = files_.find(filename);
 	if (it == files_.end())
 	{
-		if (clr.io_type() == sadfs::msgs::io_type::write)
+		std::cerr << "Error: request for chunk location in nonexistant file "
+			<< filename
+			<< '\n';
+	}
+	else if (clr.io_type() == sadfs::msgs::io_type::write)
+	{
+		if (it->second.locked_until > time::now())
 		{
+			std::cerr << "File locked\n";
+		}
+		else if (clr.chunk_number() == it->second.chunkids.size())
+		{
+			// request to write just after last chunk - generate new info
 			id = chunkid::generate();
 			servers = choose_three(chunk_server_metadata_);
-			// leave version_num = 0;
+			// (version num is already 0)
+			it->second.locked_until = time::from_now(time::file_ttl);
+		}
+		else if (clr.chunk_number() == it->second.chunkids.size() - 1)
+		{
+			// request to write to last chunk - lookup info
+			id = it->second.chunkids[clr.chunk_number()];
+			auto& chunk = chunk_metadata_[id];
+			servers = valid_servers(chunk, /*latest_only=*/false); 
+			version_num = chunk.latest_version;
+			if (servers.size() <= 0)
+			{
+				std::cerr << "Error: list of server locations empty\n";
+			}
+			it->second.locked_until = time::from_now(time::file_ttl);
 		}
 		else
 		{
-			std::cerr << "Error: request for chunk location in nonexistant file "
-					<< filename
-					<< '\n';
+			// All other chunk numbers are invalid
+			std::cerr << "Error: attempt to write to chunk "
+			          << clr.chunk_number()
+					  << " of "
+					  << filename
+					  << " which is not the last chunk";
 		}
 	}
-	else if (validate(it, clr.chunk_number()))
+	else
 	{
-		id = it->second.chunkids[clr.chunk_number()];
-		auto& chunk = chunk_metadata_[id];
-		servers = valid_servers(chunk, 
-				/*latest_only=*/clr.io_type() == sadfs::msgs::io_type::read); 
-		version_num = chunk.latest_version;
-		if (servers.size() <= 0)
+		if (validate(it, clr.chunk_number()))
 		{
-			std::cerr << "Error: list of server locations empty\n";
+			id = it->second.chunkids[clr.chunk_number()];
+			auto& chunk = chunk_metadata_[id];
+			servers = valid_servers(chunk, /*latest_only=*/true); 
+			version_num = chunk.latest_version;
+			if (servers.size() <= 0)
+			{
+				std::cerr << "Error: list of server locations empty\n";
+			}
 		}
 	}
-
-	if (servers.size() > 0 && clr.io_type() == sadfs::msgs::io_type::write)
-	{
-		it->second.locked_until = time::from_now(time::file_ttl);
-	}
-		
 	// create the response protobuf
 	auto response = msgs::client::chunk_location_response
 	{
@@ -221,8 +246,6 @@ handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
 		id,
 		version_num
 	};
-
-	// send protobuf back over channel
 	auto result = msgs::client::serializer{}.serialize(response, ch);
 	ch.flush();
 	return result;
