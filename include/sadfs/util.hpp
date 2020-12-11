@@ -16,10 +16,9 @@ namespace msgs
 
 // metafunction to help with the detection idiom
 template <typename Handler, typename MessageType>
-using can_handle = decltype(
-    std::declval<Handler>().handle(std::declval<MessageType const &>(),
-                                   std::declval<message_header const &>(),
-                                   std::declval<msgs::channel const &>()));
+using can_handle = decltype(std::declval<Handler>().handle(
+    std::declval<MessageType const&>(), std::declval<message_header const&>(),
+    std::declval<msgs::channel const&>()));
 
 } // namespace msgs
 

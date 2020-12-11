@@ -31,16 +31,17 @@ auto const msg_type_lookup = msg_type_map{
  * ========================================================
  */
 stream_request::stream_request(msgs::io_type type, chunkid chunk_id,
-		uint64_t offset, uint64_t length, std::string&& data)
+                               uint64_t offset, uint64_t length,
+                               std::string&& data)
 {
     protobuf_.set_type(proto_io_type_lookup.at(type));
     chunk_id.serialize(std::back_inserter(*protobuf_.mutable_chunk_id()));
-	protobuf_.set_offset(offset);
-	protobuf_.set_length(length);
-	// TODO: see if the statements below can be replaced with:
-	// protobuf_.set_allocated_data(new std::string{std::move(data)});
-	auto data_ptr = std::make_unique<std::string>(std::move(data));
-	protobuf_.set_allocated_data(data_ptr.release());
+    protobuf_.set_offset(offset);
+    protobuf_.set_length(length);
+    // TODO: see if the statements below can be replaced with:
+    // protobuf_.set_allocated_data(new std::string{std::move(data)});
+    auto data_ptr = std::make_unique<std::string>(std::move(data));
+    protobuf_.set_allocated_data(data_ptr.release());
 }
 
 io_type
@@ -72,7 +73,7 @@ extract(stream_request& req, message_container& container)
     }
 
     // pull stream_request out of message_container
-	// we do not make a copy since copying the data will be expensive
+    // we do not make a copy since copying the data will be expensive
     req.protobuf_ = std::move(*container.release_stream_req());
     return true;
 }

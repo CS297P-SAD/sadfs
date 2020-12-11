@@ -35,13 +35,13 @@ public:
     // constructors
     stream_request() = default;
     stream_request(msgs::io_type, chunkid chunk_id, uint64_t offset,
-	               uint64_t length, std::string&& data);
+                   uint64_t length, std::string&& data);
 
-    msgs::io_type      io_type()  const;
+    msgs::io_type      io_type() const;
     chunkid            chunk_id() const;
-	uint64_t           offset()   const;
-	uint64_t           length()   const;
-	std::string const& data()     const;
+    uint64_t           offset() const;
+    uint64_t           length() const;
+    std::string const& data() const;
 
     inline static msg_type type{msg_type::stream_request};
 
@@ -53,37 +53,33 @@ private:
     friend bool extract(stream_request&, message_container&);
 };
 
-// declarations
-bool embed(stream_request const&, message_container&);
-bool extract(stream_request&, message_container&);
-
 // ==================================================================
 //                      inline function definitions
 // ==================================================================
 inline chunkid
 stream_request::chunk_id() const
 {
-	auto id = chunkid{};
-	id.deserialize(protobuf_.chunk_id().data());
-	return id;
+    auto id = chunkid{};
+    id.deserialize(protobuf_.chunk_id().data());
+    return id;
 }
 
 inline uint64_t
 stream_request::offset() const
 {
-	return protobuf_.offset();
+    return protobuf_.offset();
 }
 
-inline uint64_t           
-stream_request::length()   const
+inline uint64_t
+stream_request::length() const
 {
-	return protobuf_.length();
+    return protobuf_.length();
 }
 
 inline std::string const&
-stream_request::data()     const
+stream_request::data() const
 {
-	return protobuf_.data();
+    return protobuf_.data();
 }
 
 } // namespace chunk

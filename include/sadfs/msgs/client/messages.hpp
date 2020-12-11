@@ -52,10 +52,6 @@ private:
     friend bool extract(chunk_location_response&, message_container const&);
 };
 
-// declarations
-bool embed(chunk_location_response const&, message_container&);
-bool extract(chunk_location_response&, message_container const&);
-
 class file_metadata_response
 {
 public:
@@ -73,10 +69,6 @@ private:
     friend bool embed(file_metadata_response const&, message_container&);
     friend bool extract(file_metadata_response&, message_container const&);
 };
-
-// declarations
-bool embed(file_metadata_response const&, message_container&);
-bool extract(file_metadata_response&, message_container const&);
 
 // ==================================================================
 //                     inline function definitions
