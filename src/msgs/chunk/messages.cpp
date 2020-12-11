@@ -45,10 +45,10 @@ chunk_request::io_type() const
 // embeds a control message into a container that is
 // (typically) sent over the wire
 bool
-embed(chunk_request const &req, message_container &container)
+embed(chunk_request const& req, message_container& container)
 {
     // should this be in a try-catch block?
-    // msg.mutable_chunk_req() can throw if heap allocation fails
+    // container.mutable_chunk_req() can throw if heap allocation fails
     *container.mutable_chunk_req() = req.protobuf_;
     return true;
 }
@@ -56,7 +56,7 @@ embed(chunk_request const &req, message_container &container)
 // extracts a control message from a container that is
 // (typically) received over the wire
 bool
-extract(chunk_request &req, message_container const &container)
+extract(chunk_request& req, message_container const& container)
 {
     if (msg_type_lookup.at(container.msg_case()) != chunk_request::type)
     {
@@ -72,16 +72,19 @@ extract(chunk_request &req, message_container const &container)
 } // namespace chunk
 
 /* ========================================================
- *                       chunk_request
+ *                  chunk::acknowledgement
+ *
+ * this is defined in the msgs namespace since
+ * acknowledgement really is defined in that namespace
  * ========================================================
  */
 // embeds a control message into a container that is
 // (typically) sent over the wire
 bool
-embed(chunk::acknowledgement const &ack, chunk::message_container &container)
+embed(chunk::acknowledgement const& ack, chunk::message_container& container)
 {
     // should this be in a try-catch block?
-    // msg.mutable_ack() can throw if heap allocation fails
+    // container.mutable_ack() can throw if heap allocation fails
     *container.mutable_ack() = ack.protobuf_;
     return true;
 }
@@ -89,7 +92,7 @@ embed(chunk::acknowledgement const &ack, chunk::message_container &container)
 // extracts a control message from a container that is
 // (typically) received over the wire
 bool
-extract(chunk::acknowledgement &ack, chunk::message_container const &container)
+extract(chunk::acknowledgement& ack, chunk::message_container const& container)
 {
     if (chunk::msg_type_lookup.at(container.msg_case()) !=
         chunk::acknowledgement::type)
@@ -102,5 +105,6 @@ extract(chunk::acknowledgement &ack, chunk::message_container const &container)
     ack.protobuf_ = container.ack();
     return true;
 }
+
 } // namespace msgs
 } // namespace sadfs
