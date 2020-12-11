@@ -7,79 +7,121 @@
 #include <sadfs/proto/client.pb.h>
 #include <sadfs/types.hpp>
 
-namespace sadfs { namespace msgs { namespace client {
+namespace sadfs
+{
+namespace msgs
+{
+namespace client
+{
 using proto::client::message_container;
 using version = unsigned int;
 
 // enumerates types of control messages sent to clients
 enum class msg_type
 {
-	unknown,
-	chunk_location_response,
+    unknown,
+    file_info_response,
+    chunk_location_response,
 };
+
+class file_info_response
+{
+public:
+    file_info_response() = default;
+    file_info_response(bool exists, uint64_t size);
+
+    bool     exists() const noexcept;
+    uint64_t size() const;
+
+    inline static msg_type type{msg_type::file_info_response};
+
+private:
+    proto::client::file_info_response protobuf_{};
+
+    friend bool embed(file_info_response const &, message_container &);
+    friend bool extract(file_info_response &, message_container const &);
+};
+
+// declarations
+bool embed(file_info_response const &, message_container &);
+bool extract(file_info_response &, message_container const &);
 
 class chunk_location_response
 {
 public:
-	chunk_location_response() = default;
-	chunk_location_response(bool ok, std::vector<comm::service> const& services, 
-				chunkid chunk_id, version version_num);
+    chunk_location_response() = default;
+    chunk_location_response(bool                              ok,
+                            std::vector<comm::service> const &services,
+                            chunkid chunk_id, version version_num);
 
-	bool               ok()             const noexcept;
-	comm::service      service(int)     const;
-	chunkid            chunk_id()       const noexcept;
-	uint32_t           version_num()    const;
-	int                locations_size() const noexcept;
+    bool          ok() const noexcept;
+    comm::service service(int) const;
+    chunkid       chunk_id() const noexcept;
+    uint32_t      version_num() const;
+    int           locations_size() const noexcept;
 
-	inline static msg_type type{msg_type::chunk_location_response};
+    inline static msg_type type{msg_type::chunk_location_response};
+
 private:
-	proto::client::chunk_location_response protobuf_{};
+    proto::client::chunk_location_response protobuf_{};
 
-	friend bool embed(chunk_location_response const&, message_container&);
-	friend bool extract(chunk_location_response&, message_container const&);
+    friend bool embed(chunk_location_response const &, message_container &);
+    friend bool extract(chunk_location_response &, message_container const &);
 };
 
 // declarations
-bool embed(chunk_location_response const&, message_container&);
-bool extract(chunk_location_response&, message_container const&);
+bool embed(chunk_location_response const &, message_container &);
+bool extract(chunk_location_response &, message_container const &);
 
 // ==================================================================
 //                     inline function definitions
 // ==================================================================
-inline bool chunk_location_response::
-ok() const noexcept
+inline bool
+file_info_response::exists() const noexcept
 {
-	return protobuf_.ok();
+    return protobuf_.exists();
 }
 
-inline comm::service chunk_location_response::
-service(int i) const
+inline uint64_t
+file_info_response::size() const
 {
-	return {protobuf_.server_ips(i).c_str(), protobuf_.ports(i)};
+    return protobuf_.size();
 }
 
-inline chunkid chunk_location_response::
-chunk_id() const noexcept
+inline bool
+chunk_location_response::ok() const noexcept
 {
-	auto id = chunkid{};
-	id.deserialize(protobuf_.chunk_id().data());
-	return id;
+    return protobuf_.ok();
 }
 
-inline int chunk_location_response::
-locations_size() const noexcept
+inline comm::service
+chunk_location_response::service(int i) const
 {
-	return protobuf_.server_ips_size();
+    return {protobuf_.server_ips(i).c_str(), protobuf_.ports(i)};
 }
 
-inline uint32_t chunk_location_response::
-version_num() const
+inline chunkid
+chunk_location_response::chunk_id() const noexcept
 {
-	return protobuf_.version_num();
+    auto id = chunkid{};
+    id.deserialize(protobuf_.chunk_id().data());
+    return id;
 }
-  
-} // client namespace
-} // msgs namespace
-} // sadfs namespace
+
+inline int
+chunk_location_response::locations_size() const noexcept
+{
+    return protobuf_.server_ips_size();
+}
+
+inline uint32_t
+chunk_location_response::version_num() const
+{
+    return protobuf_.version_num();
+}
+
+} // namespace client
+} // namespace msgs
+} // namespace sadfs
 
 #endif // SADFS_MSGS_CLIENT_MESSAGES_HPP
