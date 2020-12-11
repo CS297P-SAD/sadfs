@@ -197,7 +197,7 @@ main(int argc, char** argv)
         request_chunk("/mnt/a/file.dat", 0, 'r');
         request_chunk("/mnt/a/file.dat", 7, 'w');
         request_chunk("/mnt/a/file.dat", 0, 'w');
-		release_lock("/mnt/a/file.dat");
+        release_lock("/mnt/a/file.dat");
         request_chunk("/mnt/a/file.dat", 2, 'w');
         request_chunk("/mnt/a/file.da", 0, 'r');
     }

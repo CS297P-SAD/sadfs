@@ -157,22 +157,22 @@ private:
 bool embed(join_network_request const&, message_container&);
 bool extract(join_network_request&, message_container const&);
 
-class release_lock	
-{	
-public:	
-    release_lock() = default;	
-    release_lock(std::string const &filename);	
+class release_lock
+{
+public:
+    release_lock() = default;
+    release_lock(std::string const& filename);
 
-    std::string const &filename() const;	
+    std::string const& filename() const;
 
-    inline static msg_type type{msg_type::release_lock};	
+    inline static msg_type type{msg_type::release_lock};
 
-private:	
-    proto::master::release_lock protobuf_{};	
+private:
+    proto::master::release_lock protobuf_{};
 
-    // provide embed/extract functions access to private members	
-    friend bool embed(release_lock const &, message_container &);	
-    friend bool extract(release_lock &, message_container const &);	
+    // provide embed/extract functions access to private members
+    friend bool embed(release_lock const&, message_container&);
+    friend bool extract(release_lock&, message_container const&);
 };
 
 // ==================================================================
@@ -263,10 +263,10 @@ join_network_request::chunk_count() const
     return protobuf_.chunk_count();
 }
 
-inline std::string const &	
-release_lock::filename() const	
-{	
-    return protobuf_.filename();	
+inline std::string const&
+release_lock::filename() const
+{
+    return protobuf_.filename();
 }
 
 } // namespace master

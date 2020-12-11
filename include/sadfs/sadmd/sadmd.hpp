@@ -83,8 +83,9 @@ public:
                 msgs::message_header const&, msgs::channel const&);
 
     // handles a release_lock
-    bool handle(msgs::master::release_lock const&,
-                msgs::message_header const&, msgs::channel const&);
+    bool handle(msgs::master::release_lock const&, msgs::message_header const&,
+                msgs::channel const&);
+
 private:
     // takes ownership of a channel and serves the request on it
     void serve_requests(msgs::channel);
