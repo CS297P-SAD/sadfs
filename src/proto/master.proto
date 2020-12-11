@@ -3,10 +3,6 @@ syntax = "proto3";
 package sadfs.proto.master;
 import "common.proto";
 
-message file_info_request {
-	string filename    = 1;
-}
-
 message create_file_request {
 	string filename    = 1;
 }
@@ -41,15 +37,20 @@ message join_network_request {
 	uint64 chunk_count = 5;
 }
 
+// request for file metadata
+message file_metadata_request {
+	string filename	= 1;
+}
+
 // container for control messages
 message message_container {
 	sadfs.proto.header  header = 1;
 	oneof               msg {
-	    file_info_request        file_info_req          = 8;
-	    create_file_request      create_file_req        = 9;
-	    chunk_write_notification chunk_write_notify     = 10;
-		chunk_location_request   chunk_location_req     = 11;
-		chunk_server_heartbeat   chunk_server_heartbeat = 12;
-		join_network_request     join_network_req       = 13;
+		chunk_location_request chunk_location_req     = 6;
+		chunk_server_heartbeat chunk_server_heartbeat = 7;
+	    	chunk_write_notification chunk_write_notify   = 8;
+	    	create_file_request      create_file_req      = 9;
+		file_metadata_request  file_metadata_req      = 10;
+		join_network_request   join_network_req       = 11;
 	}
 }

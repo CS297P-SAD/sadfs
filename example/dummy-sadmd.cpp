@@ -49,8 +49,8 @@ struct sadmd
     }
 
     using clr = msgs::master::chunk_location_request;
-    bool handle(clr const &req, msgs::message_header const &header,
-                msgs::channel const &ch)
+    bool handle(clr const& req, msgs::message_header const& header,
+                msgs::channel const& ch)
     {
         logger::debug("received req. from: " + to_string(header.host_id));
         auto response = msgs::client::chunk_location_response{
@@ -65,12 +65,24 @@ struct sadmd
     }
 
     using hb = msgs::master::chunk_server_heartbeat;
-    bool handle(hb const &hb, msgs::message_header const &header,
-                msgs::channel const &ch)
+    bool handle(hb const& hb, msgs::message_header const& header,
+                msgs::channel const& ch)
     {
         logger::debug("received req. from: " + to_string(header.host_id));
         auto response = msgs::chunk::acknowledgement{/*ok=*/true};
         auto result   = msgs::chunk::serializer{}.serialize(response, ch);
+        ch.flush();
+        return result;
+    }
+
+    using fmr = msgs::master::file_metadata_request;
+    bool handle(fmr const& req, msgs::message_header const* header,
+                msgs::channel const& ch)
+    {
+        auto response = msgs::client::file_metadata_response{
+            true /* ok */, 10 /* size */
+        };
+        auto result = msgs::client::serializer{}.serialize(response, ch);
         ch.flush();
         return result;
     }

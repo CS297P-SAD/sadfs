@@ -3,11 +3,6 @@ syntax = "proto3";
 package sadfs.proto.client;
 import "common.proto";
 
-message file_info_response {
-	bool   exists = 1;
-	uint64 size   = 2;
-}
-
 // response for a chunk_location_request
 message chunk_location_response {
 	bool            ok          = 1;
@@ -17,12 +12,18 @@ message chunk_location_response {
 	int32           version_num = 5;
 }
 
+// response for a file_metadata_request
+message file_metadata_response {
+	bool		ok	    = 1;
+	uint32		size	    = 2;
+}
+
 // container for all control messages sent to clients
 message message_container {
 	sadfs.proto.header  header = 1;
 	oneof               msg {
 		sadfs.proto.acknowledgement ack                = 6;
 		chunk_location_response     chunk_location_res = 7;
-		file_info_response          file_info_res      = 8;
+		file_metadata_response      file_metadata_res  = 8;
 	}
 }

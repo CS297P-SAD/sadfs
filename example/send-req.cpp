@@ -40,7 +40,7 @@ using namespace sadfs;
 constexpr auto delim = std::string_view{"******************************\n"};
 
 void
-print_chunk_location_req(msgs::master::chunk_location_request const &req)
+print_chunk_location_req(msgs::master::chunk_location_request const& req)
 {
     std::cout << delim << "Chunk Location Request:"
               << "\nFilename:     " << req.filename()
@@ -49,7 +49,7 @@ print_chunk_location_req(msgs::master::chunk_location_request const &req)
 }
 
 void
-print_chunk_location_res(msgs::client::chunk_location_response const &res)
+print_chunk_location_res(msgs::client::chunk_location_response const& res)
 {
     std::cout << delim << "Chunk location request:"
               << "\nOK:           " << res.ok()
@@ -66,7 +66,7 @@ print_chunk_location_res(msgs::client::chunk_location_response const &res)
 
 auto establish_conn = []() -> msgs::channel {
     using namespace comm;
-    auto &&echod = service{constants::ip_localhost, 6667};
+    auto&& echod = service{constants::ip_localhost, 6667};
     try
     {
         return msgs::channel{echod.connect()};
@@ -78,7 +78,7 @@ auto establish_conn = []() -> msgs::channel {
         std::exit(1);
     }
 };
-auto info = [](auto const &msg) { std::cout << "[INFO]: " << msg << "\n"; };
+auto info = [](auto const& msg) { std::cout << "[INFO]: " << msg << "\n"; };
 
 // some version of this can be put in the client
 void
@@ -150,21 +150,21 @@ create_file(std::string filename)
 bool
 file_exists(std::string filename)
 {
-    auto fir = msgs::master::file_info_request{filename};
+    auto fmr = msgs::master::file_metadata_request{filename};
 
     auto ch = establish_conn();
 
     // send chunk_write_notification
-    msgs::master::serializer{}.serialize(fir, ch);
+    msgs::master::serializer{}.serialize(fmr, ch);
     ch.flush();
 
-    auto response = msgs::client::file_info_response{};
+    auto response = msgs::client::file_metadata_response{};
     msgs::client::deserializer{}.deserialize(response, ch);
-    return response.exists();
+    return response.ok();
 }
 
 int
-main(int argc, char **argv)
+main(int argc, char** argv)
 {
     std::cout << std::boolalpha;
     create_file("/mnt/a/file.dat");
