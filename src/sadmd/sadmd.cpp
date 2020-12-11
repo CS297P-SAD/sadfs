@@ -238,7 +238,8 @@ handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
 			}
 		}
 	}
-	// create the response protobuf
+	
+	// send protobuf back over channel
 	auto response = msgs::client::chunk_location_response
 	{
 		servers.size() > 0,
