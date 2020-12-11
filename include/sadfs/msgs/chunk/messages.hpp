@@ -23,7 +23,6 @@ enum class msg_type
     unknown,
     acknowledgement,
     read_request,
-    read_response,
 };
 
 // acknowledgement chunk::acknowledgement
@@ -51,26 +50,6 @@ private:
     friend bool extract(read_request&, message_container const&);
 };
 
-class read_response
-{
-public:
-    // constructors
-    read_response() = default;
-    read_response(bool ok, std::string&& data);
-
-    bool               ok() const;
-    std::string const& data() const;
-
-    inline static msg_type type{msg_type::read_response};
-
-private:
-    proto::chunk::read_response protobuf_{};
-
-    // provide embed/extract functions access to private members
-    friend bool embed(read_response const&, message_container&);
-    friend bool extract(read_response&, message_container&);
-};
-
 // ==================================================================
 //                      inline function definitions
 // ==================================================================
@@ -92,18 +71,6 @@ inline uint32_t
 read_request::length() const
 {
     return protobuf_.length();
-}
-
-inline bool
-read_response::ok() const
-{
-    return protobuf_.ok();
-}
-
-inline std::string const&
-read_response::data() const
-{
-    return protobuf_.data();
 }
 
 } // namespace chunk

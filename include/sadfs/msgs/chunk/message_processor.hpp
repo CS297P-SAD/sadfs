@@ -56,19 +56,6 @@ processor::process_next(msgs::channel const& ch, Handler& h)
             res = false;
         }
         break;
-    case container_type::kReadRes:
-        if constexpr (is_detected_v<can_handle, Handler, read_response>)
-        {
-            auto msg = read_response{};
-            res      = res && extract_header() && extract(msg, container_) &&
-                  h.handle(msg, header, ch);
-        }
-        else
-        {
-            // cannot handle this message
-            res = false;
-        }
-        break;
     case container_type::MsgCase::MSG_NOT_SET:
         // nothing to handle
         res = false;

@@ -10,18 +10,11 @@ message read_request {
 	uint32  length   = 4;
 }
 
-// response for a read request
-message read_response {
-	bool  ok   = 1;
-	bytes data = 2;
-}
-
 // container for control messages
 message message_container {
 	sadfs.proto.header  header = 1;
 	oneof               msg {
 		sadfs.proto.acknowledgement ack      = 6;
 		read_request                read_req = 7;
-		read_response               read_res = 8;
 	}
 }
