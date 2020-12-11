@@ -29,7 +29,7 @@ enum class msg_type
     chunk_location_request,
     chunk_server_heartbeat,
     join_network_request,
-    release_lock
+    release_lock,
 };
 
 class file_metadata_request
