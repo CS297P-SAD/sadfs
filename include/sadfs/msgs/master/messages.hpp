@@ -18,11 +18,29 @@ using message_container = proto::master::message_container;
 enum class msg_type
 {
 	unknown,
+	file_info_request,
 	create_file_request,
 	chunk_write_notification,
 	chunk_location_request,
 	chunk_server_heartbeat,
 	join_network_request
+};
+
+class file_info_request
+{
+public:
+	file_info_request() = default;
+	file_info_request(std::string const& filename);
+
+	std::string const& filename()   const;
+	
+	inline static msg_type type{msg_type::file_info_request};
+private:
+	proto::master::file_info_request protobuf_{};
+
+	// provide embed/extract functions access to private members
+	friend bool embed(file_info_request const&, message_container&);
+	friend bool extract(file_info_request&, message_container const&);
 };
 
 class create_file_request
@@ -134,6 +152,12 @@ bool extract(join_network_request&, message_container const&);
 // ==================================================================
 //                     inline function definitions
 // ==================================================================
+
+inline std::string const& file_info_request::
+filename() const
+{
+	return protobuf_.filename();
+}
 
 inline std::string const& create_file_request::
 filename() const

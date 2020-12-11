@@ -174,28 +174,49 @@ void create_file(std::string filename)
 	ch.flush();		
 }
 
+bool file_exists(std::string filename)
+{
+	auto fir = msgs::master::file_info_request
+	{
+		filename
+	};
+
+	auto ch = establish_conn();
+
+	// send chunk_write_notification
+	msgs::master::serializer{}.serialize(fir, ch);
+	ch.flush();
+
+	auto response = msgs::client::file_info_response{};
+	msgs::client::deserializer{}.deserialize(response, ch);
+	return response.exists();
+}
+
 int
 main(int argc, char** argv)
 {
 	std::cout << std::boolalpha;
 	create_file("/mnt/a/file.dat");
-	auto sid1 = serverid::generate();
-	auto sid2 = serverid::generate();
-	auto cid1 = chunkid::generate();
-	auto cid2 = chunkid::generate();
-	join_network(sid1);
-	join_network(sid2);
-	notify_chunk(sid1, cid1, 0, 200);
-	notify_chunk(sid2, cid1, 1, 250);
-	notify_chunk(sid1, cid2, 0, 0);
-	notify_chunk(sid1, cid1, 1, 250);
-	notify_chunk(sid2, cid2, 0, 100);
-	notify_chunk(sid2, cid2, 2, 36);
-	request_chunk("/mnt/a/file.dat", 0, 'r');
-	request_chunk("/mnt/a/file.dat", 7, 'w');
-	request_chunk("/mnt/a/file.dat", 0, 'w');
-	request_chunk("/mnt/a/file.dat", 2, 'w');
-	request_chunk("/mnt/a/file.da", 0, 'r');
+	if (file_exists("/mnt/a/file.dat"))
+	{
+		auto sid1 = serverid::generate();
+		auto sid2 = serverid::generate();
+		auto cid1 = chunkid::generate();
+		auto cid2 = chunkid::generate();
+		join_network(sid1);
+		join_network(sid2);
+		notify_chunk(sid1, cid1, 0, 200);
+		notify_chunk(sid2, cid1, 1, 250);
+		notify_chunk(sid1, cid2, 0, 0);
+		notify_chunk(sid1, cid1, 1, 250);
+		notify_chunk(sid2, cid2, 0, 100);
+		notify_chunk(sid2, cid2, 2, 36);
+		request_chunk("/mnt/a/file.dat", 0, 'r');
+		request_chunk("/mnt/a/file.dat", 7, 'w');
+		request_chunk("/mnt/a/file.dat", 0, 'w');
+		request_chunk("/mnt/a/file.dat", 2, 'w');
+		request_chunk("/mnt/a/file.da", 0, 'r');
+	}
 
 	return 0;
 }

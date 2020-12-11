@@ -152,6 +152,19 @@ serve_requests(msgs::channel ch)
 	}
 }
 
+bool sadmd::handle(msgs::master::file_info_request const& fir, 
+                msgs::channel const& ch)
+{
+	auto it = files_.find(fir.filename());
+	auto response = msgs::client::file_info_response{
+		/*exists=*/ it != files_.end(),
+		/*size =*/  it == files_.end() ? 0 : it->second.size
+	};
+	auto result = msgs::client::serializer{}.serialize(response, ch);
+	ch.flush();
+	return result;
+}
+
 bool sadmd::handle(msgs::master::create_file_request const& cfr, 
                 msgs::channel const& ch)
 {
