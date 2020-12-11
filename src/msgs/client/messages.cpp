@@ -83,6 +83,7 @@ extract(chunk_location_response& res, message_container const& container)
  */
 // embeds a control message into a container that is
 // (typically) sent over the wire
+template <>
 bool
 embed(client::acknowledgement const& ack, client::message_container& container)
 {
@@ -94,6 +95,7 @@ embed(client::acknowledgement const& ack, client::message_container& container)
 
 // extracts a control message from a container that is
 // (typically) received over the wire
+template <>
 bool
 extract(client::acknowledgement&         ack,
         client::message_container const& container)
