@@ -35,7 +35,6 @@ template <typename Handler>
 std::pair<bool, bool>
 processor::process_next(channel const &ch, Handler &h)
 {
-<<<<<<< HEAD
     auto header         = message_header{};
     auto extract_header = [&header, this]() {
         header.host_id.deserialize(container_.header().host_id().data());
