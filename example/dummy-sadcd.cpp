@@ -18,16 +18,16 @@ struct sadcd
     void run(comm::service const &master)
     {
         auto heart = chunk::heart{master, id};
-        logger::debug("starting heartbeat...");
+        logger::debug("starting heartbeat..."sv);
         heart.start();
-        logger::debug("started");
+        logger::debug("started"sv);
 
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(5s);
 
-        logger::debug("stopping heartbeat...");
+        logger::debug("stopping heartbeat..."sv);
         heart.stop();
-        logger::debug("stopped");
+        logger::debug("stopped"sv);
     }
 };
 
