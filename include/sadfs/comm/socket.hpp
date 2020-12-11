@@ -46,7 +46,9 @@ private:
 
 // inline functions
 inline socket::
-socket() noexcept : domain_(domain::inet), type_(type::stream) { }
+socket() noexcept
+	: domain_{domain::inet}, type_{type::stream},
+	  descriptor_{-1} { }
 
 inline bool socket::
 valid() const noexcept

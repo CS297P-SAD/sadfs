@@ -21,23 +21,30 @@ namespace
 auto const msg_type_lookup = msg_type_map{
     {MsgCase::MSG_NOT_SET, msg_type::unknown},
     {MsgCase::kAck, msg_type::acknowledgement},
-    {MsgCase::kChunkReq, msg_type::chunk_request},
+    {MsgCase::kStreamReq, msg_type::stream_request},
 };
 
 } // unnamed namespace
 
 /* ========================================================
- *                       chunk_request
+ *                       stream_request
  * ========================================================
  */
-chunk_request::chunk_request(msgs::io_type type, std::size_t chunk_id)
+stream_request::stream_request(msgs::io_type type, chunkid chunk_id,
+		uint64_t offset, uint64_t length, std::string&& data)
 {
     protobuf_.set_type(proto_io_type_lookup.at(type));
-    protobuf_.set_chunk_id(chunk_id);
+    chunk_id.serialize(std::back_inserter(*protobuf_.mutable_chunk_id()));
+	protobuf_.set_offset(offset);
+	protobuf_.set_length(length);
+	// TODO: see if the statements below can be replaced with:
+	// protobuf_.set_allocated_data(new std::string{std::move(data)});
+	auto data_ptr = std::make_unique<std::string>(std::move(data));
+	protobuf_.set_allocated_data(data_ptr.release());
 }
 
 io_type
-chunk_request::io_type() const
+stream_request::io_type() const
 {
     return io_type_lookup.at(protobuf_.type());
 }
@@ -45,27 +52,28 @@ chunk_request::io_type() const
 // embeds a control message into a container that is
 // (typically) sent over the wire
 bool
-embed(chunk_request const& req, message_container& container)
+embed(stream_request const& req, message_container& container)
 {
     // should this be in a try-catch block?
-    // container.mutable_chunk_req() can throw if heap allocation fails
-    *container.mutable_chunk_req() = req.protobuf_;
+    // container.mutable_stream_req() can throw if heap allocation fails
+    *container.mutable_stream_req() = req.protobuf_;
     return true;
 }
 
 // extracts a control message from a container that is
 // (typically) received over the wire
 bool
-extract(chunk_request& req, message_container const& container)
+extract(stream_request& req, message_container& container)
 {
-    if (msg_type_lookup.at(container.msg_case()) != chunk_request::type)
+    if (msg_type_lookup.at(container.msg_case()) != stream_request::type)
     {
         // cannot extract a msg that doesn't exist
         return false;
     }
 
-    // read chunk_request from message_container
-    req.protobuf_ = container.chunk_req();
+    // pull stream_request out of message_container
+	// we do not make a copy since copying the data will be expensive
+    req.protobuf_ = std::move(*container.release_stream_req());
     return true;
 }
 
