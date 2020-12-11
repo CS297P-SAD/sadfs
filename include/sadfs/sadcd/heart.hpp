@@ -3,6 +3,7 @@
 
 // sadfs-specific includes
 #include <sadfs/comm/inet.hpp> // comm::service
+#include <sadfs/types.hpp>
 
 // standard includes
 #include <chrono>
@@ -18,12 +19,18 @@ namespace chunk
 class heart
 {
     comm::service      master_;
+    serverid           host_id_;
     std::thread        heartbeat_{};
     std::promise<void> stop_request_;
     std::future<void>  stopped_;
 
+    void beat(std::promise<void>, std::future<void>);
+
 public:
-    heart(comm::service const &master) : master_{master} {}
+    heart(comm::service const &master, serverid id)
+        : master_{master}, host_id_{id}
+    {
+    }
     ~heart();
 
     void start();

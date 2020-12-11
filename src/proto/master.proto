@@ -35,7 +35,7 @@ message join_network_request {
 
 // container for control messages
 message message_container {
-	sadfs.proto.host_id sender = 1;
+	sadfs.proto.header  header = 1;
 	oneof               msg {
 	    chunk_write_notification chunk_write_notify     = 10;
 		chunk_location_request   chunk_location_req     = 11;
