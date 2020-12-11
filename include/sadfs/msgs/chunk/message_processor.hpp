@@ -43,10 +43,10 @@ processor::process_next(msgs::channel const& ch, Handler& h)
             !is_detected_v<can_handle, Handler, acknowledgement>,
             "acknowledgement control message must be handled explicitly");
         break;
-    case container_type::kStreamReq:
-        if constexpr (is_detected_v<can_handle, Handler, stream_request>)
+    case container_type::kReadReq:
+        if constexpr (is_detected_v<can_handle, Handler, read_request>)
         {
-            auto msg = stream_request{};
+            auto msg = read_request{};
             res      = res && extract_header() && extract(msg, container_) &&
                   h.handle(msg, header, ch);
         }
@@ -55,6 +55,23 @@ processor::process_next(msgs::channel const& ch, Handler& h)
             // cannot handle this message
             res = false;
         }
+        break;
+    case container_type::kReadRes:
+        if constexpr (is_detected_v<can_handle, Handler, read_response>)
+        {
+            auto msg = read_response{};
+            res      = res && extract_header() && extract(msg, container_) &&
+                  h.handle(msg, header, ch);
+        }
+        else
+        {
+            // cannot handle this message
+            res = false;
+        }
+        break;
+    case container_type::MsgCase::MSG_NOT_SET:
+        // nothing to handle
+        res = false;
         break;
     }
     container_.clear_msg();
