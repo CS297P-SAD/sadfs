@@ -20,7 +20,7 @@ namespace
 
 auto const msg_type_lookup = msg_type_map{
     {MsgCase::MSG_NOT_SET, msg_type::unknown},
-    {MsgCase::kFileInfoReq, msg_type::file_info_request},
+    {MsgCase::kFileMetadataReq, msg_type::file_metadata_request},
     {MsgCase::kCreateFileReq, msg_type::create_file_request},
     {MsgCase::kChunkWriteNotify, msg_type::chunk_write_notification},
     {MsgCase::kChunkLocationReq, msg_type::chunk_location_request},
@@ -31,10 +31,10 @@ auto const msg_type_lookup = msg_type_map{
 } // unnamed namespace
 
 /* ========================================================
- *                       file_info_request
+ *                       file_metadata_request
  * ========================================================
  */
-file_info_request::file_info_request(std::string const &filename)
+file_metadata_request::file_metadata_request(std::string const& filename)
 {
     protobuf_.set_filename(filename);
 }
@@ -42,27 +42,28 @@ file_info_request::file_info_request(std::string const &filename)
 // embeds a control message into a container that is
 // (typically) sent over the wire
 bool
-embed(file_info_request const &req, message_container &container)
+embed(file_metadata_request const& req, message_container& container)
 {
     // should this be in a try-catch block?
-    // msg.mutable_file_info_req() can throw if heap allocation fails
-    *container.mutable_file_info_req() = req.protobuf_;
+    // msg.mutable_file_metadata_req() can throw if heap allocation fails
+    *container.mutable_file_metadata_req() = req.protobuf_;
     return true;
 }
 
 // extracts a control message from a container that is
 // (typically) received over the wire
 bool
-extract(file_info_request &req, message_container const &container)
+extract(file_metadata_request& req, message_container const& container)
 {
-    if (msg_type_lookup.at(container.msg_case()) != file_info_request::type)
+    if (msg_type_lookup.at(container.msg_case()) !=
+        file_metadata_request::type)
     {
         // cannot extract a msg that doesn't exist
         return false;
     }
 
-    // read file_info_request from message_container
-    req.protobuf_ = container.file_info_req();
+    // read file_metadata_request from message_container
+    req.protobuf_ = container.file_metadata_req();
     return true;
 }
 
@@ -70,7 +71,7 @@ extract(file_info_request &req, message_container const &container)
  *                       create_file_request
  * ========================================================
  */
-create_file_request::create_file_request(std::string const &filename)
+create_file_request::create_file_request(std::string const& filename)
 {
     protobuf_.set_filename(filename);
 }
@@ -78,7 +79,7 @@ create_file_request::create_file_request(std::string const &filename)
 // embeds a control message into a container that is
 // (typically) sent over the wire
 bool
-embed(create_file_request const &req, message_container &container)
+embed(create_file_request const& req, message_container& container)
 {
     // should this be in a try-catch block?
     // msg.mutable_create_file_req() can throw if heap allocation fails
@@ -89,7 +90,7 @@ embed(create_file_request const &req, message_container &container)
 // extracts a control message from a container that is
 // (typically) received over the wire
 bool
-extract(create_file_request &req, message_container const &container)
+extract(create_file_request& req, message_container const& container)
 {
     if (msg_type_lookup.at(container.msg_case()) != create_file_request::type)
     {
@@ -109,7 +110,7 @@ extract(create_file_request &req, message_container const &container)
 chunk_write_notification::chunk_write_notification(serverid server_id,
                                                    chunkid  chunk_id,
                                                    uint64_t version,
-                                                   std::string const &filename,
+                                                   std::string const& filename,
                                                    uint32_t           new_size)
 {
     server_id.serialize(std::back_inserter(*protobuf_.mutable_server_id()));
@@ -122,7 +123,7 @@ chunk_write_notification::chunk_write_notification(serverid server_id,
 // embeds a control message into a container that is
 // (typically) sent over the wire
 bool
-embed(chunk_write_notification const &req, message_container &container)
+embed(chunk_write_notification const& req, message_container& container)
 {
     // should this be in a try-catch block?
     // msg.mutable_chunk_write_notify() can throw if heap allocation fails
@@ -133,7 +134,7 @@ embed(chunk_write_notification const &req, message_container &container)
 // extracts a control message from a container that is
 // (typically) received over the wire
 bool
-extract(chunk_write_notification &req, message_container const &container)
+extract(chunk_write_notification& req, message_container const& container)
 {
     if (msg_type_lookup.at(container.msg_case()) !=
         chunk_write_notification::type)
@@ -152,7 +153,7 @@ extract(chunk_write_notification &req, message_container const &container)
  * ========================================================
  */
 chunk_location_request::chunk_location_request(msgs::io_type      type,
-                                               std::string const &filename,
+                                               std::string const& filename,
                                                std::size_t        chunk_number)
 {
     protobuf_.set_type(proto_io_type_lookup.at(type));
@@ -169,7 +170,7 @@ chunk_location_request::io_type() const
 // embeds a control message into a container that is
 // (typically) sent over the wire
 bool
-embed(chunk_location_request const &req, message_container &container)
+embed(chunk_location_request const& req, message_container& container)
 {
     // should this be in a try-catch block?
     // msg.mutable_chunk_location_req() can throw if heap allocation fails
@@ -180,7 +181,7 @@ embed(chunk_location_request const &req, message_container &container)
 // extracts a control message from a container that is
 // (typically) received over the wire
 bool
-extract(chunk_location_request &req, message_container const &container)
+extract(chunk_location_request& req, message_container const& container)
 {
     if (msg_type_lookup.at(container.msg_case()) !=
         chunk_location_request::type)
@@ -201,7 +202,7 @@ extract(chunk_location_request &req, message_container const &container)
 // embeds a control message into a container that is
 // (typically) sent over the wire
 bool
-embed(chunk_server_heartbeat const &, message_container &container)
+embed(chunk_server_heartbeat const&, message_container& container)
 {
     // call mutable_chunk_server_heartbeat() so that the oneof field
     // is set to chunk_server_heartbeat, and discard the pointer
@@ -211,7 +212,7 @@ embed(chunk_server_heartbeat const &, message_container &container)
 // extracts a control message from a container that is
 // (typically) received over the wire
 bool
-extract(chunk_server_heartbeat &, message_container const &container)
+extract(chunk_server_heartbeat&, message_container const& container)
 {
     if (msg_type_lookup.at(container.msg_case()) !=
         chunk_server_heartbeat::type)
@@ -243,7 +244,7 @@ join_network_request::join_network_request(serverid      server_id,
 // embeds a control message into a container that is
 // (typically) sent over the wire
 bool
-embed(join_network_request const &req, message_container &container)
+embed(join_network_request const& req, message_container& container)
 {
     // should this be in a try-catch block?
     // msg.mutable_join_network_req() can throw if heap allocation fails
@@ -254,7 +255,7 @@ embed(join_network_request const &req, message_container &container)
 // extracts a control message from a container that is
 // (typically) received over the wire
 bool
-extract(join_network_request &req, message_container const &container)
+extract(join_network_request& req, message_container const& container)
 {
     if (msg_type_lookup.at(container.msg_case()) != join_network_request::type)
     {

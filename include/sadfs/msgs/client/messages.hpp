@@ -21,31 +21,9 @@ enum class msg_type
 {
     unknown,
     acknowledgement,
-    file_info_response,
+    file_metadata_response,
     chunk_location_response,
 };
-
-class file_info_response
-{
-public:
-    file_info_response() = default;
-    file_info_response(bool exists, uint64_t size);
-
-    bool     exists() const noexcept;
-    uint64_t size() const;
-
-    inline static msg_type type{msg_type::file_info_response};
-
-private:
-    proto::client::file_info_response protobuf_{};
-
-    friend bool embed(file_info_response const &, message_container &);
-    friend bool extract(file_info_response &, message_container const &);
-};
-
-// declarations
-bool embed(file_info_response const &, message_container &);
-bool extract(file_info_response &, message_container const &);
 
 // instantiate client::acknowledgement
 using acknowledgement = msgs::acknowledgement<message_container, msg_type,
@@ -75,24 +53,34 @@ private:
 };
 
 // declarations
-bool embed(chunk_location_response const &, message_container &);
-bool extract(chunk_location_response &, message_container const &);
+bool embed(chunk_location_response const&, message_container&);
+bool extract(chunk_location_response&, message_container const&);
+
+class file_metadata_response
+{
+public:
+    file_metadata_response() = default;
+    file_metadata_response(bool ok, uint32_t size);
+
+    bool     ok() const noexcept;
+    uint32_t size() const noexcept;
+
+    inline static msg_type type{msg_type::file_metadata_response};
+
+private:
+    proto::client::file_metadata_response protobuf_{};
+
+    friend bool embed(file_metadata_response const&, message_container&);
+    friend bool extract(file_metadata_response&, message_container const&);
+};
+
+// declarations
+bool embed(file_metadata_response const&, message_container&);
+bool extract(file_metadata_response&, message_container const&);
 
 // ==================================================================
 //                     inline function definitions
 // ==================================================================
-inline bool
-file_info_response::exists() const noexcept
-{
-    return protobuf_.exists();
-}
-
-inline uint64_t
-file_info_response::size() const
-{
-    return protobuf_.size();
-}
-
 inline bool
 chunk_location_response::ok() const noexcept
 {
@@ -123,6 +111,18 @@ inline uint32_t
 chunk_location_response::version_num() const
 {
     return protobuf_.version_num();
+}
+
+inline bool
+file_metadata_response::ok() const noexcept
+{
+    return protobuf_.ok();
+}
+
+inline uint32_t
+file_metadata_response::size() const noexcept
+{
+    return protobuf_.size();
 }
 
 } // namespace client

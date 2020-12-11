@@ -56,10 +56,10 @@ now() noexcept
 }
 } // namespace time
 
-sqlite3 *
+sqlite3*
 open_db()
 {
-    sqlite3 *db;
+    sqlite3* db;
 
     // open the sadmd database
     if (sqlite3_open("sadmd.db", &db) != 0)
@@ -74,7 +74,7 @@ open_db()
 
 std::vector<comm::service>
 choose_servers(int                                              num_servers,
-               std::unordered_map<serverid, chunk_server_info> &server_map)
+               std::unordered_map<serverid, chunk_server_info>& server_map)
 {
     auto services = std::vector<comm::service>{};
     // TODO : this decision process should be randomized
@@ -92,7 +92,7 @@ choose_servers(int                                              num_servers,
 }
 
 std::vector<comm::service>
-sadmd::valid_servers(chunk_info &info, bool latest_only)
+sadmd::valid_servers(chunk_info& info, bool latest_only)
 {
     auto is_active_latest_version = [&info](auto version, auto valid_until) {
         return valid_until > time::now() && version == info.latest_version;
@@ -118,7 +118,7 @@ sadmd::valid_servers(chunk_info &info, bool latest_only)
     return services;
 }
 
-sadmd::sadmd(char const *ip, int port)
+sadmd::sadmd(char const* ip, int port)
     : service_(ip, port), files_db_(open_db())
 {
     // make sure the files table exists
@@ -164,33 +164,33 @@ sadmd::serve_requests(msgs::channel ch)
 }
 
 bool
-sadmd::handle(msgs::master::file_info_request const &fir,
-              msgs::message_header const &, msgs::channel const &ch)
+sadmd::handle(msgs::master::file_metadata_request const& fmr,
+              msgs::message_header const&, msgs::channel const& ch)
 {
-    auto it       = files_.find(fir.filename());
-    auto response = msgs::client::file_info_response{
-        /*exists=*/it != files_.end(),
-        /*size =*/it == files_.end() ? 0 : it->second.size};
+    auto it       = files_.find(fmr.filename());
+    auto response = msgs::client::file_metadata_response{
+        it != files_.end(),                        /* ok */
+        it == files_.end() ? 0 : it->second.size}; /* size */
     auto result = msgs::client::serializer{}.serialize(response, ch);
     ch.flush();
     return result;
 }
 
 bool
-sadmd::handle(msgs::master::create_file_request const &cfr,
-              msgs::message_header const &, msgs::channel const &ch)
+sadmd::handle(msgs::master::create_file_request const& cfr,
+              msgs::message_header const&, msgs::channel const& ch)
 {
     return create_file(cfr.filename());
     // TODO: send ack
 }
 
 bool
-sadmd::handle(msgs::master::chunk_location_request const &clr,
-              msgs::message_header const &, msgs::channel const &ch)
+sadmd::handle(msgs::master::chunk_location_request const& clr,
+              msgs::message_header const&, msgs::channel const& ch)
 {
     auto        id          = chunkid{};
     auto        servers     = std::vector<comm::service>{};
-    auto const &filename    = clr.filename();
+    auto const& filename    = clr.filename();
     auto        version_num = version{0};
 
     // lambda to check if a chunk number is valid for filename
@@ -231,7 +231,7 @@ sadmd::handle(msgs::master::chunk_location_request const &clr,
         {
             // request to write to last chunk - lookup info
             id          = it->second.chunkids[clr.chunk_number()];
-            auto &chunk = chunk_metadata_[id];
+            auto& chunk = chunk_metadata_[id];
             servers     = valid_servers(chunk, /*latest_only=*/false);
             version_num = chunk.latest_version;
             if (servers.size() <= 0)
@@ -253,7 +253,7 @@ sadmd::handle(msgs::master::chunk_location_request const &clr,
         if (validate(it, clr.chunk_number()))
         {
             id          = it->second.chunkids[clr.chunk_number()];
-            auto &chunk = chunk_metadata_[id];
+            auto& chunk = chunk_metadata_[id];
             servers     = valid_servers(chunk, /*latest_only=*/true);
             version_num = chunk.latest_version;
             if (servers.size() <= 0)
@@ -273,8 +273,8 @@ sadmd::handle(msgs::master::chunk_location_request const &clr,
 }
 
 bool
-sadmd::handle(msgs::master::join_network_request const &jnr,
-              msgs::message_header const &, msgs::channel const &ch)
+sadmd::handle(msgs::master::join_network_request const& jnr,
+              msgs::message_header const&, msgs::channel const& ch)
 {
     add_server_to_network(jnr.server_id(), jnr.service(), jnr.max_chunks(),
                           jnr.chunk_count());
@@ -282,8 +282,8 @@ sadmd::handle(msgs::master::join_network_request const &jnr,
 }
 
 bool
-sadmd::handle(msgs::master::chunk_write_notification const &cwn,
-              msgs::message_header const &, msgs::channel const &ch)
+sadmd::handle(msgs::master::chunk_write_notification const& cwn,
+              msgs::message_header const&, msgs::channel const& ch)
 {
     auto server = cwn.server_id();
     // validate request - TODO: Add error logging
@@ -299,7 +299,7 @@ sadmd::handle(msgs::master::chunk_write_notification const &cwn,
     if ((it = chunk_metadata_.find(chunk)) != chunk_metadata_.end())
     {
         // chunk is already registerd - update version info
-        auto &info = it->second;
+        auto& info = it->second;
         info.latest_version =
             std::max<version>(info.latest_version, cwn.version());
         auto location = info.locations.end();
@@ -326,7 +326,7 @@ sadmd::handle(msgs::master::chunk_write_notification const &cwn,
     }
     if (update_size)
     {
-        auto &file_info_ = files_[cwn.filename()];
+        auto& file_info_ = files_[cwn.filename()];
         auto  num_chunks = file_info_.chunkids.size();
         // check that this is the last chunk in the file
         if (chunk == file_info_.chunkids[num_chunks - 1])
@@ -340,14 +340,14 @@ sadmd::handle(msgs::master::chunk_write_notification const &cwn,
 }
 
 bool
-sadmd::create_file(std::string const &filename)
+sadmd::create_file(std::string const& filename)
 {
     return load_file(filename, {});
 }
 
 bool
-sadmd::load_file(std::string const &filename,
-                 std::string const &existing_chunks)
+sadmd::load_file(std::string const& filename,
+                 std::string const& existing_chunks)
 {
     if (files_.count(filename))
     {
@@ -356,14 +356,14 @@ sadmd::load_file(std::string const &filename,
         return false;
     }
     files_.emplace(filename, file_info{});
-    auto &file_chunkids = files_[filename].chunkids;
+    auto& file_chunkids = files_[filename].chunkids;
     file_chunkids.deserialize(existing_chunks);
     reintroduce_chunks_to_network(file_chunkids);
     return true;
 }
 
 void
-sadmd::db_command(std::string const &stmt) const
+sadmd::db_command(std::string const& stmt) const
 {
     if (sqlite3_exec(files_db_, stmt.c_str(), nullptr, nullptr, nullptr) != 0)
     {
@@ -374,10 +374,10 @@ sadmd::db_command(std::string const &stmt) const
 }
 
 bool
-sadmd::db_contains(std::string const &filename) const
+sadmd::db_contains(std::string const& filename) const
 {
     auto          contains = false;
-    sqlite3_stmt *stmt;
+    sqlite3_stmt* stmt;
     auto          cmd =
         std::string{"SELECT * FROM files WHERE filename='" + filename + "';"};
 
@@ -395,7 +395,7 @@ sadmd::db_contains(std::string const &filename) const
 void
 sadmd::load_files()
 {
-    sqlite3_stmt *stmt;
+    sqlite3_stmt* stmt;
     if (sqlite3_prepare_v2(files_db_, "SELECT * FROM files;", -1, &stmt,
                            nullptr) != 0)
     {
@@ -405,9 +405,9 @@ sadmd::load_files()
 
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
-        auto filename = std::string{reinterpret_cast<const char *>(
+        auto filename = std::string{reinterpret_cast<const char*>(
             sqlite3_column_text(stmt, constants::filename_col))};
-        auto cids     = std::string{reinterpret_cast<const char *>(
+        auto cids     = std::string{reinterpret_cast<const char*>(
             sqlite3_column_text(stmt, constants::chunkid_str_col))};
         load_file(filename, cids);
     }
@@ -486,7 +486,7 @@ sadmd::is_active(serverid id) const noexcept
 }
 
 void
-sadmd::append_chunk_to_file(std::string const &filename, chunkid new_chunkid)
+sadmd::append_chunk_to_file(std::string const& filename, chunkid new_chunkid)
 {
     if (!files_.count(filename))
     {
@@ -510,7 +510,7 @@ sadmd::reintroduce_chunks_to_network(util::file_chunks ids)
 bool
 sadmd::add_chunk_to_server(chunkid cid, version v, serverid sid)
 {
-    auto &info = chunk_metadata_[cid];
+    auto& info = chunk_metadata_[cid];
     // add server to chunk's locations
     info.locations.emplace(sid, v);
     // make sure latest version is correct

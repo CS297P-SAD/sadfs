@@ -51,18 +51,18 @@ struct chunk_info
 class sadmd
 {
 public:
-    sadmd(char const *ip, int port);
+    sadmd(char const* ip, int port);
 
     // starts server
     void start();
 
     // handles a chunk_write_notification
-    bool handle(msgs::master::chunk_write_notification const &,
-                msgs::message_header const &, msgs::channel const &);
+    bool handle(msgs::master::chunk_write_notification const&,
+                msgs::message_header const&, msgs::channel const&);
 
     // handles a chunk_location_request and responds to channel it came in on
-    bool handle(msgs::master::chunk_location_request const &,
-                msgs::message_header const &, msgs::channel const &);
+    bool handle(msgs::master::chunk_location_request const&,
+                msgs::message_header const&, msgs::channel const&);
 
     // handles a chunk_server_hearbeat
     /* TODO
@@ -71,47 +71,47 @@ public:
     */
 
     // handles a join_network_request and responds to channel it came in on
-    bool handle(msgs::master::join_network_request const &,
-                msgs::message_header const &, msgs::channel const &);
+    bool handle(msgs::master::join_network_request const&,
+                msgs::message_header const&, msgs::channel const&);
 
     // handles a create_file_request
-    bool handle(msgs::master::create_file_request const &,
-                msgs::message_header const &, msgs::channel const &);
+    bool handle(msgs::master::create_file_request const&,
+                msgs::message_header const&, msgs::channel const&);
 
-    // handles a file_info_request
-    bool handle(msgs::master::file_info_request const &,
-                msgs::message_header const &, msgs::channel const &);
+    // handles a file_metadata_request
+    bool handle(msgs::master::file_metadata_request const&,
+                msgs::message_header const&, msgs::channel const&);
 
 private:
     // takes ownership of a channel and serves the request on it
     void serve_requests(msgs::channel);
 
     // creates (the metadata for) a new file
-    bool create_file(std::string const &);
+    bool create_file(std::string const&);
 
     // loads file metadata from disk
     void load_files();
-    bool load_file(std::string const &, std::string const &);
+    bool load_file(std::string const&, std::string const&);
 
     // copies in-memory files into database
     void save_files() const noexcept;
 
     // runs an sql statement on system_files_
-    void db_command(std::string const &) const;
+    void db_command(std::string const&) const;
 
     // returns true if the database contains a file with the given name
-    bool db_contains(std::string const &) const;
+    bool db_contains(std::string const&) const;
 
     // functions for maintaining chunk servers
 
-    void append_chunk_to_file(std::string const &, chunkid);
+    void append_chunk_to_file(std::string const&, chunkid);
 
     bool add_chunk_to_server(chunkid, version, serverid);
 
     void reintroduce_chunks_to_network(util::file_chunks);
 
     // must be a class member to have access to chunk_metadata_
-    std::vector<comm::service> valid_servers(chunk_info &, bool);
+    std::vector<comm::service> valid_servers(chunk_info&, bool);
 
     // returns true on success
     bool add_server_to_network(serverid, comm::service, uint64_t, uint64_t);
@@ -127,7 +127,7 @@ private:
     // map from chunkid to chunk info
     std::unordered_map<chunkid, chunk_info> chunk_metadata_;
     // persistent/on disk copy of files_
-    sqlite3 *const files_db_;
+    sqlite3* const files_db_;
 };
 
 } // namespace sadfs
