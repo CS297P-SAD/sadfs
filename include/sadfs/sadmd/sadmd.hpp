@@ -21,7 +21,6 @@
 namespace sadfs {
 
 using time_point = std::chrono::steady_clock::rep;
-using version = unsigned int;
 
 // all the information needed about a chunk server
 struct chunk_server_info
@@ -37,6 +36,7 @@ struct file_info
 {
 	time_point locked_until;
 	util::file_chunks chunkids;
+	uint32_t size;
 };
 
 // all the information needed about a chunk
@@ -44,7 +44,7 @@ struct chunk_info
 {
 	version latest_version;
 	// all the places this chunk is stored and what version is there
-	std::vector<std::pair<chunk_server_info*, version> > locations;
+	std::unordered_map<serverid, version> locations;
 };
 
 class sadmd
@@ -54,6 +54,10 @@ public:
 
 	// starts server
 	void start();
+
+	// handles a chunk_write_notification
+	bool handle(msgs::master::chunk_write_notification const&, 
+                msgs::channel const&);
 
 	// handles a chunk_location_request and responds to channel it came in on
 	bool handle(msgs::master::chunk_location_request const&, 
@@ -92,9 +96,12 @@ private:
 
 	void append_chunk_to_file(std::string const&, chunkid);
 
-	void add_chunk_to_server(chunkid, version, serverid);
+	bool add_chunk_to_server(chunkid, version, serverid);
 
 	void reintroduce_chunks_to_network(util::file_chunks);
+
+	// must be a class member to have access to chunk_metadata_
+	std::vector<comm::service> valid_servers(chunk_info&, bool);
 
 	// returns true on success
 	bool add_server_to_network(serverid, comm::service, uint64_t, uint64_t);

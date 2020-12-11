@@ -32,9 +32,11 @@ private:
 
     bool join_network();
 
-    comm::service const service_;
-    comm::service const master_;
-    serverid const      serverid_;
+	bool notify_master_of_write(chunkid, version, std::string const&, uint32_t);
+
+	comm::service const service_;
+	comm::service const master_;
+	serverid const serverid_;
 };
 
 } // namespace sadfs

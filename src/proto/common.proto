@@ -11,3 +11,8 @@ enum io_type {
 message host_id {
 	uint64 id = 1;
 }
+
+// generic acknowledgement message
+message acknowledgement {
+	bool ok = 1;
+}

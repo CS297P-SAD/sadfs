@@ -33,6 +33,22 @@ process_next(channel const& ch, Handler& h)
 	auto [res, eof] = ch.accept_deserializer(*this);
 	switch (container_.msg_case())
 	{
+		case container_type::MsgCase::kChunkWriteNotify:
+			if constexpr (is_detected_v<can_handle,
+			                            Handler,
+			                            chunk_write_notification>)
+			{
+				auto msg = chunk_write_notification{};
+				res = res
+				      && extract(msg, container_)
+				      && h.handle(msg, ch);
+			}
+			else
+			{
+				// cannot handle this message
+				res = false;
+			}
+			break;
 		case container_type::MsgCase::kChunkLocationReq:
 			if constexpr (is_detected_v<can_handle,
 			                            Handler,
