@@ -219,7 +219,7 @@ handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
 			          << clr.chunk_number()
 					  << " of "
 					  << filename
-					  << " which is not the last chunk";
+					  << " which is not the last chunk\n";
 		}
 	}
 	else
