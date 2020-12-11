@@ -31,7 +31,7 @@ auto const msg_type_lookup = msg_type_map{
  * ========================================================
  */
 stream_request::stream_request(msgs::io_type type, chunkid chunk_id,
-                               uint64_t offset, uint64_t length,
+                               uint32_t offset, uint32_t length,
                                std::string&& data)
 {
     protobuf_.set_type(proto_io_type_lookup.at(type));

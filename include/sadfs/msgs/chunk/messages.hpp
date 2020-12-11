@@ -7,7 +7,7 @@
 #include <sadfs/types.hpp>
 
 // standard includes
-#include <cstddef> // std::size_t
+#include <cstddef> // uint32_t
 #include <string>
 
 namespace sadfs
@@ -34,13 +34,13 @@ class stream_request
 public:
     // constructors
     stream_request() = default;
-    stream_request(msgs::io_type, chunkid chunk_id, uint64_t offset,
-                   uint64_t length, std::string&& data);
+    stream_request(msgs::io_type, chunkid chunk_id, uint32_t offset,
+                   uint32_t length, std::string&& data);
 
     msgs::io_type      io_type() const;
     chunkid            chunk_id() const;
-    uint64_t           offset() const;
-    uint64_t           length() const;
+    uint32_t           offset() const;
+    uint32_t           length() const;
     std::string const& data() const;
 
     inline static msg_type type{msg_type::stream_request};
@@ -64,13 +64,13 @@ stream_request::chunk_id() const
     return id;
 }
 
-inline uint64_t
+inline uint32_t
 stream_request::offset() const
 {
     return protobuf_.offset();
 }
 
-inline uint64_t
+inline uint32_t
 stream_request::length() const
 {
     return protobuf_.length();
