@@ -120,7 +120,6 @@ sadmd(char const* ip, int port) : service_(ip, port) , files_db_(open_db())
 void sadmd::
 start()
 {
-	//create_file("/mnt/a/file.dat");
 	auto listener = comm::listener{service_};
 	while (true)
 	{
@@ -151,6 +150,13 @@ serve_requests(msgs::channel ch)
 			std::cerr << "Error: request service failed\n";
 		}
 	}
+}
+
+bool sadmd::handle(msgs::master::create_file_request const& cfr, 
+                msgs::channel const& ch)
+{
+	return create_file(cfr.filename());
+	// TODO: send ack
 }
 
 bool sadmd::
@@ -265,7 +271,8 @@ bool sadmd::
 handle(msgs::master::chunk_write_notification const& cwn, msgs::channel const& ch)
 {
 	auto server = cwn.server_id();
-	if (!is_active(server)) return false;
+	// validate request - TODO: Add error logging
+	if (!is_active(server) || !files_.count(cwn.filename())) return false;
   
 	auto chunk = cwn.chunk_id();
 	// should update the size IF this is the latest version of the last chunk in the file
@@ -313,13 +320,13 @@ handle(msgs::master::chunk_write_notification const& cwn, msgs::channel const& c
 	return true;
 }
 
-void sadmd::
+bool sadmd::
 create_file(std::string const& filename)
 {
-	load_file(filename, {});
+	return load_file(filename, {});
 }
 
-void sadmd::
+bool sadmd::
 load_file(std::string const& filename, std::string const& existing_chunks)
 {
 	if (files_.count(filename))
@@ -327,12 +334,13 @@ load_file(std::string const& filename, std::string const& existing_chunks)
 		std::cerr << "Error: attempt to load " 
 				  << filename 
 				  << ": file already exists\n";
-		return;
+		return false;
 	}
 	files_.emplace(filename, file_info{});
 	auto& file_chunkids  = files_[filename].chunkids;
 	file_chunkids.deserialize(existing_chunks);
 	reintroduce_chunks_to_network(file_chunkids);
+	return true;
 }
 
 void sadmd::

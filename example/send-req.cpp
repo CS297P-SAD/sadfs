@@ -158,10 +158,27 @@ notify_chunk(serverid sid, chunkid cid, version v, uint32_t num_bytes)
 	ch.flush();	
 }
 
+void create_file(std::string filename)
+{
+	auto cfr = msgs::master::create_file_request
+	{
+		filename
+	};
+
+	auto ch = establish_conn();
+	info("connection established with the master server");
+
+	// send chunk_write_notification
+	msgs::master::serializer{}.serialize(cfr, ch);
+	info("sent create file request");
+	ch.flush();		
+}
+
 int
 main(int argc, char** argv)
 {
 	std::cout << std::boolalpha;
+	create_file("/mnt/a/file.dat");
 	auto sid1 = serverid::generate();
 	auto sid2 = serverid::generate();
 	auto cid1 = chunkid::generate();
@@ -175,8 +192,9 @@ main(int argc, char** argv)
 	notify_chunk(sid2, cid2, 0, 100);
 	notify_chunk(sid2, cid2, 2, 36);
 	request_chunk("/mnt/a/file.dat", 0, 'r');
-	request_chunk("/mnt/a/file.dat", 1, 'w');
-	request_chunk("/mnt/a/file.dat", 2, 'r');
+	request_chunk("/mnt/a/file.dat", 7, 'w');
+	request_chunk("/mnt/a/file.dat", 0, 'w');
+	request_chunk("/mnt/a/file.dat", 2, 'w');
 	request_chunk("/mnt/a/file.da", 0, 'r');
 
 	return 0;

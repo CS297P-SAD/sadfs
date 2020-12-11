@@ -15,6 +15,7 @@ namespace {
 auto const msg_type_lookup = msg_type_map
 {
 	{MsgCase::MSG_NOT_SET,           msg_type::unknown},
+	{MsgCase::kCreateFileReq,        msg_type::create_file_request},
 	{MsgCase::kChunkWriteNotify,     msg_type::chunk_write_notification},
 	{MsgCase::kChunkLocationReq,     msg_type::chunk_location_request},
 	{MsgCase::kChunkServerHeartbeat, msg_type::chunk_server_heartbeat},
@@ -22,6 +23,43 @@ auto const msg_type_lookup = msg_type_map
 };
 
 } // unnamed namespace
+
+/* ========================================================
+ *                       create_file_request
+ * ========================================================
+ */
+create_file_request::
+create_file_request(std::string const& filename)
+{
+	protobuf_.set_filename(filename);
+}
+
+// embeds a control message into a container that is
+// (typically) sent over the wire
+bool
+embed(create_file_request const& req, message_container& container)
+{
+	// should this be in a try-catch block?
+	// msg.mutable_create_file_req() can throw if heap allocation fails
+	*container.mutable_create_file_req() = req.protobuf_;
+	return true;
+}
+
+// extracts a control message from a container that is
+// (typically) received over the wire
+bool
+extract(create_file_request& req, message_container const& container)
+{
+	if (msg_type_lookup.at(container.msg_case()) != create_file_request::type)
+	{
+		// cannot extract a msg that doesn't exist
+		return false;
+	}
+
+	// read create_file_request from message_container
+	req.protobuf_ = container.create_file_req();
+	return true;
+}
 
 /* ========================================================
  *                       chunk_write_notification

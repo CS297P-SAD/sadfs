@@ -72,16 +72,20 @@ public:
 	// handles a join_network_request and responds to channel it came in on
 	bool handle(msgs::master::join_network_request const&, 
                 msgs::channel const&);
+
+	// handles a create_file_request
+	bool handle(msgs::master::create_file_request const&, 
+                msgs::channel const&);
 private:
 	// takes ownership of a channel and serves the request on it
 	void serve_requests(msgs::channel);
 
 	// creates (the metadata for) a new file
-	void create_file(std::string const&);
+	bool create_file(std::string const&);
 
 	// loads file metadata from disk
 	void load_files();
-	void load_file(std::string const&, std::string const&);
+	bool load_file(std::string const&, std::string const&);
 
 	// copies in-memory files into database
 	void save_files() const noexcept;

@@ -33,6 +33,22 @@ process_next(channel const& ch, Handler& h)
 	auto [res, eof] = ch.accept_deserializer(*this);
 	switch (container_.msg_case())
 	{
+		case container_type::MsgCase::kCreateFileReq:
+			if constexpr (is_detected_v<can_handle,
+			                            Handler,
+			                            create_file_request>)
+			{
+				auto msg = create_file_request{};
+				res = res
+				      && extract(msg, container_)
+				      && h.handle(msg, ch);
+			}
+			else
+			{
+				// cannot handle this message
+				res = false;
+			}
+			break;
 		case container_type::MsgCase::kChunkWriteNotify:
 			if constexpr (is_detected_v<can_handle,
 			                            Handler,
