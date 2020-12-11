@@ -14,13 +14,12 @@ using namespace sadfs;
 constexpr auto delim = std::string_view{"******************************\n"};
 
 void
-print_stream_req(msgs::chunk::stream_request const& req)
+print_read_req(msgs::chunk::read_request const& req)
 {
-    std::cout << delim << "Stream Request:"
+    std::cout << delim << "Read Request:"
               << "\nChunk ID:  " << to_string(req.chunk_id())
               << "\nOffset:    " << req.offset()
-              << "\nLength:    " << req.length() << "\nData:\n    "
-              << req.data() << "\n"
+              << "\nLength:    " << req.length() << "\n"
               << delim << "\n";
 }
 
@@ -31,10 +30,8 @@ main(int argc, char** argv)
 
     auto data = std::string{"This is a long string that is supposed\n"
                             "to be the data we stream to a chunk server"};
-    auto sr =
-        msgs::chunk::stream_request{msgs::io_type::write, chunkid::generate(),
-                                    1024, data.size(), std::move(data)};
-    print_stream_req(sr);
+    auto sr   = msgs::chunk::read_request{chunkid::generate(), 4 * 256, 32};
+    print_read_req(sr);
 
     auto service = comm::service{comm::constants::ip_localhost, 6666};
     auto sock    = service.connect();
@@ -55,9 +52,9 @@ main(int argc, char** argv)
     // flush the output buffer
     ch.flush();
 
-    auto sr_recv = msgs::chunk::stream_request{};
+    auto sr_recv = msgs::chunk::read_request{};
     msgs::chunk::deserializer{}.deserialize(sr_recv, ch);
-    print_stream_req(sr_recv);
+    print_read_req(sr_recv);
 
     return 0;
 }

@@ -3,20 +3,25 @@ syntax = "proto3";
 package sadfs.proto.chunk;
 import "common.proto";
 
-// data stream request for a section of a chunk
-message stream_request {
-	io_type type     = 1;
+// read request for a section of a chunk
+message read_request {
 	bytes   chunk_id = 2;
 	uint32  offset   = 3;
 	uint32  length   = 4;
-	bytes   data     = 5;
+}
+
+// response for a read request
+message read_response {
+	bool  ok   = 1;
+	bytes data = 2;
 }
 
 // container for control messages
 message message_container {
 	sadfs.proto.header  header = 1;
 	oneof               msg {
-		sadfs.proto.acknowledgement ack        = 6;
-		stream_request              stream_req = 7;
+		sadfs.proto.acknowledgement ack      = 6;
+		read_request                read_req = 7;
+		read_response               read_res = 8;
 	}
 }

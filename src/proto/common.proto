@@ -12,6 +12,11 @@ message header {
 	bytes host_id = 1;
 }
 
+message server {
+	string ip = 1;
+	int32 port = 2;
+}
+
 // generic acknowledgement message
 message acknowledgement {
 	bool ok = 1;

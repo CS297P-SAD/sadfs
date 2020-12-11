@@ -22,42 +22,60 @@ enum class msg_type
 {
     unknown,
     acknowledgement,
-    stream_request,
+    read_request,
+    read_response,
 };
 
 // acknowledgement chunk::acknowledgement
 using acknowledgement = msgs::acknowledgement<message_container, msg_type,
                                               msg_type::acknowledgement>;
 
-class stream_request
+class read_request
 {
 public:
     // constructors
-    stream_request() = default;
-    stream_request(msgs::io_type, chunkid chunk_id, uint32_t offset,
-                   uint32_t length, std::string&& data);
+    read_request() = default;
+    read_request(chunkid chunk_id, uint32_t offset, uint32_t length);
 
-    msgs::io_type      io_type() const;
-    chunkid            chunk_id() const;
-    uint32_t           offset() const;
-    uint32_t           length() const;
-    std::string const& data() const;
+    chunkid  chunk_id() const;
+    uint32_t offset() const;
+    uint32_t length() const;
 
-    inline static msg_type type{msg_type::stream_request};
+    inline static msg_type type{msg_type::read_request};
 
 private:
-    proto::chunk::stream_request protobuf_{};
+    proto::chunk::read_request protobuf_{};
 
     // provide embed/extract functions access to private members
-    friend bool embed(stream_request const&, message_container&);
-    friend bool extract(stream_request&, message_container&);
+    friend bool embed(read_request const&, message_container&);
+    friend bool extract(read_request&, message_container const&);
+};
+
+class read_response
+{
+public:
+    // constructors
+    read_response() = default;
+    read_response(bool ok, std::string&& data);
+
+    bool               ok() const;
+    std::string const& data() const;
+
+    inline static msg_type type{msg_type::read_response};
+
+private:
+    proto::chunk::read_response protobuf_{};
+
+    // provide embed/extract functions access to private members
+    friend bool embed(read_response const&, message_container&);
+    friend bool extract(read_response&, message_container&);
 };
 
 // ==================================================================
 //                      inline function definitions
 // ==================================================================
 inline chunkid
-stream_request::chunk_id() const
+read_request::chunk_id() const
 {
     auto id = chunkid{};
     id.deserialize(protobuf_.chunk_id().data());
@@ -65,19 +83,25 @@ stream_request::chunk_id() const
 }
 
 inline uint32_t
-stream_request::offset() const
+read_request::offset() const
 {
     return protobuf_.offset();
 }
 
 inline uint32_t
-stream_request::length() const
+read_request::length() const
 {
     return protobuf_.length();
 }
 
+inline bool
+read_response::ok() const
+{
+    return protobuf_.ok();
+}
+
 inline std::string const&
-stream_request::data() const
+read_response::data() const
 {
     return protobuf_.data();
 }
