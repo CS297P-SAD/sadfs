@@ -2,6 +2,7 @@
 
 // sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
+#include <sadfs/logger.hpp>
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/client/serializer.hpp>
 #include <sadfs/msgs/master/message_processor.hpp>
@@ -336,6 +337,20 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
         }
     }
 
+    return true;
+}
+
+bool
+sadmd::handle(msgs::master::release_lock const& rl,
+              msgs::message_header const&, msgs::channel const& ch)
+{
+    auto it = files_.find(rl.filename());
+    if (it != files_.end())
+    {
+        logger::debug("unlocked file"sv);
+        it->second.locked_until = time::now();
+    }
+    // TODO: send ack
     return true;
 }
 

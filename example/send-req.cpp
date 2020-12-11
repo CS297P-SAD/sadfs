@@ -163,6 +163,18 @@ file_exists(std::string filename)
     return response.ok();
 }
 
+void
+release_lock(std::string filename)
+{
+    auto rl = msgs::master::release_lock{filename};
+
+    auto ch = establish_conn();
+
+    // send chunk_write_notification
+    msgs::master::serializer{}.serialize(rl, ch);
+    ch.flush();
+}
+
 int
 main(int argc, char** argv)
 {
@@ -185,6 +197,7 @@ main(int argc, char** argv)
         request_chunk("/mnt/a/file.dat", 0, 'r');
         request_chunk("/mnt/a/file.dat", 7, 'w');
         request_chunk("/mnt/a/file.dat", 0, 'w');
+		release_lock("/mnt/a/file.dat");
         request_chunk("/mnt/a/file.dat", 2, 'w');
         request_chunk("/mnt/a/file.da", 0, 'r');
     }

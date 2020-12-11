@@ -26,6 +26,7 @@ auto const msg_type_lookup = msg_type_map{
     {MsgCase::kChunkLocationReq, msg_type::chunk_location_request},
     {MsgCase::kChunkServerHeartbeat, msg_type::chunk_server_heartbeat},
     {MsgCase::kJoinNetworkReq, msg_type::join_network_request},
+    {MsgCase::kReleaseLock, msg_type::release_lock},
 };
 
 } // unnamed namespace
@@ -265,6 +266,42 @@ extract(join_network_request& req, message_container const& container)
 
     // read join_network_request from message_container
     req.protobuf_ = container.join_network_req();
+    return true;
+}
+
+/* ========================================================
+ *                       release_lock
+ * ========================================================
+ */
+release_lock::release_lock(std::string const& filename)
+{
+    protobuf_.set_filename(filename);
+}
+
+// embeds a control message into a container that is
+// (typically) sent over the wire
+bool
+embed(release_lock const& req, message_container& container)
+{
+    // should this be in a try-catch block?
+    // msg.mutable_release_lock() can throw if heap allocation fails
+    *container.mutable_release_lock() = req.protobuf_;
+    return true;
+}
+
+// extracts a control message from a container that is
+// (typically) received over the wire
+bool
+extract(release_lock& req, message_container const& container)
+{
+    if (msg_type_lookup.at(container.msg_case()) != release_lock::type)
+    {
+        // cannot extract a msg that doesn't exist
+        return false;
+    }
+
+    // read release_lock from message_container
+    req.protobuf_ = container.release_lock();
     return true;
 }
 } // namespace master
