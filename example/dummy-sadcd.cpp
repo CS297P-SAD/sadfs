@@ -2,6 +2,8 @@
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/logger.hpp>
 #include <sadfs/sadcd/heart.hpp>
+#include <sadfs/types.hpp>
+#include <sadfs/uuid.hpp>
 
 #include <chrono>
 #include <iostream>
@@ -11,9 +13,11 @@
 using namespace sadfs;
 struct sadcd
 {
+    serverid id;
+    sadcd() : id{serverid::generate()} {}
     void run(comm::service const &master)
     {
-        auto heart = chunk::heart{master};
+        auto heart = chunk::heart{master, id};
         logger::debug("starting heartbeat...");
         heart.start();
         logger::debug("started");

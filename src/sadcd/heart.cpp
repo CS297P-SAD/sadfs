@@ -12,16 +12,12 @@ namespace sadfs
 namespace chunk
 {
 
-namespace
-{
-
 // heartbeat function
 void
-beat(comm::service master, std::promise<void> death,
-     std::future<void> stop_token)
+heart::beat(std::promise<void> death, std::future<void> stop_token)
 {
     auto msg          = msgs::master::chunk_server_heartbeat{};
-    auto serializer   = msgs::master::serializer{};
+    auto serializer   = msgs::master::serializer{{.host_id = host_id_}};
     auto deserializer = msgs::chunk::deserializer{};
     auto die          = [&death]() { return death.set_value(); };
 
@@ -31,7 +27,7 @@ beat(comm::service master, std::promise<void> death,
     {
         try
         {
-            auto ch    = msgs::channel{master.connect()};
+            auto ch    = msgs::channel{master_.connect()};
             auto ack   = msgs::chunk::acknowledgement{};
             auto flush = [](auto const &ch) {
                 ch.flush();
@@ -55,8 +51,6 @@ beat(comm::service master, std::promise<void> death,
     die();
 }
 
-} // unnamed namespace
-
 // starts the heartbeat in a concurrent thread
 void
 heart::start()
@@ -70,7 +64,7 @@ heart::start()
     stop_request_ = std::promise<void>{};
     stopped_      = death.get_future();
 
-    heartbeat_ = std::thread{beat, master_, std::move(death),
+    heartbeat_ = std::thread{&heart::beat, this, std::move(death),
                              stop_request_.get_future()};
 }
 

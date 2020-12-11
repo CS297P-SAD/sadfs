@@ -8,8 +8,8 @@ enum io_type {
 	WRITE   = 2;
 }
 
-message host_id {
-	uint64 id = 1;
+message header {
+	bytes host_id = 1;
 }
 
 // generic acknowledgement message
