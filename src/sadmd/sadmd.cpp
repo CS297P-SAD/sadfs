@@ -67,16 +67,17 @@ open_db()
 } // unnamed namespace
 
 std::vector<comm::service>
-choose_three(std::unordered_map<serverid, chunk_server_info>& server_map)
+choose_servers(int num_servers, std::unordered_map<serverid, chunk_server_info>& server_map)
 {
 	auto services = std::vector<comm::service>{};
+	// TODO : this decision process should be randomized
 	for (auto server : server_map)
 	{
 		if (server.second.valid_until > time::now())
 		{
 			services.push_back(server.second.service);
 		}
-		if (services.size() >= 3) break;
+		if (services.size() >= num_servers) break;
 	}
 
 	return services;
@@ -214,11 +215,11 @@ handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
 		{
 			// request to write just after last chunk - generate new info
 			id = chunkid::generate();
-			servers = choose_three(chunk_server_metadata_);
+			servers = choose_servers(3, chunk_server_metadata_);
 			// (version num is already 0)
 			it->second.locked_until = time::from_now(time::file_ttl);
 		}
-		else if (clr.chunk_number() == it->second.chunkids.size() - 1)
+		else if (validate(it, clr.chunk_number()))
 		{
 			// request to write to last chunk - lookup info
 			id = it->second.chunkids[clr.chunk_number()];
