@@ -236,8 +236,7 @@ handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
 			}
 		}
 	}
-	
-	// send protobuf back over channel
+
 	auto response = msgs::client::chunk_location_response
 	{
 		servers.size() > 0,
@@ -245,6 +244,8 @@ handle(msgs::master::chunk_location_request const& clr, msgs::channel const& ch)
 		id,
 		version_num
 	};
+
+	// send protobuf back over channel
 	auto result = msgs::client::serializer{}.serialize(response, ch);
 	ch.flush();
 	return result;
