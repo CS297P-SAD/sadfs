@@ -2,7 +2,10 @@
 
 // sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
+#include <sadfs/constants.hpp>
 #include <sadfs/logger.hpp>
+#include <sadfs/msgs/chunk/messages.hpp>
+#include <sadfs/msgs/chunk/serializer.hpp>
 #include <sadfs/msgs/client/deserializer.hpp>
 #include <sadfs/msgs/client/messages.hpp>
 #include <sadfs/msgs/master/messages.hpp>
@@ -10,7 +13,7 @@
 #include <sadfs/sadfsd/sadfilesys.hpp>
 
 // external includes
-#include <cstring> // strerror()
+#include <cstring> // strerror() and memcpy()
 
 namespace sadfs
 {
@@ -56,8 +59,17 @@ int
 sadfilesys::getattr(char const* path, struct stat* stbuf)
 {
     logger::debug("gettattr() called at " + std::string(path));
-
     auto result{0};
+
+    if ((strlen(path) >= 2 && path[0] == '/' && path[1] == '.') ||
+    	strcmp(path, "/autorun.inf") == 0)
+    {
+        result = -ENOENT; 	// No such file or directory
+        logger::debug("gettattr() failed with error " +
+                      std::string(strerror(-result)));
+        return result;
+    }
+    
     // base directory where filesystem is mounted
     if (strcmp(path, "/") == 0)
     {
@@ -74,8 +86,7 @@ sadfilesys::getattr(char const* path, struct stat* stbuf)
     auto sock         = master_service_.connect();
     if (!sock.valid())
     {
-        // Protocol error, modify it to something more apt
-        result = -EPROTO;
+        result = -ENETUNREACH;	// Network is unreachable
         logger::debug("gettattr() failed with error " +
                       std::string(strerror(-result)));
         return result;
@@ -90,19 +101,19 @@ sadfilesys::getattr(char const* path, struct stat* stbuf)
     if (!(serializer.serialize(request, ch) && flush(ch) &&
           deserializer.deserialize(response, ch).first))
     {
-        // Protocol error, modify it to something more apt
-        result = -EPROTO;
+        result = -ECOMM;	// Communication error on send
         logger::debug("gettattr() failed with error " +
                       std::string(strerror(-result)));
         return result;
     }
     if (!response.ok())
     {
-        result = -ENOENT; // No such file or directory
+        result = -ENOENT; 	// No such file or directory
         logger::debug("gettattr() failed with error " +
                       std::string(strerror(-result)));
         return result;
     }
+
 
     logger::debug("path identified as valid filename"sv);
 
@@ -130,8 +141,122 @@ int
 sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
                  fuse_file_info* fi)
 {
-    // TODO
-    return -ENOENT;
+    logger::debug("read() called at " + std::string(path) + " to read " +
+    	          std::to_string(size) + " bytes");
+
+    auto result{0};
+    auto location_request = msgs::master::chunk_location_request
+    {
+    	msgs::io_type::read,
+	std::string{path},
+	offset / bytes_per_chunk
+    };
+    auto location_response	= msgs::client::chunk_location_response{};
+    auto master_serializer 	= msgs::master::serializer{};
+    auto client_deserializer	= msgs::client::deserializer{};
+    auto master_sock		= master_service_.connect();
+    if (!master_sock.valid())
+    {
+        result = -ENETUNREACH;	// Network is unreachable
+        logger::debug("read() failed with error " +
+                      std::string(strerror(-result)));
+        return result;
+    }
+    auto master_ch = msgs::channel{std::move(master_sock)};
+
+    auto flush = [](auto const& ch) {
+    	ch.flush();
+	return true;
+    };
+
+    if (!(master_serializer.serialize(location_request, master_ch) &&
+        flush(master_ch) &&
+	client_deserializer.deserialize(location_response, master_ch).first))
+    {
+        result = -ECOMM;	// Communication error on send
+        logger::debug("read() failed to get chunk location " +
+                      std::string(strerror(-result)));
+        return result;
+    }
+    if (!location_response.ok())
+    {
+        result = -EBADR;	// Invalid request descriptor
+        logger::debug("read() chunk location not found " +
+                      std::string(strerror(-result)));
+        return result;
+    }
+    if (size == 0) // Not sure if we ever get such a request
+    {
+        logger::debug("read() of size 0 requested"sv);
+    	return result;
+    }
+    if (location_response.locations_size() == 0)
+    {
+    	result =  -EPROTO;	// Protocol error
+        logger::debug("read() empty chunk location returned " +
+                      std::string(strerror(-result)));
+        return result;
+    }
+    
+    
+    auto chunk_offset	= offset % bytes_per_chunk;
+    auto chunk_read_size= std::min<uint32_t>(size,
+    					     bytes_per_chunk - chunk_offset);
+    auto chunk_request	= msgs::chunk::read_request
+    {
+	location_response.chunk_id(),
+	chunk_offset,
+	chunk_read_size
+    };
+    auto chunk_response	= msgs::client::read_response{};
+    auto chunk_serializer = msgs::chunk::serializer{};
+
+    for (auto i = 0; i < location_response.locations_size(); ++i)
+    {
+    	auto chunk_sock = location_response.service(i).connect();
+	if (!chunk_sock.valid())
+	{
+		result = -ENETUNREACH; // Network is unreachable
+		continue;
+	}
+	auto chunk_ch = msgs::channel{std::move(chunk_sock)};
+
+	if (!(chunk_serializer.serialize(chunk_request, chunk_ch) &&
+	    flush(chunk_ch) &&
+	    client_deserializer.deserialize(chunk_response, chunk_ch).first))
+	{
+		result = -ECOMM;	// Communication error on send
+		continue;
+	}
+	if (!chunk_response.ok())
+	{
+		result	= -EPROTO;	// Protocol error
+		continue;
+	}
+	auto const& chunk_data = chunk_response.data();
+	memcpy(buf, chunk_data.data(), chunk_data.size());
+     	logger::debug("read() got " + std::to_string(chunk_data.size()) +
+		      " from chunk server");
+	// result returns the number of bytes read
+	result = chunk_data.size();
+	break;
+     }
+    
+     if (result < 0)
+     {
+        logger::debug("read() failed with error " +
+                      std::string(strerror(-result)));
+	return result;
+     }
+
+     if (result == chunk_read_size && offset + chunk_read_size < offset + size)
+     {
+     	return read(path, buf + chunk_read_size, size - chunk_read_size,
+		    offset + chunk_read_size, fi);
+     }
+     
+     logger::debug("read() finished"sv);
+     return result;
 }
 
 } // namespace sadfs

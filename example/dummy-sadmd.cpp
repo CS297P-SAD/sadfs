@@ -55,7 +55,7 @@ struct sadmd
         logger::debug("received req. from: " + to_string(header.host_id));
         auto response = msgs::client::chunk_location_response{
             /*ok=*/true,
-            {{"10.0.0.13", 6666}},
+            {{"127.0.0.1", 6969}},
             uuid::generate(),
             0 // version
         };
@@ -76,15 +76,23 @@ struct sadmd
     }
 
     using fmr = msgs::master::file_metadata_request;
-    bool handle(fmr const& req, msgs::message_header const* header,
+    bool handle(fmr const& req, msgs::message_header const& header,
                 msgs::channel const& ch)
     {
         auto response = msgs::client::file_metadata_response{
-            true /* ok */, 10 /* size */
+            true /* ok */, 42 /* size */
         };
         auto result = msgs::client::serializer{}.serialize(response, ch);
         ch.flush();
         return result;
+    }
+    
+    using jnr = msgs::master::join_network_request;
+    bool handle(jnr const& req, msgs::message_header const& header,
+    		msgs::channel const& ch)
+    {
+	logger::debug("received join req. " + to_string(req.server_id()));
+    	return true;
     }
 };
 

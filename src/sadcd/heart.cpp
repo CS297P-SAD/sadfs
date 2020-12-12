@@ -23,7 +23,7 @@ heart::beat(std::promise<void> death, std::future<void> stop_token)
 
     // send heartbeats until requested to stop
     using namespace std::chrono_literals;
-    while (stop_token.wait_for(1s) != std::future_status::ready)
+    while (stop_token.wait_for(15s) != std::future_status::ready)
     {
         try
         {

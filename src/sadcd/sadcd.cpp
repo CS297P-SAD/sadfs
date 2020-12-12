@@ -155,6 +155,42 @@ sadcd::serve_client(comm::listener const& listener, request_handler& handler)
     }
 }
 
+void
+sadcd::serve_requests(msgs::channel ch)
+{
+	auto processor = msgs::chunk::processor{};
+	bool result{false}, eof{false};
+	while (true)
+	{
+		auto [result, eof] = processor.process_next(ch, *this);
+		if (result)
+		{
+			logger::info("request served successfully"sv);
+		}
+		else if (eof)
+		{
+			break;
+		}
+		else
+		{
+			logger::error("request service failed"sv);
+		}
+	}
+}
+
+bool
+sadcd::handle(msgs::chunk::read_request const& rr, msgs::message_header const&,
+	      msgs::channel const& ch)
+{
+	auto response = msgs::client::read_response{
+		true,		/* ok */
+		"chunk chonk"	/* data */
+	};
+	auto result = msgs::client::serializer{}.serialize(response, ch);
+	ch.flush();
+	return result;
+}
+
 bool
 sadcd::join_network()
 {
