@@ -152,7 +152,7 @@ extract(read_response& res, message_container& container)
     }
 
     // copy the response from the container
-    res.protobuf_ = container.read_res();
+    res.protobuf_ = std::move(*container.release_read_res());
     return true;
 }
 
