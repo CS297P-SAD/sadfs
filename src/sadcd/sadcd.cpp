@@ -20,7 +20,7 @@ namespace
 {
 
 using namespace std::chrono_literals;
-auto ready = [](auto const &future, auto duration) {
+auto ready = [](auto const& future, auto duration) {
     return future.wait_for(duration) == std::future_status::ready;
 };
 
@@ -33,8 +33,8 @@ constexpr auto max_chunks = 1000;
 
 } // namespace constants
 
-sadcd::sadcd(char const *ip, int port, char const *master_ip, int master_port,
-             char const *server_id)
+sadcd::sadcd(char const* ip, int port, char const* master_ip, int master_port,
+             char const* server_id)
     : service_(ip, port), master_(master_ip, master_port),
       serverid_(serverid::from_string(server_id))
 {
@@ -119,14 +119,14 @@ sadcd::join_network()
                                                  /*chunk_count=*/0};
 
     // send join_network_request
-    msgs::master::serializer{}.serialize(jr, ch);
+    msgs::master::serializer{{.host_id = serverid_}}.serialize(jr, ch);
     // TODO: verify success
     return true;
 }
 
 bool
 sadcd::notify_master_of_write(chunkid chunk, version version_num,
-                              std::string const &filename,
+                              std::string const& filename,
                               uint32_t           new_chunk_size)
 {
     auto sock = master_.connect();
@@ -140,7 +140,7 @@ sadcd::notify_master_of_write(chunkid chunk, version version_num,
     auto cwn = msgs::master::chunk_write_notification{
         serverid_, chunk, version_num, filename, new_chunk_size};
 
-    msgs::master::serializer{}.serialize(cwn, ch);
+    msgs::master::serializer{{.host_id = serverid_}}.serialize(cwn, ch);
     // TODO: confirm from master that the write went through
     return true;
 }

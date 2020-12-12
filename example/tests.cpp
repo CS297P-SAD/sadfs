@@ -57,7 +57,7 @@ join_network(serverid id)
     auto ch = establish_conn();
 
     // send join_network_request
-    msgs::master::serializer{}.serialize(jr, ch);
+    msgs::master::serializer{{.host_id = id}}.serialize(jr, ch);
     ch.flush();
 }
 
@@ -71,7 +71,7 @@ notify_chunk(serverid sid, chunkid cid, version v, uint32_t num_bytes,
     auto ch = establish_conn();
 
     // send chunk_write_notification
-    msgs::master::serializer{}.serialize(cwn, ch);
+    msgs::master::serializer{{.host_id = sid}}.serialize(cwn, ch);
     ch.flush();
 }
 

@@ -275,18 +275,18 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
 
 bool
 sadmd::handle(msgs::master::join_network_request const& jnr,
-              msgs::message_header const&, msgs::channel const& ch)
+              msgs::message_header const& header, msgs::channel const& ch)
 {
-    add_server_to_network(jnr.server_id(), jnr.service(), jnr.max_chunks(),
+    add_server_to_network(header.host_id, jnr.service(), jnr.max_chunks(),
                           jnr.chunk_count());
     return true;
 }
 
 bool
 sadmd::handle(msgs::master::chunk_write_notification const& cwn,
-              msgs::message_header const&, msgs::channel const& ch)
+              msgs::message_header const& header, msgs::channel const& ch)
 {
-    auto server = cwn.server_id();
+    auto server = header.host_id;
     // validate request
     if (!is_active(server))
     {
