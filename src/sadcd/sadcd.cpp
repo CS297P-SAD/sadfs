@@ -4,14 +4,19 @@
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/logger.hpp>
 #include <sadfs/msgs/channel.hpp>
+#include <sadfs/msgs/chunk/message_processor.hpp>
+#include <sadfs/msgs/client/messages.hpp>
+#include <sadfs/msgs/client/serializer.hpp>
 #include <sadfs/msgs/master/serializer.hpp>
 #include <sadfs/msgs/messages.hpp>
 #include <sadfs/sadcd/heart.hpp>
 #include <sadfs/sadcd/sadcd.hpp>
 
 // standard includes
-#include <chrono> // std::chrono_literals
-#include <future> // std::promise, std::future
+#include <chrono>  // std::chrono_literals
+#include <fstream> // std::ifstream, std::ofstream
+#include <future>  // std::promise, std::future
+#include <utility> // std::pair
 
 namespace sadfs
 {
@@ -20,9 +25,14 @@ namespace
 {
 
 using namespace std::chrono_literals;
-auto ready = [](auto const &future, auto duration) {
+auto ready = [](auto const& future, auto duration) {
     return future.wait_for(duration) == std::future_status::ready;
 };
+
+namespace limits
+{
+constexpr auto requests_per_conn = 3U;
+} // namespace limits
 
 } // unnamed namespace
 
@@ -33,8 +43,11 @@ constexpr auto max_chunks = 1000;
 
 } // namespace constants
 
-sadcd::sadcd(char const *ip, int port, char const *master_ip, int master_port,
-             char const *server_id)
+// ==================================================================
+//                                sadcd
+// ==================================================================
+sadcd::sadcd(char const* ip, int port, char const* master_ip, int master_port,
+             char const* server_id)
     : service_(ip, port), master_(master_ip, master_port),
       serverid_(serverid::from_string(server_id))
 {
@@ -97,11 +110,49 @@ void
 sadcd::start_main(std::promise<void>       death,
                   std::shared_future<void> kill_switch)
 {
-    while (!ready(kill_switch, 1s))
+    auto handler = request_handler{serverid_};
+    try
     {
-        logger::info("chunk server working..."sv);
+        auto listener = comm::listener{service_};
+        while (!ready(kill_switch, 0ms))
+        {
+            serve_client(listener, handler); // serve one client's request(s)
+        }
     }
-    death.set_value(); // unnecessary, but doing this so we don't forget
+    catch (std::exception const& ex)
+    {
+        logger::error("fata error occurred: "s + ex.what());
+    }
+    death.set_value();
+}
+
+void
+sadcd::serve_client(comm::listener const& listener, request_handler& handler)
+{
+    logger::debug("waiting for a client connection..."sv);
+    auto sock = listener.accept();
+    if (!sock.valid())
+    {
+        return;
+    }
+
+    auto ch        = msgs::channel{std::move(sock)};
+    auto processor = msgs::chunk::processor{};
+    for (auto i = 0U; i < limits::requests_per_conn; i++)
+    {
+        auto [result, eof] = processor.process_next(ch, handler);
+        if (result)
+        {
+            continue;
+        }
+        if (eof)
+        {
+            logger::debug("EOF"sv);
+            break;
+        }
+        logger::debug("unable to serve request; terminating connection"sv);
+        break;
+    }
 }
 
 bool
@@ -126,7 +177,7 @@ sadcd::join_network()
 
 bool
 sadcd::notify_master_of_write(chunkid chunk, version version_num,
-                              std::string const &filename,
+                              std::string const& filename,
                               uint32_t           new_chunk_size)
 {
     auto sock = master_.connect();
@@ -143,6 +194,107 @@ sadcd::notify_master_of_write(chunkid chunk, version version_num,
     msgs::master::serializer{}.serialize(cwn, ch);
     // TODO: confirm from master that the write went through
     return true;
+}
+
+// ==================================================================
+//                           request_handler
+// ==================================================================
+namespace
+{
+
+// get version info of the newest version of a chunk
+auto latest_version = [](auto it) {
+    return std::max_element(it->second.versions().begin(),
+                            it->second.versions().end(),
+                            [](auto lmeta, auto rmeta) {
+                                return lmeta.version() < rmeta.version();
+                            });
+};
+
+std::string
+filename(chunkid const& id, uint32_t version)
+{
+    // TODO: should be /var/lib/sadcd/chunk/ + ...
+    return "chunk/" + to_string(id) + "/" + std::to_string(version);
+}
+
+bool
+read(chunkid const& id, uint32_t version, uint32_t offset, uint32_t length,
+     std::string& buf)
+{
+    logger::debug("looking for file: " + filename(id, version));
+    auto file = std::ifstream{filename(id, version), std::ios_base::in};
+    if (!file.is_open())
+    {
+        return false;
+    }
+
+    file.seekg(offset, std::ios_base::beg);
+    file.read(buf.data(), length);
+
+    if (file.good() && file.gcount() == length)
+    {
+        return true;
+    }
+    logger::debug("file read error"sv);
+    return false;
+}
+
+} // unnamed namespace
+request_handler::request_handler(serverid id) : serverid_{std::move(id)}
+{
+    /* for testing
+    auto insert = [&](auto id, auto version, auto size) {
+        auto entry = chunk_metadata_[chunkid::from_string(id)].add_versions();
+        entry->set_version(version);
+        entry->set_size(size);
+    };
+    insert("6cfe7de1-b508-4e26-864e-7887fbc700ef"s, 2U, 6 * 1024U);
+    insert("8cf03844-5a57-47e6-ab60-81f2de556aa4"s, 1U, 8 * 1024U);
+    insert("bf5b432c-3889-4484-aa3c-77a08d30901b"s, 5U, 16 * 1024U);
+    insert("229217b9-6bf0-47f0-9752-64541a99a67a"s, 1U, 4 * 1024U);
+    insert("d7e30bce-1c62-4b9a-b88b-c9d2632142a7"s, 6U, 60 * 1024U);
+    insert("d7e30bce-1c62-4b9a-b88b-c9d2632142a7"s, 7U, 64 * 1024U);
+    */
+}
+
+bool
+request_handler::handle(msgs::chunk::read_request const& req,
+                        msgs::message_header const&, msgs::channel const& ch)
+{
+    auto respond = [this, &ch](auto ok, std::string&& data) {
+        auto flush = [&ch] {
+            ch.flush();
+            return true;
+        };
+        return msgs::client::serializer{{serverid_}}.serialize(
+                   msgs::client::read_response{ok, std::move(data)}, ch) &&
+               flush();
+    };
+    // validate chunk_id
+    auto it = chunk_metadata_.find(req.chunk_id());
+    if (it == chunk_metadata_.end())
+    {
+        logger::debug("chunk does not exist on this server"sv);
+        return respond(false, {});
+    }
+
+    // validate offset and length
+    auto m_it = latest_version(it);
+    if (req.offset() >= m_it->size() ||
+        (m_it->size() - req.offset()) < req.length())
+    {
+        logger::debug("request to read invalid section of chunk"sv);
+        return respond(false, {});
+    }
+
+    // approved
+    auto data    = std::string(req.length(), '\0');
+    auto success = read(req.chunk_id(), m_it->version(), req.offset(),
+                        req.length(), data);
+
+    // return true IFF we were able to read data AND send it to the client
+    return respond(success, success ? std::move(data) : ""s) && success;
 }
 
 } // namespace sadfs

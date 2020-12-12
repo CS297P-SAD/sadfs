@@ -23,38 +23,65 @@ print_read_req(msgs::chunk::read_request const& req)
               << delim << "\n";
 }
 
-int
-main(int argc, char** argv)
+void
+print_read_res(msgs::client::read_response const& res)
 {
-    std::cout << std::boolalpha;
+    std::cout << delim << "Read Response:"
+              << "\nOK:  " << res.ok() << "\n";
+    if (res.ok())
+    {
+        std::cout << "Data length: " << res.data().size() << "\n";
+        std::cout << "Data:        " << res.data() << "\n";
+    }
+    std::cout << delim << "\n";
+}
 
-    auto data = std::string{"This is a long string that is supposed\n"
-                            "to be the data we stream to a chunk server"};
-    auto sr   = msgs::chunk::read_request{chunkid::generate(), 4 * 256, 32};
-    print_read_req(sr);
+void
+send_req(std::string id, uint32_t offset, uint32_t length)
+{
+    auto req =
+        msgs::chunk::read_request{chunkid::from_string(id), offset, length};
+    print_read_req(req);
 
-    auto service = comm::service{comm::constants::ip_localhost, 6666};
+    auto service = comm::service{comm::constants::ip_localhost, 6667};
     auto sock    = service.connect();
     if (!sock.valid())
     {
         logger::error("failed to establish a connection "
                       "with the chunk server"sv);
-        return 1;
+        return;
     }
     auto ch = msgs::channel{std::move(sock)};
 
     logger::info("connection established with the server"sv);
 
-    msgs::chunk::serializer{}.serialize(sr, ch);
+    msgs::chunk::serializer{}.serialize(req, ch);
     logger::info("sent write stream request"sv);
 
     // to make sure that the serialized msgs are sent,
     // flush the output buffer
     ch.flush();
 
-    auto sr_recv = msgs::chunk::read_request{};
-    msgs::chunk::deserializer{}.deserialize(sr_recv, ch);
-    print_read_req(sr_recv);
+    auto res = msgs::client::read_response{};
+    msgs::client::deserializer{}.deserialize(res, ch);
+    print_read_res(res);
+}
 
+int
+main(int argc, char** argv)
+{
+    std::cout << std::boolalpha;
+
+    /* send_req(chunkid, offset, length); */
+    send_req(to_string(chunkid::generate()), 4 * 1024, 64);
+
+    // should see <uuid>00000...
+    send_req("6cfe7de1-b508-4e26-864e-7887fbc700ef"s, 0, 64);
+
+    // should see <uuid>33333...
+    send_req("8cf03844-5a57-47e6-ab60-81f2de556aa4"s, 43 * 64, 64);
+
+    // should fail
+    send_req("bf5b432c-3889-4484-aa3c-77a08d30901b"s, 16 * 1024, 64);
     return 0;
 }

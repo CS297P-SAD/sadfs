@@ -7,6 +7,7 @@
 #include <sadfs/msgs/client/serializer.hpp>
 #include <sadfs/msgs/master/serializer.hpp>
 #include <sadfs/msgs/messages.hpp>
+#include <sadfs/util.hpp>
 
 // standard includes
 #include <utility> // std::pair
