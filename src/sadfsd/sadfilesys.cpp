@@ -13,7 +13,8 @@
 #include <sadfs/sadfsd/sadfilesys.hpp>
 
 // external includes
-#include <cstring> // strerror() and memcpy()
+#include <cerrno>	// error codes
+#include <cstring> 	// strerror() and memcpy()
 
 namespace sadfs
 {
@@ -149,7 +150,7 @@ sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
     {
     	msgs::io_type::read,
 	std::string{path},
-	offset / bytes_per_chunk
+	static_cast<uint32_t> (offset / bytes_per_chunk)
     };
     auto location_response	= msgs::client::chunk_location_response{};
     auto master_serializer 	= msgs::master::serializer{};
@@ -199,7 +200,7 @@ sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
     }
     
     
-    auto chunk_offset	= offset % bytes_per_chunk;
+    auto chunk_offset	= static_cast<uint32_t>(offset % bytes_per_chunk);
     auto chunk_read_size= std::min<uint32_t>(size,
     					     bytes_per_chunk - chunk_offset);
     auto chunk_request	= msgs::chunk::read_request
