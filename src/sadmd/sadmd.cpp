@@ -218,7 +218,7 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
     {
         if (it->second.locked_until > time::now())
         {
-            std::cerr << "File locked\n";
+            std::cerr << "File locked";
         }
         else if (clr.chunk_number() == it->second.chunkids.size())
         {
@@ -334,6 +334,7 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
         {
             file_info_.size = ((num_chunks - 1) * constants::bytes_per_chunk) +
                               cwn.new_size();
+            logger::debug(std::string_view{"Updated size of " + cwn.filename() + " to " + std::to_string(file_info_.size)});
         }
     }
 
