@@ -107,13 +107,13 @@ void
 join_network(serverid id)
 {
     auto jr = msgs::master::join_network_request{
-        id, comm::service{"127.0.0.1", 6668}, 1000, 0};
+        comm::service{"127.0.0.1", 6668}, 1000, 0};
 
     auto ch = establish_conn();
     info("connection established with the master server");
 
     // send join_network_request
-    msgs::master::serializer{}.serialize(jr, ch);
+    msgs::master::serializer{{.host_id = id}}.serialize(jr, ch);
     info("sent join network request");
     ch.flush();
 }

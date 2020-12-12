@@ -114,9 +114,8 @@ sadcd::join_network()
     }
 
     auto ch = msgs::channel{std::move(sock)};
-    auto jr = msgs::master::join_network_request{serverid_, service_,
-                                                 constants::max_chunks,
-                                                 /*chunk_count=*/0};
+    auto jr = msgs::master::join_network_request{
+        service_, constants::max_chunks, /*chunk_count=*/0};
 
     // send join_network_request
     msgs::master::serializer{{.host_id = serverid_}}.serialize(jr, ch);

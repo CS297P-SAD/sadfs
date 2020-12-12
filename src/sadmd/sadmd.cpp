@@ -478,6 +478,8 @@ sadmd::add_server_to_network(serverid uuid, comm::service service,
     chunk_server_metadata_.emplace(
         uuid, chunk_server_info{service, max_chunks, chunk_count,
                                 time::from_now(time::server_ttl)});
+    logger::debug(
+        std::string_view{"Added server " + to_string(uuid) + " to network"});
     return true;
 }
 
