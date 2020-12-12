@@ -5,3 +5,11 @@ package sadfs.proto.internal;
 message file_chunks {
     repeated bytes chunkids = 1;
 }
+
+message chunk_metadata {
+	message version_info {
+		uint32 version = 1;
+		uint32 size    = 2;
+	}
+	repeated version_info versions = 1;
+}
