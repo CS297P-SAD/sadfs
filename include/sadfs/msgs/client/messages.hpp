@@ -23,7 +23,7 @@ enum class msg_type
     acknowledgement,
     chunk_location_response,
     file_metadata_response,
-	read_response,
+    read_response,
 };
 
 // instantiate client::acknowledgement
