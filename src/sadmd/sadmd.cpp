@@ -93,7 +93,7 @@ choose_servers(int                                              num_servers,
 }
 
 std::vector<comm::service>
-sadmd::valid_servers(chunk_info& info, bool latest_only=true)
+sadmd::valid_servers(chunk_info& info, bool latest_only = true)
 {
     auto is_active_latest_version = [&info](auto version, auto valid_until) {
         return valid_until > time::now() && version == info.latest_version;
@@ -290,15 +290,16 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
     // validate request
     if (!is_active(server))
     {
-        std::cerr << "Error: write notification from server not on the network\n";
+        std::cerr
+            << "Error: write notification from server not on the network\n";
         return false;
     }
-    
-     if(!files_.count(cwn.filename()))
-     {
+
+    if (!files_.count(cwn.filename()))
+    {
         std::cerr << "Error: write notification for nonexistant file\n";
         return false;
-     }
+    }
 
     auto chunk = cwn.chunk_id();
     // should update the size IF this is the latest version of the last chunk
@@ -343,7 +344,9 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
         {
             file_info_.size = ((num_chunks - 1) * constants::bytes_per_chunk) +
                               cwn.new_size();
-            logger::debug(std::string_view{"Updated size of " + cwn.filename() + " to " + std::to_string(file_info_.size)});
+            logger::debug(std::string_view{"Updated size of " +
+                                           cwn.filename() + " to " +
+                                           std::to_string(file_info_.size)});
         }
     }
 

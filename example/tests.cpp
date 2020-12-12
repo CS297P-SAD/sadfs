@@ -2,6 +2,7 @@
    this program takes on the role of both a client and chunk server
 */
 
+#include <iostream>
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/client/deserializer.hpp>
@@ -9,7 +10,6 @@
 #include <sadfs/msgs/master/serializer.hpp>
 #include <sadfs/msgs/messages.hpp>
 #include <sadfs/types.hpp>
-#include <iostream>
 
 using namespace sadfs;
 
@@ -45,7 +45,7 @@ request_chunk(std::string filename, size_t offset, char rw)
     auto response = msgs::client::chunk_location_response{};
     msgs::client::deserializer{}.deserialize(response, ch);
 
-	return response.chunk_id();
+    return response.chunk_id();
 }
 
 void
@@ -62,10 +62,11 @@ join_network(serverid id)
 }
 
 void
-notify_chunk(serverid sid, chunkid cid, version v, uint32_t num_bytes, std::string filename)
+notify_chunk(serverid sid, chunkid cid, version v, uint32_t num_bytes,
+             std::string filename)
 {
-    auto cwn = msgs::master::chunk_write_notification{
-        sid, cid, v, filename, num_bytes};
+    auto cwn = msgs::master::chunk_write_notification{sid, cid, v, filename,
+                                                      num_bytes};
 
     auto ch = establish_conn();
 
@@ -100,7 +101,7 @@ file_exists(std::string filename)
     auto response = msgs::client::file_metadata_response{};
     msgs::client::deserializer{}.deserialize(response, ch);
 
-	//info(filename + " has size " + std::to_string(response.size()));
+    // info(filename + " has size " + std::to_string(response.size()));
     return response.ok();
 }
 
@@ -121,7 +122,7 @@ main(int argc, char** argv)
 {
     auto bytes_per_chunk = 64 * 1024 * 1024;
     std::cout << std::boolalpha;
-	auto fn = "/mnt/a/file.dat";
+    auto fn = "/mnt/a/file.dat";
     create_file(fn);
     if (file_exists(fn))
     {
@@ -130,22 +131,23 @@ main(int argc, char** argv)
         auto sid2 = serverid::generate();
         join_network(sid1);
         join_network(sid2);
-		auto cid1 = request_chunk(fn, 0, 'w');
+        auto cid1 = request_chunk(fn, 0, 'w');
         notify_chunk(sid1, cid1, 0, 200, fn);
         notify_chunk(sid2, cid1, 0, 200, fn);
-		auto cid2 = request_chunk(fn, 0, 'w');
+        auto cid2 = request_chunk(fn, 0, 'w');
         // file should be locked
-        assert(cid2 == uuid::from_string("00000000-0000-0000-0000-000000000000"));
+        assert(cid2 ==
+               uuid::from_string("00000000-0000-0000-0000-000000000000"));
         release_lock(fn);
-		cid2 = request_chunk(fn, 0, 'w');
-        //file should be unlocked and we should get the same chunkid
+        cid2 = request_chunk(fn, 0, 'w');
+        // file should be unlocked and we should get the same chunkid
         assert(cid1 == cid2);
         auto rest_of_chunk = bytes_per_chunk - 200;
         notify_chunk(sid1, cid1, 1, rest_of_chunk, fn);
         notify_chunk(sid2, cid1, 1, rest_of_chunk, fn);
         release_lock(fn);
-		cid2 = request_chunk(fn, 1, 'w');
-        //Should have a new chunkid
+        cid2 = request_chunk(fn, 1, 'w');
+        // Should have a new chunkid
         assert(!(cid1 == cid2));
         notify_chunk(sid1, cid2, 0, bytes_per_chunk, fn);
         notify_chunk(sid2, cid2, 0, bytes_per_chunk, fn);
