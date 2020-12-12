@@ -137,7 +137,7 @@ sadcd::notify_master_of_write(chunkid chunk, version version_num,
     auto ch = msgs::channel{std::move(sock)};
 
     auto cwn = msgs::master::chunk_write_notification{
-        serverid_, chunk, version_num, filename, new_chunk_size};
+        chunk, version_num, filename, new_chunk_size};
 
     msgs::master::serializer{{.host_id = serverid_}}.serialize(cwn, ch);
     // TODO: confirm from master that the write went through

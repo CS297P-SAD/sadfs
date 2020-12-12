@@ -65,8 +65,8 @@ void
 notify_chunk(serverid sid, chunkid cid, version v, uint32_t num_bytes,
              std::string filename)
 {
-    auto cwn = msgs::master::chunk_write_notification{sid, cid, v, filename,
-                                                      num_bytes};
+    auto cwn =
+        msgs::master::chunk_write_notification{cid, v, filename, num_bytes};
 
     auto ch = establish_conn();
 

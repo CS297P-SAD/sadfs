@@ -108,13 +108,11 @@ extract(create_file_request& req, message_container const& container)
  *                       chunk_write_notification
  * ========================================================
  */
-chunk_write_notification::chunk_write_notification(serverid server_id,
-                                                   chunkid  chunk_id,
-                                                   uint64_t version,
+chunk_write_notification::chunk_write_notification(chunkid            chunk_id,
+                                                   uint64_t           version,
                                                    std::string const& filename,
                                                    uint32_t           new_size)
 {
-    server_id.serialize(std::back_inserter(*protobuf_.mutable_server_id()));
     chunk_id.serialize(std::back_inserter(*protobuf_.mutable_chunk_id()));
     protobuf_.set_version(version);
     protobuf_.set_filename(filename);
