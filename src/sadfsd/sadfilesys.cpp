@@ -102,7 +102,7 @@ sadfilesys::getattr(char const* path, struct stat* stbuf)
     if (!(serializer.serialize(request, ch) && flush(ch) &&
           deserializer.deserialize(response, ch).first))
     {
-        result = -ECOMM;	// Communication error on send
+        result = -EPROTONOSUPPORT;	// Protocol not supported
         logger::debug("gettattr() failed with error " +
                       std::string(strerror(-result)));
         return result;
@@ -174,14 +174,14 @@ sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
         flush(master_ch) &&
 	client_deserializer.deserialize(location_response, master_ch).first))
     {
-        result = -ECOMM;	// Communication error on send
+        result = -EPROTONOSUPPORT;	// Communication error on send
         logger::debug("read() failed to get chunk location " +
                       std::string(strerror(-result)));
         return result;
     }
     if (!location_response.ok())
     {
-        result = -EBADR;	// Invalid request descriptor
+        result = -EBADMSG;	// Bad message
         logger::debug("read() chunk location not found " +
                       std::string(strerror(-result)));
         return result;
@@ -226,7 +226,7 @@ sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
 	    flush(chunk_ch) &&
 	    client_deserializer.deserialize(chunk_response, chunk_ch).first))
 	{
-		result = -ECOMM;	// Communication error on send
+        	result = -EPROTONOSUPPORT;	// Protocol not supported
 		continue;
 	}
 	if (!chunk_response.ok())
