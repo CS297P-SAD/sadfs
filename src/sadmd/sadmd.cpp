@@ -93,7 +93,7 @@ choose_servers(int                                              num_servers,
 }
 
 std::vector<comm::service>
-sadmd::valid_servers(chunk_info& info, bool latest_only)
+sadmd::valid_servers(chunk_info& info, bool latest_only=true)
 {
     auto is_active_latest_version = [&info](auto version, auto valid_until) {
         return valid_until > time::now() && version == info.latest_version;
@@ -218,7 +218,7 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
     {
         if (it->second.locked_until > time::now())
         {
-            std::cerr << "File locked";
+            std::cerr << "File locked\n";
         }
         else if (clr.chunk_number() == it->second.chunkids.size())
         {
@@ -233,7 +233,7 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
             // request to write to last chunk - lookup info
             id          = it->second.chunkids[clr.chunk_number()];
             auto& chunk = chunk_metadata_[id];
-            servers     = valid_servers(chunk, /*latest_only=*/false);
+            servers     = valid_servers(chunk);
             version_num = chunk.latest_version;
             if (servers.size() <= 0)
             {
@@ -255,7 +255,7 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
         {
             id          = it->second.chunkids[clr.chunk_number()];
             auto& chunk = chunk_metadata_[id];
-            servers     = valid_servers(chunk, /*latest_only=*/true);
+            servers     = valid_servers(chunk);
             version_num = chunk.latest_version;
             if (servers.size() <= 0)
             {
@@ -287,9 +287,18 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
               msgs::message_header const&, msgs::channel const& ch)
 {
     auto server = cwn.server_id();
-    // validate request - TODO: Add error logging
-    if (!is_active(server) || !files_.count(cwn.filename()))
+    // validate request
+    if (!is_active(server))
+    {
+        std::cerr << "Error: write notification from server not on the network\n";
         return false;
+    }
+    
+     if(!files_.count(cwn.filename()))
+     {
+        std::cerr << "Error: write notification for nonexistant file\n";
+        return false;
+     }
 
     auto chunk = cwn.chunk_id();
     // should update the size IF this is the latest version of the last chunk
@@ -504,12 +513,6 @@ sadmd::is_active(serverid id) const noexcept
 void
 sadmd::append_chunk_to_file(std::string const& filename, chunkid new_chunkid)
 {
-    if (!files_.count(filename))
-    {
-        std::cerr << "Error: cannot append chunk to file " << filename
-                  << ": file does not exist\n";
-        return;
-    }
     files_[filename].chunkids.add_chunk(new_chunkid);
     chunk_metadata_.emplace(new_chunkid, chunk_info{});
 }
