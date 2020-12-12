@@ -181,8 +181,9 @@ bool
 sadmd::handle(msgs::master::create_file_request const& cfr,
               msgs::message_header const&, msgs::channel const& ch)
 {
-    return create_file(cfr.filename());
-    // TODO: send ack
+    create_file(cfr.filename());
+    // TODO: send ack if create_file succeeded
+    return true;
 }
 
 bool
@@ -202,7 +203,6 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
             std::cerr << "Error: request for too large chunk number: chunk "
                       << chunk_number << " of " << it->first // filename
                       << '\n';
-            return false;
         }
         return true;
     };
@@ -290,15 +290,15 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
     // validate request
     if (!is_active(server))
     {
-        std::cerr
-            << "Error: write notification from server not on the network\n";
-        return false;
+        logger::error("Write notification from server not on the network or "
+                      "not sending hearbeats");
+        return true;
     }
 
     if (!files_.count(cwn.filename()))
     {
-        std::cerr << "Error: write notification for nonexistant file\n";
-        return false;
+        logger::error("Write notification for nonexistant file");
+        return true;
     }
 
     auto chunk = cwn.chunk_id();
@@ -344,9 +344,8 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
         {
             file_info_.size = ((num_chunks - 1) * constants::bytes_per_chunk) +
                               cwn.new_size();
-            logger::debug(std::string_view{"Updated size of " +
-                                           cwn.filename() + " to " +
-                                           std::to_string(file_info_.size)});
+            logger::debug("Updated size of " + cwn.filename() + " to " +
+                          std::to_string(file_info_.size));
         }
     }
 
