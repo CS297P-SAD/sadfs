@@ -291,13 +291,13 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
     if (!is_active(server))
     {
         logger::error("Write notification from server not on the network or "
-                      "not sending hearbeats");
+                      "not sending hearbeats"sv);
         return true;
     }
 
     if (!files_.count(cwn.filename()))
     {
-        logger::error("Write notification for nonexistant file");
+        logger::error("Write notification for nonexistant file"sv);
         return true;
     }
 
