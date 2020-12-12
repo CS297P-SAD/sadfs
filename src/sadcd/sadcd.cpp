@@ -294,7 +294,7 @@ request_handler::handle(msgs::chunk::read_request const& req,
                         req.length(), data);
 
     // return true IFF we were able to read data AND send it to the client
-    return respond(success, success ? std::move(data) : {}) && success;
+    return respond(success, success ? std::move(data) : ""s) && success;
 }
 
 } // namespace sadfs
