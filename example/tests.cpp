@@ -30,7 +30,7 @@ auto establish_conn = []() -> msgs::channel {
 auto info = [](auto const& msg) { std::cout << "[INFO]: " << msg << "\n"; };
 
 // some version of this can be put in the client
-chunkid
+std::pair<bool, chunkid>
 request_chunk(std::string filename, size_t offset, char rw)
 {
     auto type = (rw == 'r') ? msgs::io_type::read : msgs::io_type::write;
@@ -45,7 +45,7 @@ request_chunk(std::string filename, size_t offset, char rw)
     auto response = msgs::client::chunk_location_response{};
     msgs::client::deserializer{}.deserialize(response, ch);
 
-    return response.chunk_id();
+    return {response.ok(), response.chunk_id()};
 }
 
 void
@@ -87,8 +87,8 @@ create_file(std::string filename)
     ch.flush();
 }
 
-bool
-file_exists(std::string filename)
+std::pair<bool, uint64_t>
+file_metadata(std::string filename)
 {
     auto fmr = msgs::master::file_metadata_request{filename};
 
@@ -101,8 +101,7 @@ file_exists(std::string filename)
     auto response = msgs::client::file_metadata_response{};
     msgs::client::deserializer{}.deserialize(response, ch);
 
-    // info(filename + " has size " + std::to_string(response.size()));
-    return response.ok();
+    return {response.ok(), response.size()};
 }
 
 void
@@ -121,37 +120,60 @@ int
 main(int argc, char** argv)
 {
     auto bytes_per_chunk = 64 * 1024 * 1024;
-    std::cout << std::boolalpha;
-    auto fn = "/mnt/a/file.dat";
+    auto fn              = "/mnt/a/file.dat";
+
     create_file(fn);
-    if (file_exists(fn))
-    {
-        assert(true); // file should exist
-        auto sid1 = serverid::generate();
-        auto sid2 = serverid::generate();
-        join_network(sid1);
-        join_network(sid2);
-        auto cid1 = request_chunk(fn, 0, 'w');
-        notify_chunk(sid1, cid1, 0, 200, fn);
-        notify_chunk(sid2, cid1, 0, 200, fn);
-        auto cid2 = request_chunk(fn, 0, 'w');
-        // file should be locked
-        assert(cid2 ==
-               uuid::from_string("00000000-0000-0000-0000-000000000000"));
-        release_lock(fn);
-        cid2 = request_chunk(fn, 0, 'w');
-        // file should be unlocked and we should get the same chunkid
-        assert(cid1 == cid2);
-        auto rest_of_chunk = bytes_per_chunk - 200;
-        notify_chunk(sid1, cid1, 1, rest_of_chunk, fn);
-        notify_chunk(sid2, cid1, 1, rest_of_chunk, fn);
-        release_lock(fn);
-        cid2 = request_chunk(fn, 1, 'w');
-        // Should have a new chunkid
-        assert(!(cid1 == cid2));
-        notify_chunk(sid1, cid2, 0, bytes_per_chunk, fn);
-        notify_chunk(sid2, cid2, 0, bytes_per_chunk, fn);
-    }
+    auto metadata = file_metadata(fn);
+    // file should exist and be size zero
+    assert(metadata.first);
+    assert(metadata.second == 0);
+
+    // add servers
+    auto sid1 = serverid::generate();
+    auto sid2 = serverid::generate();
+    join_network(sid1);
+    join_network(sid2);
+
+    // request chunk in empty file
+    auto response = request_chunk(fn, 0, 'w');
+    assert(response.first);
+    auto cid1 = response.second;
+
+    // "write" 200 bytes
+    notify_chunk(sid1, cid1, 0, 200, fn);
+    notify_chunk(sid2, cid1, 0, 200, fn);
+    response = request_chunk(fn, 0, 'w');
+    // file should be locked
+    assert(!(response.first));
+
+    // unlock and request same chunk
+    release_lock(fn);
+    response = request_chunk(fn, 0, 'w');
+    // file should be unlocked and we should get the same chunkid
+    assert(response.first);
+    auto cid2 = response.second;
+    assert(cid1 == cid2);
+
+    // fill the rest of the chunk
+    auto rest_of_chunk = bytes_per_chunk - 200;
+    notify_chunk(sid1, cid1, 1, rest_of_chunk, fn);
+    notify_chunk(sid2, cid1, 1, rest_of_chunk, fn);
+    release_lock(fn);
+
+    // we filled first chunk: request another
+    response = request_chunk(fn, 1, 'w');
+    assert(response.first);
+    cid2 = response.second;
+    // Should have a new chunkid
+    assert(!(cid1 == cid2));
+    notify_chunk(sid1, cid2, 0, bytes_per_chunk, fn);
+    notify_chunk(sid2, cid2, 0, bytes_per_chunk, fn);
+
+    // file should now be 2 chunks
+    metadata = file_metadata(fn);
+    assert(metadata.first);
+    assert(metadata.second == bytes_per_chunk * 2);
+
     info("All test passed");
     return 0;
 }
