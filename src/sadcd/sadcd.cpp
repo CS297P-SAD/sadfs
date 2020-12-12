@@ -275,7 +275,7 @@ request_handler::handle(msgs::chunk::read_request const& req,
     auto it = chunk_metadata_.find(req.chunk_id());
     if (it == chunk_metadata_.end())
     {
-        logger::debug("chunk does exist on this server"sv);
+        logger::debug("chunk does not exist on this server"sv);
         return respond(false, {});
     }
 
