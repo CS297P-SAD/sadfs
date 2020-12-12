@@ -21,51 +21,46 @@ namespace
 auto const msg_type_lookup = msg_type_map{
     {MsgCase::MSG_NOT_SET, msg_type::unknown},
     {MsgCase::kAck, msg_type::acknowledgement},
-    {MsgCase::kChunkReq, msg_type::chunk_request},
+    {MsgCase::kReadReq, msg_type::read_request},
 };
 
 } // unnamed namespace
 
 /* ========================================================
- *                       chunk_request
+ *                       read_request
  * ========================================================
  */
-chunk_request::chunk_request(msgs::io_type type, std::size_t chunk_id)
+read_request::read_request(chunkid chunk_id, uint32_t offset, uint32_t length)
 {
-    protobuf_.set_type(proto_io_type_lookup.at(type));
-    protobuf_.set_chunk_id(chunk_id);
-}
-
-io_type
-chunk_request::io_type() const
-{
-    return io_type_lookup.at(protobuf_.type());
+    chunk_id.serialize(std::back_inserter(*protobuf_.mutable_chunk_id()));
+    protobuf_.set_offset(offset);
+    protobuf_.set_length(length);
 }
 
 // embeds a control message into a container that is
 // (typically) sent over the wire
 bool
-embed(chunk_request const& req, message_container& container)
+embed(read_request const& req, message_container& container)
 {
     // should this be in a try-catch block?
-    // container.mutable_chunk_req() can throw if heap allocation fails
-    *container.mutable_chunk_req() = req.protobuf_;
+    // container.mutable_read_req() can throw if heap allocation fails
+    *container.mutable_read_req() = req.protobuf_;
     return true;
 }
 
 // extracts a control message from a container that is
 // (typically) received over the wire
 bool
-extract(chunk_request& req, message_container const& container)
+extract(read_request& req, message_container const& container)
 {
-    if (msg_type_lookup.at(container.msg_case()) != chunk_request::type)
+    if (msg_type_lookup.at(container.msg_case()) != read_request::type)
     {
         // cannot extract a msg that doesn't exist
         return false;
     }
 
-    // read chunk_request from message_container
-    req.protobuf_ = container.chunk_req();
+    // copy the request from the container
+    req.protobuf_ = container.read_req();
     return true;
 }
 

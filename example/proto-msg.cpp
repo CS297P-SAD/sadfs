@@ -41,15 +41,6 @@ print_chunk_location_res(msgs::client::chunk_location_response const& res)
 	std::cout << "\n" << delim << "\n";
 }
 
-void
-print_chunk_req(msgs::chunk::chunk_request const& req)
-{
-	std::cout << delim
-		<< "Chunk Request:"
-		<< "\nChunk ID:  " << req.chunk_id()
-		<< "\n" << delim << "\n";
-}
-
 int
 main(int argc, char** argv)
 {
@@ -63,15 +54,6 @@ main(int argc, char** argv)
 	print_chunk_location_req(fr);
 
 	auto hb = msgs::master::chunk_server_heartbeat{};
-
-	/*
-	auto cr = msgs::chunk::chunk_request
-	{
-		msgs::io_type::read,
-		78234
-	};
-	print_chunk_req(cr);
-	*/
 
 	auto clr = msgs::client::chunk_location_response
 	{
@@ -132,14 +114,6 @@ main(int argc, char** argv)
 	msgs::client::deserializer{}.deserialize(new_clr2, ch);
 	info("received chunk location response");
 	print_chunk_location_res(new_clr2);
-
-	// receive chunk_request
-	/*
-	auto new_cr = msgs::chunk::chunk_request{};
-	msgs::chunk::deserializer{}.deserialize(new_cr, ch);
-	info("received chunk request");
-	print_chunk_req(new_cr);
-	*/
 
 	return 0;
 }

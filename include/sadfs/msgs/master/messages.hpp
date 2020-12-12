@@ -113,10 +113,6 @@ private:
     friend bool extract(chunk_location_request&, message_container const&);
 };
 
-// declarations
-bool embed(chunk_location_request const&, message_container&);
-bool extract(chunk_location_request&, message_container const&);
-
 class chunk_server_heartbeat
 {
 public:
@@ -153,9 +149,23 @@ private:
     friend bool extract(join_network_request&, message_container const&);
 };
 
-// declarations
-bool embed(join_network_request const&, message_container&);
-bool extract(join_network_request&, message_container const&);
+class release_lock
+{
+public:
+    release_lock() = default;
+    release_lock(std::string const& filename);
+
+    std::string const& filename() const;
+
+    inline static msg_type type{msg_type::release_lock};
+
+private:
+    proto::master::release_lock protobuf_{};
+
+    // provide embed/extract functions access to private members
+    friend bool embed(release_lock const&, message_container&);
+    friend bool extract(release_lock&, message_container const&);
+};
 
 class release_lock
 {
