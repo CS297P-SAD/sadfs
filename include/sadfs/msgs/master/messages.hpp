@@ -113,10 +113,6 @@ private:
     friend bool extract(chunk_location_request&, message_container const&);
 };
 
-// declarations
-bool embed(chunk_location_request const&, message_container&);
-bool extract(chunk_location_request&, message_container const&);
-
 class chunk_server_heartbeat
 {
 public:
@@ -152,10 +148,6 @@ private:
     friend bool embed(join_network_request const&, message_container&);
     friend bool extract(join_network_request&, message_container const&);
 };
-
-// declarations
-bool embed(join_network_request const&, message_container&);
-bool extract(join_network_request&, message_container const&);
 
 class release_lock
 {
