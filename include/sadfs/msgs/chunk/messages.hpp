@@ -7,7 +7,7 @@
 #include <sadfs/types.hpp>
 
 // standard includes
-#include <cstddef> // std::size_t
+#include <cstddef> // uint32_t
 #include <string>
 
 namespace sadfs
@@ -22,44 +22,55 @@ enum class msg_type
 {
     unknown,
     acknowledgement,
-    chunk_request,
+    read_request,
 };
 
 // acknowledgement chunk::acknowledgement
 using acknowledgement = msgs::acknowledgement<message_container, msg_type,
                                               msg_type::acknowledgement>;
 
-class chunk_request
+class read_request
 {
 public:
     // constructors
-    chunk_request() = default;
-    chunk_request(msgs::io_type, std::size_t);
+    read_request() = default;
+    read_request(chunkid chunk_id, uint32_t offset, uint32_t length);
 
-    msgs::io_type io_type() const;
-    std::size_t   chunk_id() const;
+    chunkid  chunk_id() const;
+    uint32_t offset() const;
+    uint32_t length() const;
 
-    inline static msg_type type{msg_type::chunk_request};
+    inline static msg_type type{msg_type::read_request};
 
 private:
-    proto::chunk::chunk_request protobuf_{};
+    proto::chunk::read_request protobuf_{};
 
     // provide embed/extract functions access to private members
-    friend bool embed(chunk_request const&, message_container&);
-    friend bool extract(chunk_request&, message_container const&);
+    friend bool embed(read_request const&, message_container&);
+    friend bool extract(read_request&, message_container const&);
 };
-
-// declarations
-bool embed(chunk_request const&, message_container&);
-bool extract(chunk_request&, message_container const&);
 
 // ==================================================================
 //                      inline function definitions
 // ==================================================================
-inline std::size_t
-chunk_request::chunk_id() const
+inline chunkid
+read_request::chunk_id() const
 {
-    return protobuf_.chunk_id();
+    auto id = chunkid{};
+    id.deserialize(protobuf_.chunk_id().data());
+    return id;
+}
+
+inline uint32_t
+read_request::offset() const
+{
+    return protobuf_.offset();
+}
+
+inline uint32_t
+read_request::length() const
+{
+    return protobuf_.length();
 }
 
 } // namespace chunk

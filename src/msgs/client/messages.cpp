@@ -21,9 +21,10 @@ namespace
 
 auto const msg_type_lookup = msg_type_map{
     {MsgCase::MSG_NOT_SET, msg_type::unknown},
-    {MsgCase::kFileMetadataRes, msg_type::file_metadata_response},
     {MsgCase::kAck, msg_type::acknowledgement},
     {MsgCase::kChunkLocationRes, msg_type::chunk_location_response},
+    {MsgCase::kFileMetadataRes, msg_type::file_metadata_response},
+    {MsgCase::kReadRes, msg_type::read_response},
 };
 
 } // unnamed namespace
@@ -109,6 +110,49 @@ extract(chunk_location_response& res, message_container const& container)
 
     // read chunk_location_response from message_container
     res.protobuf_ = container.chunk_location_res();
+    return true;
+}
+
+/* ========================================================
+ *                       read_response
+ * ========================================================
+ */
+read_response::read_response(bool ok, std::string&& data)
+{
+    protobuf_.set_ok(ok);
+    if (ok)
+    {
+        // TODO: see if the statements below can be replaced with:
+        // protobuf_.set_allocated_data(new std::string{std::move(data)});
+        auto data_ptr = std::make_unique<std::string>(std::move(data));
+        protobuf_.set_allocated_data(data_ptr.release());
+    }
+}
+
+// embeds a control message into a container that is
+// (typically) sent over the wire
+bool
+embed(read_response const& res, message_container& container)
+{
+    // should this be in a try-catch block?
+    // container.mutable_read_res() can throw if heap allocation fails
+    *container.mutable_read_res() = res.protobuf_;
+    return true;
+}
+
+// extracts a control message from a container that is
+// (typically) received over the wire
+bool
+extract(read_response& res, message_container& container)
+{
+    if (msg_type_lookup.at(container.msg_case()) != read_response::type)
+    {
+        // cannot extract a msg that doesn't exist
+        return false;
+    }
+
+    // copy the response from the container
+    res.protobuf_ = std::move(*container.release_read_res());
     return true;
 }
 

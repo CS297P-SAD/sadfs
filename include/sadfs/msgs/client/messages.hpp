@@ -21,8 +21,9 @@ enum class msg_type
 {
     unknown,
     acknowledgement,
-    file_metadata_response,
     chunk_location_response,
+    file_metadata_response,
+    read_response,
 };
 
 // instantiate client::acknowledgement
@@ -52,10 +53,6 @@ private:
     friend bool extract(chunk_location_response&, message_container const&);
 };
 
-// declarations
-bool embed(chunk_location_response const&, message_container&);
-bool extract(chunk_location_response&, message_container const&);
-
 class file_metadata_response
 {
 public:
@@ -74,9 +71,25 @@ private:
     friend bool extract(file_metadata_response&, message_container const&);
 };
 
-// declarations
-bool embed(file_metadata_response const&, message_container&);
-bool extract(file_metadata_response&, message_container const&);
+class read_response
+{
+public:
+    // constructors
+    read_response() = default;
+    read_response(bool ok, std::string&& data);
+
+    bool               ok() const;
+    std::string const& data() const;
+
+    inline static msg_type type{msg_type::read_response};
+
+private:
+    proto::client::read_response protobuf_{};
+
+    // provide embed/extract functions access to private members
+    friend bool embed(read_response const&, message_container&);
+    friend bool extract(read_response&, message_container&);
+};
 
 // ==================================================================
 //                     inline function definitions
@@ -123,6 +136,18 @@ inline uint32_t
 file_metadata_response::size() const noexcept
 {
     return protobuf_.size();
+}
+
+inline bool
+read_response::ok() const
+{
+    return protobuf_.ok();
+}
+
+inline std::string const&
+read_response::data() const
+{
+    return protobuf_.data();
 }
 
 } // namespace client

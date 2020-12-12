@@ -5,9 +5,10 @@
 #include <sadfs/is_detected.hpp>
 #include <sadfs/msgs/master/deserializer.hpp>
 #include <sadfs/msgs/master/messages.hpp>
+#include <sadfs/util.hpp> // msgs::can_handle
 
 // standard includes
-#include <utility>
+#include <utility> // std::pair
 
 namespace sadfs
 {
@@ -22,12 +23,6 @@ public:
     template <typename Handler>
     std::pair<bool, bool> process_next(channel const&, Handler&);
 };
-
-// metafunction to help with the detection idiom
-template <typename Handler, typename MessageType>
-using can_handle = decltype(std::declval<Handler>().handle(
-    std::declval<MessageType const&>(), std::declval<message_header const&>(),
-    std::declval<msgs::channel const&>()));
 
 // template definitions
 template <typename Handler>

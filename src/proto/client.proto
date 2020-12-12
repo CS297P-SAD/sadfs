@@ -18,6 +18,12 @@ message file_metadata_response {
 	uint32		size	    = 2;
 }
 
+// response for a chunk read request
+message read_response {
+	bool  ok   = 1;
+	bytes data = 2;
+}
+
 // container for all control messages sent to clients
 message message_container {
 	sadfs.proto.header  header = 1;
@@ -25,5 +31,6 @@ message message_container {
 		sadfs.proto.acknowledgement ack                = 6;
 		chunk_location_response     chunk_location_res = 7;
 		file_metadata_response      file_metadata_res  = 8;
+		read_response               read_res           = 9;
 	}
 }
