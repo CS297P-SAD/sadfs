@@ -44,10 +44,27 @@ processor::process_next(msgs::channel const& ch, Handler& h)
             !is_detected_v<can_handle, Handler, acknowledgement>,
             "acknowledgement control message must be handled explicitly");
         break;
+    case container_type::kStream:
+        static_assert(!is_detected_v<can_handle, Handler, stream>,
+                      "data streams must be handled explicitly");
+        break;
     case container_type::kReadReq:
         if constexpr (is_detected_v<can_handle, Handler, read_request>)
         {
             auto msg = read_request{};
+            res      = res && extract_header() && extract(msg, container_) &&
+                  h.handle(msg, header, ch);
+        }
+        else
+        {
+            // cannot handle this message
+            res = false;
+        }
+        break;
+    case container_type::kAppendReq:
+        if constexpr (is_detected_v<can_handle, Handler, append_request>)
+        {
+            auto msg = append_request{};
             res      = res && extract_header() && extract(msg, container_) &&
                   h.handle(msg, header, ch);
         }

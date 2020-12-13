@@ -21,7 +21,9 @@ namespace
 auto const msg_type_lookup = msg_type_map{
     {MsgCase::MSG_NOT_SET, msg_type::unknown},
     {MsgCase::kAck, msg_type::acknowledgement},
+    {MsgCase::kAppendReq, msg_type::append_request},
     {MsgCase::kReadReq, msg_type::read_request},
+    {MsgCase::kStream, msg_type::stream},
 };
 
 } // unnamed namespace
@@ -64,6 +66,52 @@ extract(read_request& req, message_container const& container)
     return true;
 }
 
+/* ========================================================
+ *                       append_request
+ * ========================================================
+ */
+append_request::append_request(chunkid chunk_id, uint32_t length,
+                               std::vector<comm::service> const& replicas,
+                               std::string const&                filename)
+{
+    chunk_id.serialize(std::back_inserter(*protobuf_.mutable_chunk_id()));
+    protobuf_.set_length(length);
+    for (auto const& replica : replicas)
+    {
+        auto r = protobuf_.add_replicas();
+        r->set_ip(to_string(replica.ip()));
+        r->set_port(to_int(replica.port()));
+    }
+    protobuf_.set_filename(filename);
+}
+
+// embeds a control message into a container that is
+// (typically) sent over the wire
+bool
+embed(append_request const& req, message_container& container)
+{
+    // should this be in a try-catch block?
+    // container.mutable_append_req() can throw if heap allocation fails
+    *container.mutable_append_req() = req.protobuf_;
+    return true;
+}
+
+// extracts a control message from a container that is
+// (typically) received over the wire
+bool
+extract(append_request& req, message_container const& container)
+{
+    if (msg_type_lookup.at(container.msg_case()) != append_request::type)
+    {
+        // cannot extract a msg that doesn't exist
+        return false;
+    }
+
+    // copy the request from the container
+    req.protobuf_ = container.append_req();
+    return true;
+}
+
 } // namespace chunk
 
 /* ========================================================
@@ -100,6 +148,42 @@ extract(chunk::acknowledgement& ack, chunk::message_container const& container)
 
     // read acknowledgement from message_container
     ack.protobuf_ = container.ack();
+    return true;
+}
+
+/* ========================================================
+ *                       chunk::stream
+ *
+ * these are defined in the msgs namespace since
+ * stream really is defined in that namespace
+ * ========================================================
+ */
+// embeds a control message into a container that is
+// (typically) sent over the wire
+template <>
+bool
+embed(chunk::stream const& stream, chunk::message_container& container)
+{
+    // should this be in a try-catch block?
+    // container.mutable_stream() can throw if heap allocation fails
+    *container.mutable_stream() = stream.protobuf_;
+    return true;
+}
+
+// extracts a control message from a container that is
+// (typically) received over the wire
+template <>
+bool
+extract(chunk::stream& stream, chunk::message_container& container)
+{
+    if (chunk::msg_type_lookup.at(container.msg_case()) != chunk::stream::type)
+    {
+        // cannot extract a msg that doesn't exist
+        return false;
+    }
+
+    // pull streamed data from message_container
+    stream.protobuf_ = *container.release_stream();
     return true;
 }
 

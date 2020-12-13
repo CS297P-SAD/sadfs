@@ -43,6 +43,7 @@ add_executable (sadcd
 	sadcd/main.cpp
 	sadcd/sadcd.cpp
 	sadcd/heart.cpp
+	sadcd/io.cpp
 	${COMMON_SOURCE_FILES})
 
 # first, find the boost_program_options library. this sets
@@ -118,5 +119,7 @@ target_sources (dummy-sadcd PRIVATE ${COMMON_SOURCE_FILES} sadcd/heart.cpp)
 target_link_libraries (dummy-sadcd PRIVATE sadfs_protobuf pthread)
 target_sources (chunk-read-req PRIVATE ${COMMON_SOURCE_FILES} sadcd/heart.cpp)
 target_link_libraries (chunk-read-req PRIVATE sadfs_protobuf pthread)
+target_sources (sadcd-tests PRIVATE ${COMMON_SOURCE_FILES} sadcd/heart.cpp)
+target_link_libraries (sadcd-tests PRIVATE sadfs_protobuf pthread)
 target_include_directories (uuid PRIVATE ${Boost_INCLUDE_DIRS})
 target_include_directories (create-chunk PRIVATE ${Boost_INCLUDE_DIRS})
