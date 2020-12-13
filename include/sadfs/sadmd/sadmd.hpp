@@ -65,7 +65,6 @@ public:
                 msgs::message_header const&, msgs::channel const&);
 
     // handles a chunk_server_hearbeat
-
     bool handle(msgs::master::chunk_server_heartbeat const&,
                 msgs::message_header const&, msgs::channel const&);
 
