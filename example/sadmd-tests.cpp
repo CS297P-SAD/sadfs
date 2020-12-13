@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/msgs/channel.hpp>
+#include <sadfs/msgs/chunk/deserializer.hpp>
 #include <sadfs/msgs/client/deserializer.hpp>
 #include <sadfs/msgs/master/message_processor.hpp>
 #include <sadfs/msgs/master/serializer.hpp>
@@ -73,6 +74,13 @@ notify_chunk(serverid sid, chunkid cid, version v, uint32_t num_bytes,
     // send chunk_write_notification
     msgs::master::serializer{{.host_id = sid}}.serialize(cwn, ch);
     ch.flush();
+
+    auto ack          = msgs::chunk::acknowledgement{};
+    auto deserializer = msgs::chunk::deserializer{};
+    if (!(deserializer.deserialize(ack, ch).first && ack.ok()))
+    {
+        std::cerr << "Notification rejected\n";
+    }
 }
 
 void
@@ -85,6 +93,12 @@ create_file(std::string filename)
     // send chunk_write_notification
     msgs::master::serializer{}.serialize(cfr, ch);
     ch.flush();
+
+    auto ack = msgs::client::acknowledgement{};
+    if (!(msgs::client::deserializer{}.deserialize(ack, ch).first && ack.ok()))
+    {
+        std::cerr << "Couldn't create file\n";
+    }
 }
 
 std::pair<bool, uint64_t>

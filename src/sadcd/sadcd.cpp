@@ -4,6 +4,7 @@
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/logger.hpp>
 #include <sadfs/msgs/channel.hpp>
+#include <sadfs/msgs/chunk/deserializer.hpp>
 #include <sadfs/msgs/chunk/message_processor.hpp>
 #include <sadfs/msgs/client/messages.hpp>
 #include <sadfs/msgs/client/serializer.hpp>
@@ -185,14 +186,21 @@ sadcd::notify_master_of_write(chunkid chunk, version version_num,
         return false;
     }
 
-    auto ch = msgs::channel{std::move(sock)};
+    auto ch           = msgs::channel{std::move(sock)};
+    auto ack          = msgs::chunk::acknowledgement{};
+    auto serializer   = msgs::master::serializer{{.host_id = serverid_}};
+    auto deserializer = msgs::chunk::deserializer{};
+
+    auto flush = [](auto const& ch) {
+        ch.flush();
+        return true;
+    };
 
     auto cwn = msgs::master::chunk_write_notification{
         chunk, version_num, filename, new_chunk_size};
 
-    msgs::master::serializer{{.host_id = serverid_}}.serialize(cwn, ch);
-    // TODO: confirm from master that the write went through
-    return true;
+    return (serializer.serialize(cwn, ch) && flush(ch) &&
+            deserializer.deserialize(ack, ch).first && ack.ok());
 }
 
 // ==================================================================

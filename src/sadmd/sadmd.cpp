@@ -5,6 +5,7 @@
 #include <sadfs/constants.hpp>
 #include <sadfs/logger.hpp>
 #include <sadfs/msgs/channel.hpp>
+#include <sadfs/msgs/chunk/serializer.hpp>
 #include <sadfs/msgs/client/serializer.hpp>
 #include <sadfs/msgs/master/message_processor.hpp>
 #include <sadfs/msgs/messages.hpp>
@@ -181,9 +182,11 @@ bool
 sadmd::handle(msgs::master::create_file_request const& cfr,
               msgs::message_header const&, msgs::channel const& ch)
 {
-    create_file(cfr.filename());
-    // TODO: send ack if create_file succeeded
-    return true;
+    auto ok     = create_file(cfr.filename());
+    auto ack    = msgs::client::acknowledgement{ok};
+    auto result = msgs::client::serializer{}.serialize(ack, ch);
+    ch.flush();
+    return result;
 }
 
 bool
@@ -194,16 +197,16 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
     auto        servers     = std::vector<comm::service>{};
     auto const& filename    = clr.filename();
     auto        version_num = version{0};
-    auto	file_size   = 0u;
+    auto        file_size   = 0u;
 
     // lambda to check if a chunk number is valid for filename
     auto validate = [](auto it, auto chunk_number) {
         // safe since we don't validate if iterator is invalid
         if (chunk_number >= it->second.chunkids.size())
         {
-            std::cerr << "Error: request for too large chunk number: chunk "
-                      << chunk_number << " of " << it->first // filename
-                      << '\n';
+            logger::error("Request for too large chunk number: chunk " +
+                          std::to_string(chunk_number) + " of " +
+                          /*filename=*/it->first);
         }
         return true;
     };
@@ -212,14 +215,14 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
     auto it = files_.find(filename);
     if (it == files_.end())
     {
-        std::cerr << "Error: request for chunk location in nonexistant file "
-                  << filename << '\n';
+        logger::error("Request for chunk location in nonexistant file " +
+                      filename);
     }
     else if (clr.io_type() == sadfs::msgs::io_type::write)
     {
         if (it->second.locked_until > time::now())
         {
-            std::cerr << "File locked\n";
+            logger::error("File locked"sv);
         }
         else if (clr.chunk_number() == it->second.chunkids.size())
         {
@@ -236,19 +239,19 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
             auto& chunk = chunk_metadata_[id];
             servers     = valid_servers(chunk);
             version_num = chunk.latest_version;
-	    file_size   = it->second.size;
+            file_size   = it->second.size;
             if (servers.size() <= 0)
             {
-                std::cerr << "Error: list of server locations empty\n";
+                logger::error("List of server locations empty"sv);
             }
             it->second.locked_until = time::from_now(time::file_ttl);
         }
         else
         {
             // All other chunk numbers are invalid
-            std::cerr << "Error: attempt to write to chunk "
-                      << clr.chunk_number() << " of " << filename
-                      << " which is not the last chunk\n";
+            logger::error("Attempt to write to chunk " +
+                          std::to_string(clr.chunk_number()) + " of " +
+                          filename + " which is not the last chunk");
         }
     }
     else
@@ -259,10 +262,10 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
             auto& chunk = chunk_metadata_[id];
             servers     = valid_servers(chunk);
             version_num = chunk.latest_version;
-	    file_size   = it->second.size;
+            file_size   = it->second.size;
             if (servers.size() <= 0)
             {
-                std::cerr << "Error: list of server locations empty\n";
+                logger::error("List of server locations empty"sv);
             }
         }
     }
@@ -295,13 +298,19 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
     {
         logger::error("Write notification from server not on the network or "
                       "not sending hearbeats"sv);
-        return true;
+        auto ack    = msgs::chunk::acknowledgement{false};
+        auto result = msgs::chunk::serializer{}.serialize(ack, ch);
+        ch.flush();
+        return result;
     }
 
     if (!files_.count(cwn.filename()))
     {
         logger::error("Write notification for nonexistant file"sv);
-        return true;
+        auto ack    = msgs::chunk::acknowledgement{false};
+        auto result = msgs::chunk::serializer{}.serialize(ack, ch);
+        ch.flush();
+        return result;
     }
 
     auto chunk = cwn.chunk_id();
@@ -352,7 +361,10 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
         }
     }
 
-    return true;
+    auto ack    = msgs::chunk::acknowledgement{true};
+    auto result = msgs::chunk::serializer{}.serialize(ack, ch);
+    ch.flush();
+    return result;
 }
 
 bool
@@ -365,8 +377,30 @@ sadmd::handle(msgs::master::release_lock const& rl,
         logger::debug("unlocked file"sv);
         it->second.locked_until = time::now();
     }
-    // TODO: send ack
-    return true;
+
+    auto ack    = msgs::client::acknowledgement{true};
+    auto result = msgs::client::serializer{}.serialize(ack, ch);
+    ch.flush();
+    return result;
+}
+
+bool
+sadmd::handle(msgs::master::chunk_server_heartbeat const& csh,
+              msgs::message_header const& header, msgs::channel const& ch)
+{
+    if (!chunk_server_metadata_.count(header.host_id))
+    {
+        logger::error("Received heartbeat from server " +
+                      to_string(header.host_id) +
+                      " which is not on the network");
+        return true;
+    }
+    register_server_heartbeat(header.host_id);
+
+    auto ack    = msgs::chunk::acknowledgement{true};
+    auto result = msgs::chunk::serializer{}.serialize(ack, ch);
+    ch.flush();
+    return result;
 }
 
 bool
@@ -381,8 +415,7 @@ sadmd::load_file(std::string const& filename,
 {
     if (files_.count(filename))
     {
-        std::cerr << "Error: attempt to load " << filename
-                  << ": file already exists\n";
+        logger::error("Attempt to load " + filename + ": file already exists");
         return false;
     }
     files_.emplace(filename, file_info{});
@@ -494,13 +527,6 @@ sadmd::remove_server_from_network(serverid id) noexcept
 void
 sadmd::register_server_heartbeat(serverid id) noexcept
 {
-    if (!chunk_server_metadata_.count(id))
-    {
-        std::cerr << "Error: received heartbeat from server " << to_string(id)
-                  << " which is not on the network\n";
-        return;
-    }
-    // use the default value
     chunk_server_metadata_.at(id).valid_until =
         time::from_now(time::server_ttl);
 }
