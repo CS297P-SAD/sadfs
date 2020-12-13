@@ -72,11 +72,9 @@ class chunk_write_notification
 {
 public:
     chunk_write_notification() = default;
-    chunk_write_notification(serverid server_id, chunkid chunk_id,
-                             uint64_t version, std::string const& filename,
-                             uint32_t new_size);
+    chunk_write_notification(chunkid chunk_id, uint64_t version,
+                             std::string const& filename, uint32_t new_size);
 
-    serverid           server_id() const;
     chunkid            chunk_id() const;
     uint64_t           version() const;
     std::string const& filename() const;
@@ -131,10 +129,9 @@ class join_network_request
 {
 public:
     join_network_request() = default;
-    join_network_request(serverid server_id, comm::service service,
-                         uint64_t max_chunks, uint64_t chunk_count);
+    join_network_request(comm::service service, uint64_t max_chunks,
+                         uint64_t chunk_count);
 
-    serverid      server_id() const;
     comm::service service() const;
     uint64_t      max_chunks() const;
     uint64_t      chunk_count() const;
@@ -183,14 +180,6 @@ create_file_request::filename() const
     return protobuf_.filename();
 }
 
-inline serverid
-chunk_write_notification::server_id() const
-{
-    auto id = serverid{};
-    id.deserialize(protobuf_.server_id().data());
-    return id;
-}
-
 inline chunkid
 chunk_write_notification::chunk_id() const
 {
@@ -227,14 +216,6 @@ inline std::size_t
 chunk_location_request::chunk_number() const
 {
     return protobuf_.chunk_number();
-}
-
-inline serverid
-join_network_request::server_id() const
-{
-    auto id = serverid{};
-    id.deserialize(protobuf_.server_id().data());
-    return id;
 }
 
 inline comm::service

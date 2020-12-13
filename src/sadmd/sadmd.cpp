@@ -93,7 +93,7 @@ choose_servers(int                                              num_servers,
 }
 
 std::vector<comm::service>
-sadmd::valid_servers(chunk_info& info, bool latest_only)
+sadmd::valid_servers(chunk_info& info, bool latest_only = true)
 {
     auto is_active_latest_version = [&info](auto version, auto valid_until) {
         return valid_until > time::now() && version == info.latest_version;
@@ -181,8 +181,9 @@ bool
 sadmd::handle(msgs::master::create_file_request const& cfr,
               msgs::message_header const&, msgs::channel const& ch)
 {
-    return create_file(cfr.filename());
-    // TODO: send ack
+    create_file(cfr.filename());
+    // TODO: send ack if create_file succeeded
+    return true;
 }
 
 bool
@@ -202,7 +203,6 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
             std::cerr << "Error: request for too large chunk number: chunk "
                       << chunk_number << " of " << it->first // filename
                       << '\n';
-            return false;
         }
         return true;
     };
@@ -233,7 +233,7 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
             // request to write to last chunk - lookup info
             id          = it->second.chunkids[clr.chunk_number()];
             auto& chunk = chunk_metadata_[id];
-            servers     = valid_servers(chunk, /*latest_only=*/false);
+            servers     = valid_servers(chunk);
             version_num = chunk.latest_version;
             if (servers.size() <= 0)
             {
@@ -255,7 +255,7 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
         {
             id          = it->second.chunkids[clr.chunk_number()];
             auto& chunk = chunk_metadata_[id];
-            servers     = valid_servers(chunk, /*latest_only=*/true);
+            servers     = valid_servers(chunk);
             version_num = chunk.latest_version;
             if (servers.size() <= 0)
             {
@@ -275,21 +275,31 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
 
 bool
 sadmd::handle(msgs::master::join_network_request const& jnr,
-              msgs::message_header const&, msgs::channel const& ch)
+              msgs::message_header const& header, msgs::channel const& ch)
 {
-    add_server_to_network(jnr.server_id(), jnr.service(), jnr.max_chunks(),
+    add_server_to_network(header.host_id, jnr.service(), jnr.max_chunks(),
                           jnr.chunk_count());
     return true;
 }
 
 bool
 sadmd::handle(msgs::master::chunk_write_notification const& cwn,
-              msgs::message_header const&, msgs::channel const& ch)
+              msgs::message_header const& header, msgs::channel const& ch)
 {
-    auto server = cwn.server_id();
-    // validate request - TODO: Add error logging
-    if (!is_active(server) || !files_.count(cwn.filename()))
-        return false;
+    auto server = header.host_id;
+    // validate request
+    if (!is_active(server))
+    {
+        logger::error("Write notification from server not on the network or "
+                      "not sending hearbeats"sv);
+        return true;
+    }
+
+    if (!files_.count(cwn.filename()))
+    {
+        logger::error("Write notification for nonexistant file"sv);
+        return true;
+    }
 
     auto chunk = cwn.chunk_id();
     // should update the size IF this is the latest version of the last chunk
@@ -334,6 +344,8 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
         {
             file_info_.size = ((num_chunks - 1) * constants::bytes_per_chunk) +
                               cwn.new_size();
+            logger::debug("Updated size of " + cwn.filename() + " to " +
+                          std::to_string(file_info_.size));
         }
     }
 
@@ -465,6 +477,8 @@ sadmd::add_server_to_network(serverid uuid, comm::service service,
     chunk_server_metadata_.emplace(
         uuid, chunk_server_info{service, max_chunks, chunk_count,
                                 time::from_now(time::server_ttl)});
+    logger::debug(
+        std::string_view{"Added server " + to_string(uuid) + " to network"});
     return true;
 }
 
@@ -503,12 +517,6 @@ sadmd::is_active(serverid id) const noexcept
 void
 sadmd::append_chunk_to_file(std::string const& filename, chunkid new_chunkid)
 {
-    if (!files_.count(filename))
-    {
-        std::cerr << "Error: cannot append chunk to file " << filename
-                  << ": file does not exist\n";
-        return;
-    }
     files_[filename].chunkids.add_chunk(new_chunkid);
     chunk_metadata_.emplace(new_chunkid, chunk_info{});
 }

@@ -108,13 +108,11 @@ extract(create_file_request& req, message_container const& container)
  *                       chunk_write_notification
  * ========================================================
  */
-chunk_write_notification::chunk_write_notification(serverid server_id,
-                                                   chunkid  chunk_id,
-                                                   uint64_t version,
+chunk_write_notification::chunk_write_notification(chunkid            chunk_id,
+                                                   uint64_t           version,
                                                    std::string const& filename,
                                                    uint32_t           new_size)
 {
-    server_id.serialize(std::back_inserter(*protobuf_.mutable_server_id()));
     chunk_id.serialize(std::back_inserter(*protobuf_.mutable_chunk_id()));
     protobuf_.set_version(version);
     protobuf_.set_filename(filename);
@@ -230,12 +228,10 @@ extract(chunk_server_heartbeat&, message_container const& container)
  *                       join_network_request
  * ========================================================
  */
-join_network_request::join_network_request(serverid      server_id,
-                                           comm::service service,
+join_network_request::join_network_request(comm::service service,
                                            uint64_t      max_chunks,
                                            uint64_t      chunk_count)
 {
-    server_id.serialize(std::back_inserter(*protobuf_.mutable_server_id()));
     protobuf_.set_ip(to_string(service.ip()));
     protobuf_.set_port(to_int(service.port()));
     protobuf_.set_max_chunks(max_chunks);

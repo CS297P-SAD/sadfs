@@ -165,12 +165,11 @@ sadcd::join_network()
     }
 
     auto ch = msgs::channel{std::move(sock)};
-    auto jr = msgs::master::join_network_request{serverid_, service_,
-                                                 constants::max_chunks,
-                                                 /*chunk_count=*/0};
+    auto jr = msgs::master::join_network_request{
+        service_, constants::max_chunks, /*chunk_count=*/0};
 
     // send join_network_request
-    msgs::master::serializer{}.serialize(jr, ch);
+    msgs::master::serializer{{.host_id = serverid_}}.serialize(jr, ch);
     // TODO: verify success
     return true;
 }
@@ -189,9 +188,9 @@ sadcd::notify_master_of_write(chunkid chunk, version version_num,
     auto ch = msgs::channel{std::move(sock)};
 
     auto cwn = msgs::master::chunk_write_notification{
-        serverid_, chunk, version_num, filename, new_chunk_size};
+        chunk, version_num, filename, new_chunk_size};
 
-    msgs::master::serializer{}.serialize(cwn, ch);
+    msgs::master::serializer{{.host_id = serverid_}}.serialize(cwn, ch);
     // TODO: confirm from master that the write went through
     return true;
 }
