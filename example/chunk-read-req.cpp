@@ -83,5 +83,8 @@ main(int argc, char** argv)
 
     // should fail
     send_req("bf5b432c-3889-4484-aa3c-77a08d30901b"s, 16 * 1024, 64);
+
+    // should see a lot of shit
+    send_req("d7e30bce-1c62-4b9a-b88b-c9d2632142a7"s, 0, 64 * 1024);
     return 0;
 }
