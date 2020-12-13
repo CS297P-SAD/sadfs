@@ -57,7 +57,8 @@ struct sadmd
             /*ok=*/true,
             {{"127.0.0.1", 6969}},
             uuid::generate(),
-            0 // version
+            0, // version
+	    11 // file_size
         };
         auto result = msgs::client::serializer{}.serialize(response, ch);
         ch.flush();
@@ -80,7 +81,7 @@ struct sadmd
                 msgs::channel const& ch)
     {
         auto response = msgs::client::file_metadata_response{
-            true /* ok */, 42 /* size */
+            true /* ok */, 11 /* size */
         };
         auto result = msgs::client::serializer{}.serialize(response, ch);
         ch.flush();

@@ -2,6 +2,7 @@
 
 // sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
+#include <sadfs/constants.hpp>
 #include <sadfs/logger.hpp>
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/client/serializer.hpp>
@@ -24,15 +25,14 @@ namespace sadfs
 
 namespace
 {
-namespace constants
+namespace database
 {
 
 // columns in our SQLite database
 constexpr auto filename_col    = 0;
 constexpr auto chunkid_str_col = 1;
-constexpr auto bytes_per_chunk = 64 * 1024 * 1024; // 64 MB
 
-} // namespace constants
+} // namespace database
 
 namespace time
 {
@@ -194,6 +194,7 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
     auto        servers     = std::vector<comm::service>{};
     auto const& filename    = clr.filename();
     auto        version_num = version{0};
+    auto	file_size   = 0u;
 
     // lambda to check if a chunk number is valid for filename
     auto validate = [](auto it, auto chunk_number) {
@@ -235,6 +236,7 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
             auto& chunk = chunk_metadata_[id];
             servers     = valid_servers(chunk);
             version_num = chunk.latest_version;
+	    file_size   = it->second.size;
             if (servers.size() <= 0)
             {
                 std::cerr << "Error: list of server locations empty\n";
@@ -257,6 +259,7 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
             auto& chunk = chunk_metadata_[id];
             servers     = valid_servers(chunk);
             version_num = chunk.latest_version;
+	    file_size   = it->second.size;
             if (servers.size() <= 0)
             {
                 std::cerr << "Error: list of server locations empty\n";
@@ -265,7 +268,7 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
     }
 
     auto response = msgs::client::chunk_location_response{
-        servers.size() > 0, servers, id, version_num};
+        servers.size() > 0, servers, id, version_num, file_size};
 
     // send protobuf back over channel
     auto result = msgs::client::serializer{}.serialize(response, ch);
@@ -433,9 +436,9 @@ sadmd::load_files()
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
         auto filename = std::string{reinterpret_cast<const char*>(
-            sqlite3_column_text(stmt, constants::filename_col))};
+            sqlite3_column_text(stmt, database::filename_col))};
         auto cids     = std::string{reinterpret_cast<const char*>(
-            sqlite3_column_text(stmt, constants::chunkid_str_col))};
+            sqlite3_column_text(stmt, database::chunkid_str_col))};
         load_file(filename, cids);
     }
     sqlite3_finalize(stmt);

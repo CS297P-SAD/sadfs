@@ -72,7 +72,7 @@ extract(file_metadata_response& res, message_container const& container)
 // ==================================================================
 chunk_location_response::chunk_location_response(
     bool ok, std::vector<comm::service> const& services, chunkid chunk_id,
-    version version_num)
+    version version_num, uint32_t file_size)
 {
     protobuf_.set_ok(ok);
     for (auto service : services)
@@ -82,6 +82,7 @@ chunk_location_response::chunk_location_response(
     }
     chunk_id.serialize(std::back_inserter(*protobuf_.mutable_chunk_id()));
     protobuf_.set_version_num(version_num);
+    protobuf_.set_file_size(file_size);
 }
 
 // embeds a control message into a container that is

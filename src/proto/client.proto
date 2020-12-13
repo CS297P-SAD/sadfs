@@ -10,6 +10,7 @@ message chunk_location_response {
 	repeated int32  ports       = 3;  // not uint32 for sadfs code compatibility
 	bytes           chunk_id    = 4;
 	int32           version_num = 5;
+	uint32		file_size   = 6;
 }
 
 // response for a file_metadata_request

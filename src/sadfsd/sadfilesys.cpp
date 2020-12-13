@@ -76,6 +76,7 @@ sadfilesys::getattr(char const* path, struct stat* stbuf)
     {
         logger::debug("path identified as base directory"sv);
         stbuf->st_mode = S_IFDIR | 0755;
+	stbuf->st_size = 0;
         return result;
     }
 
@@ -150,7 +151,7 @@ sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
     {
     	msgs::io_type::read,
 	std::string{path},
-	static_cast<uint32_t> (offset / bytes_per_chunk)
+	static_cast<uint32_t> (offset / constants::bytes_per_chunk)
     };
     auto location_response	= msgs::client::chunk_location_response{};
     auto master_serializer 	= msgs::master::serializer{};
@@ -200,9 +201,16 @@ sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
     }
     
     
-    auto chunk_offset	= static_cast<uint32_t>(offset % bytes_per_chunk);
-    auto chunk_read_size= std::min<uint32_t>(size,
-    					     bytes_per_chunk - chunk_offset);
+    auto file_size	= location_response.file_size();
+    auto chunk_offset	= static_cast<uint32_t>(
+    				offset % constants::bytes_per_chunk);
+    auto chunk_read_size= std::min<uint32_t>({
+					static_cast<uint32_t>(size),
+				    	constants::bytes_per_chunk -
+						chunk_offset,
+				    	file_size - 
+						static_cast<uint32_t>(offset)
+				});
     auto chunk_request	= msgs::chunk::read_request
     {
 	location_response.chunk_id(),
@@ -250,10 +258,17 @@ sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
 	return result;
      }
 
-     if (result == chunk_read_size && offset + chunk_read_size < offset + size)
+     if (result == chunk_read_size &&
+     	 offset + chunk_read_size < offset + size &&
+	 offset + chunk_read_size < file_size)
      {
-     	return read(path, buf + chunk_read_size, size - chunk_read_size,
-		    offset + chunk_read_size, fi);
+     	auto ret = read(path, buf + chunk_read_size, size - chunk_read_size,
+		        offset + chunk_read_size, fi);
+	if (ret < 0)
+	{
+		return result;
+	}
+	return result + ret;
      }
      
      logger::debug("read() finished"sv);

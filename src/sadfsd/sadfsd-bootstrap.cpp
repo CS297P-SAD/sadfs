@@ -93,7 +93,7 @@ main(int argc, char const** argv)
     // empty string
     auto filesys_args = std::array{
         std::string(), variables["mountpoint"].as<std::string>(),
-        std::string("-odirect_io"), // direct_io mode
+	std::string("-omax_readahead=0"),
 #ifndef NDEBUG
         std::string("-f") // fuse runs in foreground
 #endif

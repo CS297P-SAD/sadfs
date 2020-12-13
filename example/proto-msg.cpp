@@ -60,7 +60,8 @@ main(int argc, char** argv)
 		true,
 		{{"10.0.0.13", 6666}},
 		uuid::generate(),
-		0 // version
+		0, // version
+		0  // file_size
 	};
 	print_chunk_location_res(clr);
 
