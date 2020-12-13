@@ -155,42 +155,6 @@ sadcd::serve_client(comm::listener const& listener, request_handler& handler)
     }
 }
 
-void
-sadcd::serve_requests(msgs::channel ch)
-{
-	auto processor = msgs::chunk::processor{};
-	bool result{false}, eof{false};
-	while (true)
-	{
-		auto [result, eof] = processor.process_next(ch, *this);
-		if (result)
-		{
-			logger::info("request served successfully"sv);
-		}
-		else if (eof)
-		{
-			break;
-		}
-		else
-		{
-			logger::error("request service failed"sv);
-		}
-	}
-}
-
-bool
-sadcd::handle(msgs::chunk::read_request const& rr, msgs::message_header const&,
-	      msgs::channel const& ch)
-{
-	auto response = msgs::client::read_response{
-		true,		/* ok */
-		"chunk chonk"	/* data */
-	};
-	auto result = msgs::client::serializer{}.serialize(response, ch);
-	ch.flush();
-	return result;
-}
-
 bool
 sadcd::join_network()
 {
@@ -278,7 +242,6 @@ read(chunkid const& id, uint32_t version, uint32_t offset, uint32_t length,
 } // unnamed namespace
 request_handler::request_handler(serverid id) : serverid_{std::move(id)}
 {
-    /* for testing
     auto insert = [&](auto id, auto version, auto size) {
         auto entry = chunk_metadata_[chunkid::from_string(id)].add_versions();
         entry->set_version(version);
@@ -290,7 +253,6 @@ request_handler::request_handler(serverid id) : serverid_{std::move(id)}
     insert("229217b9-6bf0-47f0-9752-64541a99a67a"s, 1U, 4 * 1024U);
     insert("d7e30bce-1c62-4b9a-b88b-c9d2632142a7"s, 6U, 60 * 1024U);
     insert("d7e30bce-1c62-4b9a-b88b-c9d2632142a7"s, 7U, 64 * 1024U);
-    */
 }
 
 bool

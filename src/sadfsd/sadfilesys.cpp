@@ -144,7 +144,8 @@ sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
                  fuse_file_info* fi)
 {
     logger::debug("read() called at " + std::string(path) + " to read " +
-    	          std::to_string(size) + " bytes");
+    	          std::to_string(size) + " bytes at offset " +
+		  std::to_string(offset));
 
     auto result{0};
     auto location_request = msgs::master::chunk_location_request
@@ -202,6 +203,12 @@ sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
     
     
     auto file_size	= location_response.file_size();
+    logger::debug("read() got file size " + std::to_string(file_size));
+    if (static_cast<uint32_t>(offset) >= file_size)
+    {
+    	return result;
+    }
+
     auto chunk_offset	= static_cast<uint32_t>(
     				offset % constants::bytes_per_chunk);
     auto chunk_read_size= std::min<uint32_t>({
