@@ -388,16 +388,19 @@ bool
 sadmd::handle(msgs::master::chunk_server_heartbeat const& csh,
               msgs::message_header const& header, msgs::channel const& ch)
 {
+    auto ok = false;
     if (!chunk_server_metadata_.count(header.host_id))
     {
         logger::error("Received heartbeat from server " +
                       to_string(header.host_id) +
                       " which is not on the network");
-        return true;
     }
-    register_server_heartbeat(header.host_id);
-
-    auto ack    = msgs::chunk::acknowledgement{true};
+    else
+    {
+        ok = true;
+        register_server_heartbeat(header.host_id);
+    }
+    auto ack    = msgs::chunk::acknowledgement{ok};
     auto result = msgs::chunk::serializer{}.serialize(ack, ch);
     ch.flush();
     return result;
