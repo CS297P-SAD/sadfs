@@ -92,7 +92,7 @@ struct sadmd
     bool handle(jnr const& req, msgs::message_header const& header,
     		msgs::channel const& ch)
     {
-	logger::debug("received join req. " + to_string(req.server_id()));
+	logger::debug("received join req. " + to_string(header.host_id));
     	return true;
     }
 };
