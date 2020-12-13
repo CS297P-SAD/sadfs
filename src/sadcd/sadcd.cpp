@@ -242,7 +242,6 @@ read(chunkid const& id, uint32_t version, uint32_t offset, uint32_t length,
 } // unnamed namespace
 request_handler::request_handler(serverid id) : serverid_{std::move(id)}
 {
-    /* for testing
     auto insert = [&](auto id, auto version, auto size) {
         auto entry = chunk_metadata_[chunkid::from_string(id)].add_versions();
         entry->set_version(version);
@@ -254,7 +253,6 @@ request_handler::request_handler(serverid id) : serverid_{std::move(id)}
     insert("229217b9-6bf0-47f0-9752-64541a99a67a"s, 1U, 4 * 1024U);
     insert("d7e30bce-1c62-4b9a-b88b-c9d2632142a7"s, 6U, 60 * 1024U);
     insert("d7e30bce-1c62-4b9a-b88b-c9d2632142a7"s, 7U, 64 * 1024U);
-    */
 }
 
 bool

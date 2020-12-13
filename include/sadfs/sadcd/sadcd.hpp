@@ -28,6 +28,10 @@ public:
     // starts server by opening a listener
     void start();
 
+    // handles a read_request
+    bool handle(msgs::chunk::read_request const&, msgs::message_header const&,
+    		msgs::channel const&);
+
 private:
     // runs the chunk service
     void run();

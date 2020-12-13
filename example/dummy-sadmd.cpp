@@ -55,9 +55,10 @@ struct sadmd
         logger::debug("received req. from: " + to_string(header.host_id));
         auto response = msgs::client::chunk_location_response{
             /*ok=*/true,
-            {{"10.0.0.13", 6666}},
-            uuid::generate(),
-            0 // version
+            {{"127.0.0.1", 6969}},
+            chunkid::from_string("d7e30bce-1c62-4b9a-b88b-c9d2632142a7"),
+            7, // version
+	    64*1024 // file_size
         };
         auto result = msgs::client::serializer{}.serialize(response, ch);
         ch.flush();
@@ -76,15 +77,23 @@ struct sadmd
     }
 
     using fmr = msgs::master::file_metadata_request;
-    bool handle(fmr const& req, msgs::message_header const* header,
+    bool handle(fmr const& req, msgs::message_header const& header,
                 msgs::channel const& ch)
     {
         auto response = msgs::client::file_metadata_response{
-            true /* ok */, 10 /* size */
+            true /* ok */, 64*1024 /* size */
         };
         auto result = msgs::client::serializer{}.serialize(response, ch);
         ch.flush();
         return result;
+    }
+    
+    using jnr = msgs::master::join_network_request;
+    bool handle(jnr const& req, msgs::message_header const& header,
+    		msgs::channel const& ch)
+    {
+	logger::debug("received join req. " + to_string(header.host_id));
+    	return true;
     }
 };
 

@@ -36,13 +36,15 @@ public:
     chunk_location_response() = default;
     chunk_location_response(bool                              ok,
                             std::vector<comm::service> const& services,
-                            chunkid chunk_id, version version_num);
+                            chunkid chunk_id, version version_num,
+			    uint32_t file_size);
 
     bool          ok() const noexcept;
     comm::service service(int) const;
     chunkid       chunk_id() const noexcept;
     uint32_t      version_num() const;
     int           locations_size() const noexcept;
+    uint32_t	  file_size() const noexcept;
 
     inline static msg_type type{msg_type::chunk_location_response};
 
@@ -124,6 +126,12 @@ inline uint32_t
 chunk_location_response::version_num() const
 {
     return protobuf_.version_num();
+}
+
+inline uint32_t
+chunk_location_response::file_size() const noexcept
+{
+    return protobuf_.file_size();
 }
 
 inline bool
