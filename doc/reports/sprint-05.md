@@ -27,7 +27,7 @@ This section should answer the following questions:
   - finished implementng a messaging class for component communication
   - add the following messages to our messaging class and implemented their handlers on 
     the servers: heartbeat, request to join the network, notification of write, request 
-    for chunk location, release a write lock, ack/nack
+    for chunk location, release a write lock, ack/nack, request for file metadata
   - a separate thread on the chunk servers for sending heartbeats
   - our filesystem's getattr() and read() implementations
 
