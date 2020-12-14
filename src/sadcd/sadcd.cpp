@@ -4,7 +4,6 @@
 #include <sadfs/comm/inet.hpp>
 #include <sadfs/logger.hpp>
 #include <sadfs/msgs/channel.hpp>
-#include <sadfs/msgs/chunk/deserializer.hpp>
 #include <sadfs/msgs/chunk/message_processor.hpp>
 #include <sadfs/msgs/client/messages.hpp>
 #include <sadfs/msgs/client/serializer.hpp>
