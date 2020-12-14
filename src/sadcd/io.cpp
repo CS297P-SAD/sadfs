@@ -99,13 +99,21 @@ notify_master(write_spec const spec, comm::service const& master,
         return false;
     }
 
-    auto ch = msgs::channel{std::move(sock)};
+    auto ch           = msgs::channel{std::move(sock)};
+    auto ack          = msgs::chunk::acknowledgement{};
+    auto deserializer = msgs::chunk::deserializer{};
+
+    auto flush = [](auto const& ch) {
+        ch.flush();
+        return true;
+    };
 
     auto cwn = msgs::master::chunk_write_notification{
         spec.id, spec.ver + 1, spec.filename, spec.size + spec.length};
 
     // TODO: confirm from master that the write went through
-    return msgs::master::serializer{{sid}}.serialize(cwn, ch);
+    return (serializer.serialize(cwn, ch) && flush(ch) &&
+            deserializer.deserialize(ack, ch).first && ack.ok());
 }
 
 } // unnamed namespace
