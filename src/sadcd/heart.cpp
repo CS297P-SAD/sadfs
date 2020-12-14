@@ -29,7 +29,7 @@ heart::beat(std::promise<void> death, std::future<void> stop_token)
         {
             auto ch    = msgs::channel{master_.connect()};
             auto ack   = msgs::chunk::acknowledgement{};
-            auto flush = [](auto const &ch) {
+            auto flush = [](auto const& ch) {
                 ch.flush();
                 return true;
             };
@@ -40,7 +40,7 @@ heart::beat(std::promise<void> death, std::future<void> stop_token)
             }
             throw sadfs::operation_failure{"could not send heartbeat"};
         }
-        catch (std::exception const &)
+        catch (std::exception const&)
         {
             return die();
         }

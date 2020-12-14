@@ -80,6 +80,53 @@ private:
     friend bool extract<>(acknowledgement&, MessageContainer const&);
 };
 
+// ==================================================================
+//                               stream
+// ==================================================================
+// forward declarations
+template <typename MessageContainer, typename Type, Type msg_type>
+class stream;
+
+template <typename MessageContainer, typename Type, Type msg_type>
+bool embed(stream<MessageContainer, Type, msg_type> const&, MessageContainer&);
+
+template <typename MessageContainer, typename Type, Type msg_type>
+bool extract(stream<MessageContainer, Type, msg_type>&, MessageContainer&);
+
+// class declaration
+template <typename MessageContainer, typename Type, Type msg_type> class stream
+{
+public:
+    stream() = default;
+    stream(std::string data);
+
+    std::string extract_data();
+
+    inline static Type type{msg_type};
+
+private:
+    proto::stream protobuf_{};
+
+    // TODO: change serializer's API to accept a mutable ref
+    // to avoid copies here
+    friend bool embed<>(stream const&, MessageContainer&);
+    friend bool extract<>(stream&, MessageContainer&);
+};
+
+// inline definitions
+template <typename MessageContainer, typename Type, Type msg_type>
+inline stream<MessageContainer, Type, msg_type>::stream(std::string data)
+{
+    protobuf_.set_data(std::move(data));
+}
+
+template <typename MessageContainer, typename Type, Type msg_type>
+inline std::string
+stream<MessageContainer, Type, msg_type>::extract_data()
+{
+    return *protobuf_.release_data();
+}
+
 } // namespace msgs
 } // namespace sadfs
 

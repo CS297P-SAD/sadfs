@@ -5,16 +5,25 @@ import "common.proto";
 
 // read request for a section of a chunk
 message read_request {
-	bytes   chunk_id = 2;
-	uint32  offset   = 3;
-	uint32  length   = 4;
+	bytes   chunk_id = 1;
+	uint32  offset   = 2;
+	uint32  length   = 3;
+}
+
+message append_request {
+	bytes                        chunk_id = 1;
+	uint32                       length   = 3;
+	repeated sadfs.proto.service replicas = 4;
+	string                       filename = 5;
 }
 
 // container for control messages
 message message_container {
 	sadfs.proto.header  header = 1;
 	oneof               msg {
-		sadfs.proto.acknowledgement ack      = 6;
-		read_request                read_req = 7;
+		sadfs.proto.acknowledgement ack        = 6;
+		read_request                read_req   = 7;
+		append_request              append_req = 8;
+		sadfs.proto.stream          stream     = 9;
 	}
 }
