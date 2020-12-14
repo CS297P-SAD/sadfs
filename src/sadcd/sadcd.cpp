@@ -2,6 +2,7 @@
 
 // sadfs-specific includes
 #include <sadfs/comm/inet.hpp>
+#include <sadfs/constants.hpp>
 #include <sadfs/logger.hpp>
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/chunk/message_processor.hpp>
@@ -188,13 +189,10 @@ auto ack = [](auto ok, auto const& ch) {
     return Serializer{}.serialize(Acknowledgement{ok}, ch) && io::flush(ch);
 };
 
-// get version info of the newest version of a chunk
-auto latest_version = [](auto it) {
-    return std::max_element(it->second.mutable_versions()->begin(),
-                            it->second.mutable_versions()->end(),
-                            [](auto lmeta, auto rmeta) {
-                                return lmeta.version() < rmeta.version();
-                            });
+// get version info of the current version of a chunk
+auto current_ver_and_size = [](auto it) {
+    auto const& cur = it->second.current();
+    return std::make_pair(cur.version(), cur.size());
 };
 
 template <typename Request, typename MetadataIt>
@@ -202,7 +200,7 @@ bool
 is_valid(Request const& req, MetadataIt it, bool new_chunk)
 {
     // validate length
-    if (req.length() > 64 * 1024 * 1024)
+    if (req.length() > constants::chunk_capacity)
     {
         logger::error("invalid length requested"sv);
         return false;
@@ -210,8 +208,9 @@ is_valid(Request const& req, MetadataIt it, bool new_chunk)
     // existing chunk
     if (!new_chunk)
     {
-        auto m_it = latest_version(it);
-        if ((64 * 1024 * 1024 - m_it->size()) < req.length())
+        auto [ver, size] = current_ver_and_size(it);
+        (void)ver; // unused
+        if ((constants::chunk_capacity - size) < req.length())
         {
             logger::error("requested length exceeds free space in chunk"sv);
             return false;
@@ -240,8 +239,7 @@ filename(chunkid const& id)
 }
 
 bool
-read(chunkid const& id, uint32_t version, uint32_t offset, uint32_t length,
-     std::string& buf)
+read(chunkid const& id, uint32_t offset, uint32_t length, std::string& buf)
 {
     logger::debug("looking for file: " + filename(id));
     auto file = std::ifstream{filename(id)};
@@ -302,9 +300,9 @@ request_handler::handle(msgs::chunk::read_request const& req,
     }
 
     // validate offset and length
-    auto m_it = latest_version(it);
-    if (req.offset() >= m_it->size() ||
-        (m_it->size() - req.offset()) < req.length())
+    auto [ver, size] = current_ver_and_size(it);
+    (void)ver; // unused
+    if (req.offset() >= size || (size - req.offset()) < req.length())
     {
         logger::debug("request to read invalid section of chunk"sv);
         return respond(false, {});
@@ -312,8 +310,7 @@ request_handler::handle(msgs::chunk::read_request const& req,
 
     // approved
     auto data    = std::string(req.length(), '\0');
-    auto success = read(req.chunk_id(), m_it->version(), req.offset(),
-                        req.length(), data);
+    auto success = read(req.chunk_id(), req.offset(), req.length(), data);
 
     // return true IFF we were able to read data AND send it to the client
     return respond(success, success ? std::move(data) : ""s) && success;
@@ -362,8 +359,7 @@ request_handler::handle(Request const& req, Ack ack, msgs::channel const& ch)
         {
             return make_pair(0, 0);
         }
-        auto m_it = latest_version(it);
-        return make_pair(m_it->version(), m_it->size());
+        return current_ver_and_size(it);
     }();
 
     auto buf = std::string{};
@@ -392,22 +388,23 @@ request_handler::handle(Request const& req, Ack ack, msgs::channel const& ch)
 	}
     // clang-format on
     // the append operation is now guaranteed to persist
+    // update data structures in memory
+    if (new_chunk)
+    {
+        chunk_metadata_[req.chunk_id()];
+    }
+    auto cur = chunk_metadata_[req.chunk_id()].mutable_current();
+    cur->set_version(cur->version() + 1);
+    cur->set_size(cur->size() + req.length());
+
+    // tell the client that the operation succeeded
     if (!ack(true, ch))
     {
         logger::error("unable to send ack to client"sv);
+        // TODO: revisit this, and see if we should return at this
+        //       point or forward the operation anyway
         return false;
     }
-
-    // update data structures in memory
-    auto entry = [this, new_chunk, it, &req]() {
-        if (new_chunk)
-        {
-            return chunk_metadata_[req.chunk_id()].add_versions();
-        }
-        return &*latest_version(it);
-    }();
-    entry->set_version(entry->version() + 1);
-    entry->set_size(entry->size() + req.length());
 
     // append has succeeded; forward data to other chunk servers
     io::forward({.id              = req.chunk_id(),
