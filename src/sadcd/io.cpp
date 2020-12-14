@@ -3,6 +3,8 @@
 #include <sadfs/logger.hpp>
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/chunk/deserializer.hpp>
+#include <sadfs/msgs/chunk/messages.hpp>
+#include <sadfs/msgs/chunk/serializer.hpp>
 #include <sadfs/msgs/master/messages.hpp>
 #include <sadfs/msgs/master/serializer.hpp>
 #include <sadfs/sadcd/io.hpp>
@@ -101,6 +103,7 @@ notify_master(write_spec const spec, comm::service const& master,
 
     auto ch           = msgs::channel{std::move(sock)};
     auto ack          = msgs::chunk::acknowledgement{};
+    auto serializer   = msgs::master::serializer{{sid}};
     auto deserializer = msgs::chunk::deserializer{};
 
     auto flush = [](auto const& ch) {
@@ -111,7 +114,7 @@ notify_master(write_spec const spec, comm::service const& master,
     auto cwn = msgs::master::chunk_write_notification{
         spec.id, spec.ver + 1, spec.filename, spec.size + spec.length};
 
-    // TODO: confirm from master that the write went through
+    // confirm from master that the write went through
     return (serializer.serialize(cwn, ch) && flush(ch) &&
             deserializer.deserialize(ack, ch).first && ack.ok());
 }
