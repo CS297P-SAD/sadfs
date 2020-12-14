@@ -125,7 +125,10 @@ test_append(std::string id, uint32_t length, std::string data, bool expected)
     total++;
     auto cid = uuid::from_string(id);
     auto req =
-        msgs::chunk::append_request{cid, length, {}, "irrelevant_name.dat"};
+        msgs::chunk::append_request{cid,
+                                    length,
+                                    {{"127.0.0.1", 6669}, {"127.0.0.1", 6670}},
+                                    "irrelevant_name.dat"};
     auto sock = service.connect();
     if (!sock.valid())
     {

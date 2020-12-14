@@ -5,6 +5,8 @@
 #include <sadfs/logger.hpp>
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/chunk/message_processor.hpp>
+#include <sadfs/msgs/chunk/messages.hpp>
+#include <sadfs/msgs/chunk/serializer.hpp>
 #include <sadfs/msgs/client/messages.hpp>
 #include <sadfs/msgs/client/serializer.hpp>
 #include <sadfs/msgs/master/serializer.hpp>
@@ -181,6 +183,11 @@ sadcd::join_network()
 namespace
 {
 
+template <typename Serializer, typename Acknowledgement>
+auto ack = [](auto ok, auto const& ch) {
+    return Serializer{}.serialize(Acknowledgement{ok}, ch) && io::flush(ch);
+};
+
 // get version info of the newest version of a chunk
 auto latest_version = [](auto it) {
     return std::max_element(it->second.mutable_versions()->begin(),
@@ -190,8 +197,10 @@ auto latest_version = [](auto it) {
                             });
 };
 
-auto is_valid = [](msgs::chunk::append_request const& req, auto it,
-                   bool new_chunk) {
+template <typename Request, typename MetadataIt>
+bool
+is_valid(Request const& req, MetadataIt it, bool new_chunk)
+{
     // validate length
     if (req.length() > 64 * 1024 * 1024)
     {
@@ -210,6 +219,18 @@ auto is_valid = [](msgs::chunk::append_request const& req, auto it,
     }
     return true;
 };
+
+template <typename Request>
+std::vector<comm::service>
+forwarding_list(Request const& req)
+{
+    auto list = std::vector<comm::service>{};
+    for (auto i = 0; i < req.replicas_size(); i++)
+    {
+        list.emplace_back(req.replicas(i));
+    }
+    return list;
+}
 
 // TODO: move read into io namespace, and delete this implementation
 std::string
@@ -302,16 +323,34 @@ bool
 request_handler::handle(msgs::chunk::append_request const& req,
                         msgs::message_header const&, msgs::channel const& ch)
 {
+    using msgs::client::acknowledgement;
+    using msgs::client::serializer;
+    return handle(req, ack<serializer, acknowledgement>, ch);
+}
+
+bool
+request_handler::handle(msgs::chunk::append_forward_request const& req,
+                        msgs::message_header const&, msgs::channel const& ch)
+{
+    using msgs::chunk::acknowledgement;
+    using msgs::chunk::serializer;
+    return handle(req, ack<serializer, acknowledgement>, ch);
+}
+
+template <typename Request, typename Ack>
+bool
+request_handler::handle(Request const& req, Ack ack, msgs::channel const& ch)
+{
     // validate req
     auto it        = chunk_metadata_.find(req.chunk_id());
     auto new_chunk = it == chunk_metadata_.end();
     if (!is_valid(req, it, new_chunk))
     {
-        return ack_client(false, ch);
+        return ack(false, ch);
     }
 
     // request validated, ok to receive data
-    if (!ack_client(true, ch))
+    if (!ack(true, ch))
     {
         logger::error("unable to send ack to client"sv);
         return false;
@@ -349,11 +388,11 @@ request_handler::handle(msgs::chunk::append_request const& req,
 			serverid_))
 	{
 		logger::error("append operation has failed"sv);
-		return ack_client(false, ch) && false; // we could not handle the request
+		return ack(false, ch) && false; // we could not handle the request
 	}
     // clang-format on
     // the append operation is now guaranteed to persist
-    if (!ack_client(true, ch))
+    if (!ack(true, ch))
     {
         logger::error("unable to send ack to client"sv);
         return false;
@@ -370,20 +409,14 @@ request_handler::handle(msgs::chunk::append_request const& req,
     entry->set_version(entry->version() + 1);
     entry->set_size(entry->size() + req.length());
 
-    // TODO: forward appends to replications servers
+    // append has succeeded; forward data to other chunk servers
+    io::forward({.id              = req.chunk_id(),
+                 .length          = req.length(),
+                 .filename        = req.filename(),
+                 .data            = std::move(buf),
+                 .forwarding_list = forwarding_list(req)},
+                serverid_);
     return true;
-}
-
-bool
-request_handler::ack_client(bool ok, msgs::channel const& ch)
-{
-    auto flush = [&ch] {
-        ch.flush();
-        return true;
-    };
-    return msgs::client::serializer{{serverid_}}.serialize(
-               msgs::client::acknowledgement{ok}, ch) &&
-           flush();
 }
 
 } // namespace sadfs

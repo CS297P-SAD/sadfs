@@ -56,7 +56,8 @@ class request_handler
     comm::service const&                  master_;
     serverid const                        serverid_;
 
-    bool ack_client(bool, msgs::channel const&);
+    template <typename Request, typename Ack>
+    bool handle(Request const&, Ack, msgs::channel const&);
 
 public:
     request_handler(comm::service const& master, serverid id);
@@ -65,6 +66,8 @@ public:
                 msgs::channel const&);
     bool handle(msgs::chunk::append_request const&,
                 msgs::message_header const&, msgs::channel const&);
+    bool handle(msgs::chunk::append_forward_request const& req,
+                msgs::message_header const&, msgs::channel const& ch);
 };
 
 } // namespace sadfs
