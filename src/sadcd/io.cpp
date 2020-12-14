@@ -8,8 +8,15 @@
 #include <sadfs/sadcd/io.hpp>
 
 // standard includes
+#ifndef __APPLE__
 #include <filesystem> // std::create_directory
-#include <fstream>    // std::ifstream, std::ofstream
+#else
+#include <cerrno>
+#include <cstring>
+#include <sys/stat.h>
+#endif // __APPLE__
+
+#include <fstream> // std::ifstream, std::ofstream
 #include <optional>
 #include <string_view>
 #include <system_error> // std::system_error
@@ -29,12 +36,21 @@ mkdir(std::string_view path)
 {
     // get directory path
     path.remove_suffix(current_filename.size());
+#ifndef __APPLE__
     auto ec = std::error_code{};
     if (std::filesystem::create_directory(path, ec))
     {
         return true;
     }
     logger::error(ec.message());
+#else
+    if (::mkdir(std::string{path}.c_str(),
+                S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0)
+    {
+        return true;
+    }
+    logger::error(std::strerror(errno));
+#endif // __APPLE__
     return false;
 }
 
