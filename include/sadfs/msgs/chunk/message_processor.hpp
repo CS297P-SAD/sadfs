@@ -74,6 +74,20 @@ processor::process_next(msgs::channel const& ch, Handler& h)
             res = false;
         }
         break;
+    case container_type::kAppendForwardReq:
+        if constexpr (is_detected_v<can_handle, Handler,
+                                    append_forward_request>)
+        {
+            auto msg = append_forward_request{};
+            res      = res && extract_header() && extract(msg, container_) &&
+                  h.handle(msg, header, ch);
+        }
+        else
+        {
+            // cannot handle this message
+            res = false;
+        }
+        break;
     case container_type::MsgCase::MSG_NOT_SET:
         // nothing to handle
         res = false;

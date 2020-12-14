@@ -65,7 +65,7 @@ filename(chunkid const& id, std::optional<uint32_t> version)
 }
 
 bool
-write_to_disk(write_spec const spec)
+write_to_disk(write_spec const& spec)
 {
     auto const path = filename(spec.id, {});
     if (spec.ver == 0 && !mkdir(path))
@@ -92,7 +92,7 @@ write_to_disk(write_spec const spec)
 }
 
 bool
-notify_master(write_spec const spec, comm::service const& master,
+notify_master(write_spec const& spec, comm::service const& master,
               serverid const& sid)
 {
     auto sock = master.connect();
@@ -119,6 +119,25 @@ notify_master(write_spec const spec, comm::service const& master,
             deserializer.deserialize(ack, ch).first && ack.ok());
 }
 
+bool
+forward(forwarding_spec const& spec, msgs::channel const& ch, size_t start)
+{
+    auto serializer   = msgs::chunk::serializer{};
+    auto deserializer = msgs::chunk::deserializer{};
+    auto ack          = msgs::chunk::acknowledgement{};
+    auto req          = msgs::chunk::append_forward_request{
+        spec.id,
+        spec.length,
+        {spec.forwarding_list.begin() + start, spec.forwarding_list.end()},
+        spec.filename};
+    auto stream = msgs::chunk::stream{std::string{spec.data}};
+
+    return serializer.serialize(req, ch) && flush(ch) &&
+           deserializer.deserialize(ack, ch).first && ack.ok() &&
+           serializer.serialize(stream, ch) && flush(ch) &&
+           deserializer.deserialize(ack, ch).first && ack.ok();
+}
+
 } // unnamed namespace
 
 bool
@@ -133,7 +152,43 @@ append(write_spec const spec, comm::service const& master, serverid const& sid)
     {
         return false;
     }
+
     return true;
+}
+
+void
+forward(forwarding_spec const& spec, serverid const& sid)
+{
+    // stream data to the first server in the forwarding list
+    auto [sock, start] = [&spec]() {
+        for (auto iter = spec.forwarding_list.begin();
+             iter != spec.forwarding_list.end(); iter++)
+        {
+            auto sock = iter->connect();
+            if (sock.valid())
+            {
+                size_t connected = iter - spec.forwarding_list.begin();
+                // return socket and index of the next server in the list
+                // so that the server we connected to can then forward
+                // the write/append request
+                return std::make_pair(std::move(sock), connected + 1);
+            }
+            logger::error("data could not be forwarded to " +
+                          to_string(iter->ip()) + ":" +
+                          std::to_string(to_int(iter->port())));
+        }
+        return std::make_pair(comm::socket{}, spec.forwarding_list.size());
+    }();
+    if (!sock.valid())
+    {
+        return;
+    }
+
+    if (!forward(spec, std::move(sock), start))
+    {
+        logger::error("data could not be forwarded"sv);
+    }
+    return;
 }
 
 } // namespace io

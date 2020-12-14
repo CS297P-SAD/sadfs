@@ -17,13 +17,21 @@ message append_request {
 	string                       filename = 5;
 }
 
+message append_forward_request {
+	bytes                        chunk_id = 1;
+	uint32                       length   = 3;
+	repeated sadfs.proto.service replicas = 4;
+	string                       filename = 5;
+}
+
 // container for control messages
 message message_container {
 	sadfs.proto.header  header = 1;
 	oneof               msg {
-		sadfs.proto.acknowledgement ack        = 6;
-		read_request                read_req   = 7;
-		append_request              append_req = 8;
-		sadfs.proto.stream          stream     = 9;
+		sadfs.proto.acknowledgement ack                = 6;
+		read_request                read_req           = 7;
+		append_request              append_req         = 8;
+		append_forward_request      append_forward_req = 9;
+		sadfs.proto.stream          stream             = 10;
 	}
 }
