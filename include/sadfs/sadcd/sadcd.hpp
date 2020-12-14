@@ -28,10 +28,6 @@ public:
     // starts server by opening a listener
     void start();
 
-    // handles a read_request
-    bool handle(msgs::chunk::read_request const&, msgs::message_header const&,
-    		msgs::channel const&);
-
 private:
     // runs the chunk service
     void run();
@@ -48,8 +44,8 @@ private:
     bool notify_master_of_write(chunkid, version, std::string const&,
                                 uint32_t);
 
-    comm::service const service_;
     comm::service const master_;
+    comm::service const service_;
     serverid const      serverid_;
 };
 
@@ -57,13 +53,18 @@ class request_handler
 {
     using metadata = proto::internal::chunk_metadata;
     std::unordered_map<chunkid, metadata> chunk_metadata_;
+    comm::service const&                  master_;
     serverid const                        serverid_;
 
+    bool ack_client(bool, msgs::channel const&);
+
 public:
-    request_handler(serverid id);
+    request_handler(comm::service const& master, serverid id);
 
     bool handle(msgs::chunk::read_request const&, msgs::message_header const&,
                 msgs::channel const&);
+    bool handle(msgs::chunk::append_request const&,
+                msgs::message_header const&, msgs::channel const&);
 };
 
 } // namespace sadfs

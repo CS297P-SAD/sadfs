@@ -12,9 +12,14 @@ message header {
 	bytes host_id = 1;
 }
 
-message server {
+message service {
 	string ip = 1;
 	int32 port = 2;
+}
+
+// data stream
+message stream {
+	bytes data = 1;
 }
 
 // generic acknowledgement message

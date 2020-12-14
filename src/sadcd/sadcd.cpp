@@ -11,6 +11,7 @@
 #include <sadfs/msgs/master/serializer.hpp>
 #include <sadfs/msgs/messages.hpp>
 #include <sadfs/sadcd/heart.hpp>
+#include <sadfs/sadcd/io.hpp>
 #include <sadfs/sadcd/sadcd.hpp>
 
 // standard includes
@@ -111,7 +112,7 @@ void
 sadcd::start_main(std::promise<void>       death,
                   std::shared_future<void> kill_switch)
 {
-    auto handler = request_handler{serverid_};
+    auto handler = request_handler{master_, serverid_};
     try
     {
         auto listener = comm::listener{service_};
@@ -175,34 +176,6 @@ sadcd::join_network()
     return true;
 }
 
-bool
-sadcd::notify_master_of_write(chunkid chunk, version version_num,
-                              std::string const& filename,
-                              uint32_t           new_chunk_size)
-{
-    auto sock = master_.connect();
-    if (!sock.valid())
-    {
-        return false;
-    }
-
-    auto ch           = msgs::channel{std::move(sock)};
-    auto ack          = msgs::chunk::acknowledgement{};
-    auto serializer   = msgs::master::serializer{{.host_id = serverid_}};
-    auto deserializer = msgs::chunk::deserializer{};
-
-    auto flush = [](auto const& ch) {
-        ch.flush();
-        return true;
-    };
-
-    auto cwn = msgs::master::chunk_write_notification{
-        chunk, version_num, filename, new_chunk_size};
-
-    return (serializer.serialize(cwn, ch) && flush(ch) &&
-            deserializer.deserialize(ack, ch).first && ack.ok());
-}
-
 // ==================================================================
 //                           request_handler
 // ==================================================================
@@ -211,26 +184,47 @@ namespace
 
 // get version info of the newest version of a chunk
 auto latest_version = [](auto it) {
-    return std::max_element(it->second.versions().begin(),
-                            it->second.versions().end(),
+    return std::max_element(it->second.mutable_versions()->begin(),
+                            it->second.mutable_versions()->end(),
                             [](auto lmeta, auto rmeta) {
                                 return lmeta.version() < rmeta.version();
                             });
 };
 
+auto is_valid = [](msgs::chunk::append_request const& req, auto it,
+                   bool new_chunk) {
+    // validate length
+    if (req.length() > 64 * 1024 * 1024)
+    {
+        logger::error("invalid length requested"sv);
+        return false;
+    }
+    // existing chunk
+    if (!new_chunk)
+    {
+        auto m_it = latest_version(it);
+        if ((64 * 1024 * 1024 - m_it->size()) < req.length())
+        {
+            logger::error("requested length exceeds free space in chunk"sv);
+            return false;
+        }
+    }
+    return true;
+};
+
+// TODO: move read into io namespace, and delete this implementation
 std::string
-filename(chunkid const& id, uint32_t version)
+filename(chunkid const& id)
 {
-    // TODO: should be /var/lib/sadcd/chunk/ + ...
-    return "chunk/" + to_string(id) + "/" + std::to_string(version);
+    return "chunk/" + to_string(id) + "/current";
 }
 
 bool
 read(chunkid const& id, uint32_t version, uint32_t offset, uint32_t length,
      std::string& buf)
 {
-    logger::debug("looking for file: " + filename(id, version));
-    auto file = std::ifstream{filename(id, version), std::ios_base::in};
+    logger::debug("looking for file: " + filename(id));
+    auto file = std::ifstream{filename(id)};
     if (!file.is_open())
     {
         return false;
@@ -247,20 +241,23 @@ read(chunkid const& id, uint32_t version, uint32_t offset, uint32_t length,
     return false;
 }
 
-} // unnamed namespace
-request_handler::request_handler(serverid id) : serverid_{std::move(id)}
+bool
+receive_stream(msgs::channel const& ch, std::string& data)
 {
-    auto insert = [&](auto id, auto version, auto size) {
-        auto entry = chunk_metadata_[chunkid::from_string(id)].add_versions();
-        entry->set_version(version);
-        entry->set_size(size);
-    };
-    insert("6cfe7de1-b508-4e26-864e-7887fbc700ef"s, 2U, 6 * 1024U);
-    insert("8cf03844-5a57-47e6-ab60-81f2de556aa4"s, 1U, 8 * 1024U);
-    insert("bf5b432c-3889-4484-aa3c-77a08d30901b"s, 5U, 16 * 1024U);
-    insert("229217b9-6bf0-47f0-9752-64541a99a67a"s, 1U, 4 * 1024U);
-    insert("d7e30bce-1c62-4b9a-b88b-c9d2632142a7"s, 6U, 60 * 1024U);
-    insert("d7e30bce-1c62-4b9a-b88b-c9d2632142a7"s, 7U, 64 * 1024U);
+    auto stream = msgs::chunk::stream{};
+    if (!msgs::chunk::deserializer{}.deserialize(stream, ch).first)
+    {
+        return false;
+    }
+    data = stream.extract_data();
+    return true;
+}
+
+} // unnamed namespace
+
+request_handler::request_handler(comm::service const& master, serverid id)
+    : master_{master}, serverid_{std::move(id)}
+{
 }
 
 bool
@@ -300,6 +297,94 @@ request_handler::handle(msgs::chunk::read_request const& req,
 
     // return true IFF we were able to read data AND send it to the client
     return respond(success, success ? std::move(data) : ""s) && success;
+}
+
+bool
+request_handler::handle(msgs::chunk::append_request const& req,
+                        msgs::message_header const&, msgs::channel const& ch)
+{
+    // validate req
+    auto it        = chunk_metadata_.find(req.chunk_id());
+    auto new_chunk = it == chunk_metadata_.end();
+    if (!is_valid(req, it, new_chunk))
+    {
+        return ack_client(false, ch);
+    }
+
+    // request validated, ok to receive data
+    if (!ack_client(true, ch))
+    {
+        logger::error("unable to send ack to client"sv);
+        return false;
+    }
+
+    auto [ver, size] = [it, new_chunk]() {
+        auto const make_pair = std::make_pair<uint32_t, uint32_t>;
+        if (new_chunk)
+        {
+            return make_pair(0, 0);
+        }
+        auto m_it = latest_version(it);
+        return make_pair(m_it->version(), m_it->size());
+    }();
+
+    auto buf = std::string{};
+    if (!receive_stream(ch, buf))
+    {
+        return false;
+    }
+
+    // clang-format off
+	// append data to chunk
+    if (!io::append(
+            {
+                .id       = req.chunk_id(),
+                .ver      = ver,
+                .size     = size, // current size
+                .offset   = size, // append
+                .length   = req.length(),
+                .filename = req.filename(),
+                .data     = buf
+            }, // write_spec
+            master_,
+			serverid_))
+	{
+		logger::error("append operation has failed"sv);
+		return ack_client(false, ch) && false; // we could not handle the request
+	}
+    // clang-format on
+    // the append operation is now guaranteed to persist
+    if (!ack_client(true, ch))
+    {
+        logger::error("unable to send ack to client"sv);
+        return false;
+    }
+
+    // update data structures in memory
+    auto entry = [this, new_chunk, it, &req]() {
+        if (new_chunk)
+        {
+            return chunk_metadata_[req.chunk_id()].add_versions();
+        }
+        return &*latest_version(it);
+    }();
+    entry->set_version(entry->version() + 1);
+    entry->set_size(entry->size() + req.length());
+
+    // TODO: forward appends to replications servers
+    return true;
+}
+
+bool
+request_handler::ack_client(bool ok, msgs::channel const& ch)
+{
+    auto flush = [&ch] {
+        ch.flush();
+        return true;
+    };
+    return msgs::client::serializer{{serverid_}}.serialize(
+               msgs::client::acknowledgement{ok}, ch) &&
+           flush();
 }
 
 } // namespace sadfs
