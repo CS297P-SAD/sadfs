@@ -194,7 +194,7 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
     auto        servers     = std::vector<comm::service>{};
     auto const& filename    = clr.filename();
     auto        version_num = version{0};
-    auto	file_size   = 0u;
+    auto        file_size   = 0u;
 
     // lambda to check if a chunk number is valid for filename
     auto validate = [](auto it, auto chunk_number) {
@@ -236,7 +236,7 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
             auto& chunk = chunk_metadata_[id];
             servers     = valid_servers(chunk);
             version_num = chunk.latest_version;
-	    file_size   = it->second.size;
+            file_size   = it->second.size;
             if (servers.size() <= 0)
             {
                 std::cerr << "Error: list of server locations empty\n";
@@ -259,7 +259,7 @@ sadmd::handle(msgs::master::chunk_location_request const& clr,
             auto& chunk = chunk_metadata_[id];
             servers     = valid_servers(chunk);
             version_num = chunk.latest_version;
-	    file_size   = it->second.size;
+            file_size   = it->second.size;
             if (servers.size() <= 0)
             {
                 std::cerr << "Error: list of server locations empty\n";
@@ -345,7 +345,7 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
         // check that this is the last chunk in the file
         if (chunk == file_info_.chunkids[num_chunks - 1])
         {
-            file_info_.size = ((num_chunks - 1) * constants::bytes_per_chunk) +
+            file_info_.size = ((num_chunks - 1) * constants::chunk_capacity) +
                               cwn.new_size();
             logger::debug("Updated size of " + cwn.filename() + " to " +
                           std::to_string(file_info_.size));
