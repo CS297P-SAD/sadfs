@@ -138,6 +138,25 @@ forward(forwarding_spec const& spec, msgs::channel const& ch, size_t start)
            deserializer.deserialize(ack, ch).first && ack.ok();
 }
 
+bool
+forward(forwarding_spec const& spec, msgs::channel const& ch, size_t start)
+{
+    auto serializer   = msgs::chunk::serializer{};
+    auto deserializer = msgs::chunk::deserializer{};
+    auto ack          = msgs::chunk::acknowledgement{};
+    auto req          = msgs::chunk::append_forward_request{
+        spec.id,
+        spec.length,
+        {spec.forwarding_list.begin() + start, spec.forwarding_list.end()},
+        spec.filename};
+    auto stream = msgs::chunk::stream{std::string{spec.data}};
+
+    return serializer.serialize(req, ch) && flush(ch) &&
+           deserializer.deserialize(ack, ch).first && ack.ok() &&
+           serializer.serialize(stream, ch) && flush(ch) &&
+           deserializer.deserialize(ack, ch).first && ack.ok();
+}
+
 } // unnamed namespace
 
 bool
