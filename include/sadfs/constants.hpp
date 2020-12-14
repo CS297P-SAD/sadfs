@@ -6,9 +6,9 @@ namespace sadfs
 namespace constants
 {
 
-constexpr auto bytes_per_chunk = 64 * 1024 * 1024; // 64MB
+constexpr auto chunk_capacity = 64 * 1024 * 1024U; // 64MB
 
-} // constants namespace
-} // sadfs namespace
+} // namespace constants
+} // namespace sadfs
 
 #endif // SADFS_CONSTANTS_HPP
