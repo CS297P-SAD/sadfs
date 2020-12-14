@@ -33,6 +33,21 @@ namespace database
 constexpr auto filename_col    = 0;
 constexpr auto chunkid_str_col = 1;
 
+sqlite3*
+open_db()
+{
+    sqlite3* db;
+
+    // open the sadmd database
+    if (sqlite3_open("sadmd.db", &db) != 0)
+    {
+        std::cerr << "Error: Couldn't open database: ";
+        std::cerr << sqlite3_errmsg(db) << '\n';
+        std::exit(1);
+    }
+    return db;
+}
+
 } // namespace database
 
 namespace time
@@ -58,19 +73,28 @@ now() noexcept
 }
 } // namespace time
 
-sqlite3*
-open_db()
+bool
+ack_client(bool ok, msgs::channel const& ch)
 {
-    sqlite3* db;
+    auto flush = [&ch] {
+        ch.flush();
+        return true;
+    };
+    return msgs::client::serializer{}.serialize(
+               msgs::client::acknowledgement{ok}, ch) &&
+           flush();
+}
 
-    // open the sadmd database
-    if (sqlite3_open("sadmd.db", &db) != 0)
-    {
-        std::cerr << "Error: Couldn't open database: ";
-        std::cerr << sqlite3_errmsg(db) << '\n';
-        std::exit(1);
-    }
-    return db;
+bool
+ack_chunk(bool ok, msgs::channel const& ch)
+{
+    auto flush = [&ch] {
+        ch.flush();
+        return true;
+    };
+    return msgs::chunk::serializer{}.serialize(
+               msgs::chunk::acknowledgement{ok}, ch) &&
+           flush();
 }
 } // unnamed namespace
 
@@ -121,7 +145,7 @@ sadmd::valid_servers(chunk_info& info, bool latest_only = true)
 }
 
 sadmd::sadmd(char const* ip, int port)
-    : service_(ip, port), files_db_(open_db())
+    : service_(ip, port), files_db_(database::open_db())
 {
     // make sure the files table exists
     db_command(
@@ -182,11 +206,8 @@ bool
 sadmd::handle(msgs::master::create_file_request const& cfr,
               msgs::message_header const&, msgs::channel const& ch)
 {
-    auto ok     = create_file(cfr.filename());
-    auto ack    = msgs::client::acknowledgement{ok};
-    auto result = msgs::client::serializer{}.serialize(ack, ch);
-    ch.flush();
-    return result;
+    auto ok = create_file(cfr.filename());
+    return ack_client(ok, ch);
 }
 
 bool
@@ -298,19 +319,13 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
     {
         logger::error("Write notification from server not on the network or "
                       "not sending hearbeats"sv);
-        auto ack    = msgs::chunk::acknowledgement{false};
-        auto result = msgs::chunk::serializer{}.serialize(ack, ch);
-        ch.flush();
-        return result;
+        return ack_chunk(false, ch);
     }
 
     if (!files_.count(cwn.filename()))
     {
         logger::error("Write notification for nonexistant file"sv);
-        auto ack    = msgs::chunk::acknowledgement{false};
-        auto result = msgs::chunk::serializer{}.serialize(ack, ch);
-        ch.flush();
-        return result;
+        return ack_chunk(false, ch);
     }
 
     auto chunk = cwn.chunk_id();
@@ -361,10 +376,7 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
         }
     }
 
-    auto ack    = msgs::chunk::acknowledgement{true};
-    auto result = msgs::chunk::serializer{}.serialize(ack, ch);
-    ch.flush();
-    return result;
+    return ack_chunk(true, ch);
 }
 
 bool
@@ -378,10 +390,7 @@ sadmd::handle(msgs::master::release_lock const& rl,
         it->second.locked_until = time::now();
     }
 
-    auto ack    = msgs::client::acknowledgement{true};
-    auto result = msgs::client::serializer{}.serialize(ack, ch);
-    ch.flush();
-    return result;
+    return ack_client(true, ch);
 }
 
 bool
@@ -400,10 +409,8 @@ sadmd::handle(msgs::master::chunk_server_heartbeat const& csh,
         ok = true;
         register_server_heartbeat(header.host_id);
     }
-    auto ack    = msgs::chunk::acknowledgement{ok};
-    auto result = msgs::chunk::serializer{}.serialize(ack, ch);
-    ch.flush();
-    return result;
+
+    return ack_chunk(ok, ch);
 }
 
 bool
