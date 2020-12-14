@@ -369,7 +369,7 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
         // check that this is the last chunk in the file
         if (chunk == file_info_.chunkids[num_chunks - 1])
         {
-            file_info_.size = ((num_chunks - 1) * constants::bytes_per_chunk) +
+            file_info_.size = ((num_chunks - 1) * constants::chunk_capacity) +
                               cwn.new_size();
             logger::debug("Updated size of " + cwn.filename() + " to " +
                           std::to_string(file_info_.size));
