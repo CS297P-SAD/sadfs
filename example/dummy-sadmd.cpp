@@ -95,6 +95,14 @@ struct sadmd
 	logger::debug("received join req. " + to_string(header.host_id));
     	return true;
     }
+
+    using cfr = msgs::master::create_file_request;
+    bool handle(cfr const& req, msgs::message_header const& header,
+                msgs::channel const& ch)
+    {
+    	logger::debug("received create req. " + std::string(req.filename()));
+	return true;
+    }
 };
 
 int
