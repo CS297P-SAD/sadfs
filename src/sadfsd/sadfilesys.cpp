@@ -39,6 +39,10 @@ sadfilesys::this_()
 void
 sadfilesys::load_operations()
 {
+    operations_.create = [](char const* path, mode_t mode,
+    			    fuse_file_info* fi) -> int {
+	return this_()->create(path, mode, fi);
+    };
     operations_.getattr = [](char const* path, struct stat* stbuf) -> int {
         return this_()->getattr(path, stbuf);
     };
@@ -54,6 +58,51 @@ sadfilesys::load_operations()
                              fuse_file_info* fi) -> int {
         return this_()->readdir(path, buf, filler, off, fi);
     };
+    operations_.write = [](char const* path, const char* buf, size_t size,
+                          off_t offset, fuse_file_info* fi) -> int {
+        return this_()->write(path, buf, size, offset, fi);
+    };
+}
+
+int
+sadfilesys::create(char const* path, mode_t mode, fuse_file_info* fi)
+{
+    logger::debug("create() called at " + std::string(path));
+    auto result{0};
+
+    if (!S_ISREG(mode))
+    {
+	logger::debug("create() only support regular files"sv);
+	result = -EPROTONOSUPPORT;	// Protocol not supported
+	return result;
+    }
+    
+    auto request	= msgs::master::create_file_request{std::string(path)};
+    auto serializer	= msgs::master::serializer{};
+    auto sock		= master_service_.connect();
+    if (!sock.valid())
+    {
+    	result = -ENETUNREACH;	/// Network is unreachable
+	logger::debug("create() failed with error " +
+		      std::string(strerror(-result)));
+	return result;
+    }
+    auto ch = msgs::channel{std::move(sock)};
+    auto flush = [](auto const& ch) {
+    	ch.flush();
+	return true;
+    };
+
+    if (!(serializer.serialize(request, ch) && flush(ch)))
+    {
+    	result = -EPROTONOSUPPORT; 	// Protocol not supported
+	logger::debug("create() failed with error " +
+		      std::string(strerror(-result)));
+	return result;
+    }
+    
+    logger::debug("regular file created"sv);
+    return result;
 }
 
 int
@@ -134,7 +183,7 @@ sadfilesys::readdir(char const* path, void* buf, fuse_fill_dir_t filler,
 int
 sadfilesys::open(char const* path, fuse_file_info* fi)
 {
-    // TODO
+    logger::debug("open() called on path " + std::string(path));
     return 0;
 }
 
@@ -269,4 +318,14 @@ sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
     return result;
 }
 
+int
+sadfilesys::write(char const* path, const char* buf, size_t size, off_t offset,
+                  fuse_file_info* fi)
+{
+    logger::debug("write() called at " + std::string(path) + " to write " +
+    	          std::to_string(size) + " bytes at offset " +
+		  std::to_string(offset) + "with value " + std::string(buf));
+    
+    return strlen(buf);
+}
 } // namespace sadfs
