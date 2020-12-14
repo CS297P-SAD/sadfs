@@ -49,7 +49,7 @@ mkdir(std::string_view path)
     {
         return true;
     }
-    logger::error(std::strerror(errno));
+    logger::error(std::string_view{std::strerror(errno)});
 #endif // __APPLE__
     return false;
 }
