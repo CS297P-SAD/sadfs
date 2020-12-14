@@ -65,10 +65,8 @@ public:
                 msgs::message_header const&, msgs::channel const&);
 
     // handles a chunk_server_hearbeat
-    /* TODO
     bool handle(msgs::master::chunk_server_heartbeat const&,
-                msgs::message_header const &, msgs::channel const &);
-    */
+                msgs::message_header const&, msgs::channel const&);
 
     // handles a join_network_request and responds to channel it came in on
     bool handle(msgs::master::join_network_request const&,

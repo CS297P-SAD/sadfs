@@ -3,13 +3,22 @@
 #include <sadfs/logger.hpp>
 #include <sadfs/msgs/channel.hpp>
 #include <sadfs/msgs/chunk/deserializer.hpp>
+#include <sadfs/msgs/chunk/messages.hpp>
+#include <sadfs/msgs/chunk/serializer.hpp>
 #include <sadfs/msgs/master/messages.hpp>
 #include <sadfs/msgs/master/serializer.hpp>
 #include <sadfs/sadcd/io.hpp>
 
 // standard includes
+#ifndef __APPLE__
 #include <filesystem> // std::create_directory
-#include <fstream>    // std::ifstream, std::ofstream
+#else
+#include <cerrno>
+#include <cstring>
+#include <sys/stat.h>
+#endif // __APPLE__
+
+#include <fstream> // std::ifstream, std::ofstream
 #include <optional>
 #include <string_view>
 #include <system_error> // std::system_error
@@ -29,12 +38,21 @@ mkdir(std::string_view path)
 {
     // get directory path
     path.remove_suffix(current_filename.size());
+#ifndef __APPLE__
     auto ec = std::error_code{};
     if (std::filesystem::create_directory(path, ec))
     {
         return true;
     }
     logger::error(ec.message());
+#else
+    if (::mkdir(std::string{path}.c_str(),
+                S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0)
+    {
+        return true;
+    }
+    logger::error(std::string_view{std::strerror(errno)});
+#endif // __APPLE__
     return false;
 }
 
@@ -83,13 +101,22 @@ notify_master(write_spec const spec, comm::service const& master,
         return false;
     }
 
-    auto ch = msgs::channel{std::move(sock)};
+    auto ch           = msgs::channel{std::move(sock)};
+    auto ack          = msgs::chunk::acknowledgement{};
+    auto serializer   = msgs::master::serializer{{sid}};
+    auto deserializer = msgs::chunk::deserializer{};
+
+    auto flush = [](auto const& ch) {
+        ch.flush();
+        return true;
+    };
 
     auto cwn = msgs::master::chunk_write_notification{
         spec.id, spec.ver + 1, spec.filename, spec.size + spec.length};
 
-    // TODO: confirm from master that the write went through
-    return msgs::master::serializer{{sid}}.serialize(cwn, ch);
+    // confirm from master that the write went through
+    return (serializer.serialize(cwn, ch) && flush(ch) &&
+            deserializer.deserialize(ack, ch).first && ack.ok());
 }
 
 } // unnamed namespace
