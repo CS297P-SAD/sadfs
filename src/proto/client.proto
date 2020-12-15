@@ -25,6 +25,11 @@ message read_response {
 	bytes data = 2;
 }
 
+// response for a read dir request
+message read_dir_response {
+	repeated string filenames = 1;
+}
+
 // container for all control messages sent to clients
 message message_container {
 	sadfs.proto.header  header = 1;
@@ -33,5 +38,6 @@ message message_container {
 		chunk_location_response     chunk_location_res = 7;
 		file_metadata_response      file_metadata_res  = 8;
 		read_response               read_res           = 9;
+		read_dir_response	    read_dir_res       = 10;
 	}
 }

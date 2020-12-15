@@ -171,6 +171,7 @@ sadfilesys::getattr(char const* path, struct stat* stbuf)
     logger::debug("path identified as valid filename"sv);
 
     stbuf->st_mode = S_IFREG | 0666;
+    stbuf->st_nlink= 1;
     stbuf->st_size = response.size();
     return result;
 }
@@ -179,8 +180,54 @@ int
 sadfilesys::readdir(char const* path, void* buf, fuse_fill_dir_t filler,
                     off_t off, fuse_file_info* fi)
 {
-    // TODO
-    return -ENOENT;
+    logger::debug("readdir() called at " + std::string(path) + " at offset " +
+		  std::to_string(off));
+
+    auto result{0};
+    if (strcmp(path, "/") != 0)
+    {
+        result = -ENOENT; 	// No such file or directory
+        logger::debug("readdir() failed with error " +
+                      std::string(strerror(-result)));
+        return result;
+    }
+    
+    filler(buf, ".", NULL, 0);
+    filler(buf, "..", NULL, 0);
+
+    auto request	= msgs::master::read_dir_request{std::string(path)};
+    auto response	= msgs::client::read_dir_response{};
+    auto serializer	= msgs::master::serializer{};
+    auto deserializer	= msgs::client::deserializer{};
+    auto sock		= master_service_.connect();
+    if (!sock.valid())
+    {
+    	result = -ENETUNREACH;	/// Network is unreachable
+	logger::debug("create() failed with error " +
+		      std::string(strerror(-result)));
+	return result;
+    }
+    auto ch = msgs::channel{std::move(sock)};
+    auto flush = [](auto const& ch) {
+    	ch.flush();
+	return true;
+    };
+
+    if (!(serializer.serialize(request, ch) && flush(ch) &&
+    	deserializer.deserialize(response, ch).first))
+    {
+    	result = -EPROTONOSUPPORT; 	// Protocol not supported
+	logger::debug("create() failed with error " +
+		      std::string(strerror(-result)));
+	return result;
+    }
+    
+    for (auto i = 0; i < response.filenames_size(); ++i)
+    {
+    	filler(buf, response.filename(i).c_str() + 1, NULL, 0);
+    }
+
+    return result;
 }
 
 int

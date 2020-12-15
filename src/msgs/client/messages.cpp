@@ -24,6 +24,7 @@ auto const msg_type_lookup = msg_type_map{
     {MsgCase::kAck, msg_type::acknowledgement},
     {MsgCase::kChunkLocationRes, msg_type::chunk_location_response},
     {MsgCase::kFileMetadataRes, msg_type::file_metadata_response},
+    {MsgCase::kReadDirRes, msg_type::read_dir_response},
     {MsgCase::kReadRes, msg_type::read_response},
 };
 
@@ -111,6 +112,46 @@ extract(chunk_location_response& res, message_container const& container)
 
     // read chunk_location_response from message_container
     res.protobuf_ = container.chunk_location_res();
+    return true;
+}
+
+// ==================================================================
+//                     read_dir_response
+// ==================================================================
+read_dir_response::read_dir_response(std::vector<std::string> const& filenames)
+{
+    for (auto filename : filenames)
+    {
+    	protobuf_.add_filenames(filename);
+    }
+}
+
+// embeds a control message into a container that is
+// (typically) sent over the wire
+bool
+embed(read_dir_response const& res, message_container& container)
+{
+    // should this be in a try-catch block?
+    // container.mutable_read_dir_res() can throw if heap allocation
+    // fails
+    *container.mutable_read_dir_res() = res.protobuf_;
+    return true;
+}
+
+// extracts a control message from a container that is
+// (typically) received over the wire
+bool
+extract(read_dir_response& res, message_container const& container)
+{
+    if (msg_type_lookup.at(container.msg_case()) !=
+        read_dir_response::type)
+    {
+        // cannot extract a msg that doesn't exist
+        return false;
+    }
+
+    // read read_dir_response from message_container
+    res.protobuf_ = container.read_dir_res();
     return true;
 }
 

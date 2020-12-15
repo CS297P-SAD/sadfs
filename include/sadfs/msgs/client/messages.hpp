@@ -24,6 +24,7 @@ enum class msg_type
     chunk_location_response,
     file_metadata_response,
     read_response,
+    read_dir_response,
 };
 
 // instantiate client::acknowledgement
@@ -72,6 +73,25 @@ private:
     friend bool embed(file_metadata_response const&, message_container&);
     friend bool extract(file_metadata_response&, message_container const&);
 };
+
+class read_dir_response
+{
+public:
+    read_dir_response() = default;
+    read_dir_response(std::vector<std::string> const& filenames);
+
+    std::string	const& filename(int) const;
+    int filenames_size() const noexcept;
+
+    inline static msg_type type{msg_type::read_dir_response};
+
+private:
+    proto::client::read_dir_response protobuf_{};
+
+    friend bool embed(read_dir_response const&, message_container&);
+    friend bool extract(read_dir_response&, message_container const&);
+};
+
 
 class read_response
 {
@@ -156,6 +176,18 @@ inline std::string const&
 read_response::data() const
 {
     return protobuf_.data();
+}
+
+inline std::string const&
+read_dir_response::filename(int i) const
+{
+    return protobuf_.filenames(i);
+}
+
+inline int
+read_dir_response::filenames_size() const noexcept
+{
+    return protobuf_.filenames_size();
 }
 
 } // namespace client
