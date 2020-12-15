@@ -55,15 +55,14 @@ namespace time
 
 using namespace std::literals;
 constexpr auto server_ttl = 1min;
-constexpr auto file_ttl   = 1min;
+constexpr auto file_ttl   = 1s;
 
-time_point
-from_now(std::chrono::minutes delta) noexcept
+auto from_now = [](auto delta) noexcept
 {
     return (std::chrono::steady_clock::now() + delta)
         .time_since_epoch()
         .count();
-}
+};
 
 time_point
 now() noexcept

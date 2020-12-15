@@ -479,6 +479,24 @@ sadfilesys::write(char const* path, const char* buf, uint32_t size,
 	return result + ret;
      }
      
+     master_sock	= master_service_.connect();
+     auto release_lock	= msgs::master::release_lock{std::string(path)};
+     auto release_ack	= msgs::client::acknowledgement{};
+     if (!master_sock.valid())
+     {
+	logger::debug("write() release lock failed "sv);
+	return result;
+     }
+     master_ch = msgs::channel{std::move(master_sock)};
+     if (!(master_serializer.serialize(release_lock, master_ch) &&
+         flush(master_ch) &&
+	 client_deserializer.deserialize(release_ack, master_ch).first &&
+	 release_ack.ok()))
+     {
+	logger::debug("write() release lock failed "sv);
+	return result;
+     }
+     	
      logger::debug("write() finished"sv);
      return result;
 }
