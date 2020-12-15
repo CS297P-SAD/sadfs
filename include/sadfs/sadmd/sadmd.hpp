@@ -80,6 +80,10 @@ public:
     bool handle(msgs::master::file_metadata_request const&,
                 msgs::message_header const&, msgs::channel const&);
 
+    // handles a read_dir
+    bool handle(msgs::master::read_dir_request const&,
+                msgs::message_header const&, msgs::channel const&);
+
     // handles a release_lock
     bool handle(msgs::master::release_lock const&, msgs::message_header const&,
                 msgs::channel const&);

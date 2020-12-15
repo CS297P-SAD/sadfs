@@ -379,6 +379,28 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
 }
 
 bool
+sadmd::handle(msgs::master::read_dir_request const& rdr,
+	      msgs::message_header const&, msgs::channel const& ch)
+{
+    auto filenames = std::vector<std::string>{};
+    if (rdr.dirname() == "/")
+    {
+	    logger::debug("read_dir_request number of files " + 
+			  std::to_string(files_.size()));
+	    filenames.reserve(files_.size());
+	    for (auto it : files_)
+	    {
+		filenames.push_back(it.first);
+	    }
+    }
+
+    auto response = msgs::client::read_dir_response{filenames};
+    auto result = msgs::client::serializer{}.serialize(response, ch);
+    ch.flush();
+    return result;
+}
+
+bool
 sadmd::handle(msgs::master::release_lock const& rl,
               msgs::message_header const&, msgs::channel const& ch)
 {
