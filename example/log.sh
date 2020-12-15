@@ -2,7 +2,7 @@
 
 echo "Starting logging script..."
 
-while
+while true
 do
 	echo "`date`: something important"
 	sleep 2
