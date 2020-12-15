@@ -126,8 +126,9 @@ sadfilesys::getattr(char const* path, struct stat* stbuf)
     if (strcmp(path, "/") == 0)
     {
         logger::debug("path identified as base directory"sv);
-        stbuf->st_mode = S_IFDIR | 0755;
+        stbuf->st_mode = S_IFDIR | 0777;
         stbuf->st_size = 0;
+        stbuf->st_nlink = 2;
         return result;
     }
 
