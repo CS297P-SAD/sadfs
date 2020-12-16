@@ -29,6 +29,7 @@ enum class msg_type
     chunk_location_request,
     chunk_server_heartbeat,
     join_network_request,
+    read_dir_request,
     release_lock,
 };
 
@@ -164,6 +165,24 @@ private:
     friend bool extract(release_lock&, message_container const&);
 };
 
+class read_dir_request
+{
+public:
+    read_dir_request() = default;
+    read_dir_request(std::string const& dirname);
+
+    std::string const& dirname() const;
+
+    inline static msg_type type{msg_type::read_dir_request};
+
+private:
+    proto::master::read_dir_request protobuf_{};
+
+    // provide embed/extract functions access to private members
+    friend bool embed(read_dir_request const&, message_container&);
+    friend bool extract(read_dir_request&, message_container const&);
+};
+
 // ==================================================================
 //                     inline function definitions
 // ==================================================================
@@ -240,6 +259,12 @@ inline std::string const&
 release_lock::filename() const
 {
     return protobuf_.filename();
+}
+
+inline std::string const&
+read_dir_request::dirname() const
+{
+    return protobuf_.dirname();
 }
 
 } // namespace master

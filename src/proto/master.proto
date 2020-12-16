@@ -40,6 +40,11 @@ message file_metadata_request {
 	string filename	= 1;
 }
 
+// request for list of files in a directory
+message read_dir_request {
+	string dirname = 1;
+}
+
 // notification of release of write lock
 message release_lock {
 	string filename	= 1;
@@ -56,5 +61,6 @@ message message_container {
 		create_file_request      create_file_req        = 9;
 		file_metadata_request    file_metadata_req      = 10;
 		join_network_request     join_network_req       = 11;
+		read_dir_request	 read_dir_req		= 12;
 	}
 }

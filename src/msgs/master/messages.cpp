@@ -26,6 +26,7 @@ auto const msg_type_lookup = msg_type_map{
     {MsgCase::kChunkLocationReq, msg_type::chunk_location_request},
     {MsgCase::kChunkServerHeartbeat, msg_type::chunk_server_heartbeat},
     {MsgCase::kJoinNetworkReq, msg_type::join_network_request},
+    {MsgCase::kReadDirReq, msg_type::read_dir_request},
     {MsgCase::kReleaseLock, msg_type::release_lock},
 };
 
@@ -262,6 +263,42 @@ extract(join_network_request& req, message_container const& container)
 
     // read join_network_request from message_container
     req.protobuf_ = container.join_network_req();
+    return true;
+}
+
+/* ========================================================
+ *                       read_dir_request
+ * ========================================================
+ */
+read_dir_request::read_dir_request(std::string const& dirname)
+{
+    protobuf_.set_dirname(dirname);
+}
+
+// embeds a control message into a container that is
+// (typically) sent over the wire
+bool
+embed(read_dir_request const& req, message_container& container)
+{
+    // should this be in a try-catch block?
+    // msg.mutable_read_dir_request() can throw if heap allocation fails
+    *container.mutable_read_dir_req() = req.protobuf_;
+    return true;
+}
+
+// extracts a control message from a container that is
+// (typically) received over the wire
+bool
+extract(read_dir_request& req, message_container const& container)
+{
+    if (msg_type_lookup.at(container.msg_case()) != read_dir_request::type)
+    {
+        // cannot extract a msg that doesn't exist
+        return false;
+    }
+
+    // read read_dir_request from message_container
+    req.protobuf_ = container.read_dir_req();
     return true;
 }
 

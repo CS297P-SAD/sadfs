@@ -34,6 +34,9 @@ private:
     // to FUSE in bootstrap()
     static sadfilesys* this_();
     
+    // create a file
+    int create(char const* path, mode_t mode, fuse_file_info* fi);
+
     // get file attributes
     int getattr(char const* path, struct stat* stbuf);
 
@@ -45,8 +48,12 @@ private:
     int open(char const* path, fuse_file_info* fi);
 
     // read data from an open file
-    int read(char const* path, char* buf, size_t size, off_t offset,
+    int read(char const* path, char* buf, uint32_t size, uint32_t offset,
              fuse_file_info* fi);
+
+    // write to an open file
+    int write(char const* path, const char* buf, uint32_t size,
+    	      uint32_t offset, fuse_file_info* fi);
 
     fuse_operations operations_{};
     

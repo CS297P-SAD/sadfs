@@ -39,6 +39,10 @@ sadfilesys::this_()
 void
 sadfilesys::load_operations()
 {
+    operations_.create = [](char const* path, mode_t mode,
+    			    fuse_file_info* fi) -> int {
+	return this_()->create(path, mode, fi);
+    };
     operations_.getattr = [](char const* path, struct stat* stbuf) -> int {
         return this_()->getattr(path, stbuf);
     };
@@ -47,13 +51,60 @@ sadfilesys::load_operations()
     };
     operations_.read = [](char const* path, char* buf, size_t size,
                           off_t offset, fuse_file_info* fi) -> int {
-        return this_()->read(path, buf, size, offset, fi);
+        return this_()->read(path, buf, static_cast<uint32_t>(size),
+			     static_cast<uint32_t>(offset), fi);
     };
     operations_.readdir = [](char const* path, void* buf,
                              fuse_fill_dir_t filler, off_t off,
                              fuse_file_info* fi) -> int {
         return this_()->readdir(path, buf, filler, off, fi);
     };
+    operations_.write = [](char const* path, const char* buf, size_t size,
+                          off_t offset, fuse_file_info* fi) -> int {
+        return this_()->write(path, buf, static_cast<uint32_t>(size),
+			      static_cast<uint32_t>(offset), fi);
+    };
+}
+
+int
+sadfilesys::create(char const* path, mode_t mode, fuse_file_info* fi)
+{
+    logger::debug("create() called at " + std::string(path));
+    auto result{0};
+
+    if (!S_ISREG(mode))
+    {
+	logger::debug("create() only support regular files"sv);
+	result = -EPROTONOSUPPORT;	// Protocol not supported
+	return result;
+    }
+    
+    auto request	= msgs::master::create_file_request{std::string(path)};
+    auto serializer	= msgs::master::serializer{};
+    auto sock		= master_service_.connect();
+    if (!sock.valid())
+    {
+    	result = -ENETUNREACH;	/// Network is unreachable
+	logger::debug("create() failed with error " +
+		      std::string(strerror(-result)));
+	return result;
+    }
+    auto ch = msgs::channel{std::move(sock)};
+    auto flush = [](auto const& ch) {
+    	ch.flush();
+	return true;
+    };
+
+    if (!(serializer.serialize(request, ch) && flush(ch)))
+    {
+    	result = -EPROTONOSUPPORT; 	// Protocol not supported
+	logger::debug("create() failed with error " +
+		      std::string(strerror(-result)));
+	return result;
+    }
+    
+    logger::debug("regular file created"sv);
+    return result;
 }
 
 int
@@ -75,8 +126,9 @@ sadfilesys::getattr(char const* path, struct stat* stbuf)
     if (strcmp(path, "/") == 0)
     {
         logger::debug("path identified as base directory"sv);
-        stbuf->st_mode = S_IFDIR | 0755;
+        stbuf->st_mode = S_IFDIR | 0777;
         stbuf->st_size = 0;
+        stbuf->st_nlink = 2;
         return result;
     }
 
@@ -119,6 +171,7 @@ sadfilesys::getattr(char const* path, struct stat* stbuf)
     logger::debug("path identified as valid filename"sv);
 
     stbuf->st_mode = S_IFREG | 0666;
+    stbuf->st_nlink= 1;
     stbuf->st_size = response.size();
     return result;
 }
@@ -127,19 +180,65 @@ int
 sadfilesys::readdir(char const* path, void* buf, fuse_fill_dir_t filler,
                     off_t off, fuse_file_info* fi)
 {
-    // TODO
-    return -ENOENT;
+    logger::debug("readdir() called at " + std::string(path) + " at offset " +
+		  std::to_string(off));
+
+    auto result{0};
+    if (strcmp(path, "/") != 0)
+    {
+        result = -ENOENT; 	// No such file or directory
+        logger::debug("readdir() failed with error " +
+                      std::string(strerror(-result)));
+        return result;
+    }
+    
+    filler(buf, ".", NULL, 0);
+    filler(buf, "..", NULL, 0);
+
+    auto request	= msgs::master::read_dir_request{std::string(path)};
+    auto response	= msgs::client::read_dir_response{};
+    auto serializer	= msgs::master::serializer{};
+    auto deserializer	= msgs::client::deserializer{};
+    auto sock		= master_service_.connect();
+    if (!sock.valid())
+    {
+    	result = -ENETUNREACH;	/// Network is unreachable
+	logger::debug("create() failed with error " +
+		      std::string(strerror(-result)));
+	return result;
+    }
+    auto ch = msgs::channel{std::move(sock)};
+    auto flush = [](auto const& ch) {
+    	ch.flush();
+	return true;
+    };
+
+    if (!(serializer.serialize(request, ch) && flush(ch) &&
+    	deserializer.deserialize(response, ch).first))
+    {
+    	result = -EPROTONOSUPPORT; 	// Protocol not supported
+	logger::debug("create() failed with error " +
+		      std::string(strerror(-result)));
+	return result;
+    }
+    
+    for (auto i = 0; i < response.filenames_size(); ++i)
+    {
+    	filler(buf, response.filename(i).c_str() + 1, NULL, 0);
+    }
+
+    return result;
 }
 
 int
 sadfilesys::open(char const* path, fuse_file_info* fi)
 {
-    // TODO
+    logger::debug("open() called on path " + std::string(path));
     return 0;
 }
 
 int
-sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
+sadfilesys::read(char const* path, char* buf, uint32_t size, uint32_t offset,
                  fuse_file_info* fi)
 {
     logger::debug("read() called at " + std::string(path) + " to read " +
@@ -172,7 +271,7 @@ sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
           flush(master_ch) &&
           client_deserializer.deserialize(location_response, master_ch).first))
     {
-        result = -EPROTONOSUPPORT; // Communication error on send
+        result = -EPROTONOSUPPORT;	// Protocol not supported
         logger::debug("read() failed to get chunk location " +
                       std::string(strerror(-result)));
         return result;
@@ -199,7 +298,7 @@ sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
 
     auto file_size = location_response.file_size();
     logger::debug("read() got file size " + std::to_string(file_size));
-    if (static_cast<uint32_t>(offset) >= file_size)
+    if (offset >= file_size)
     {
         return result;
     }
@@ -214,7 +313,7 @@ sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
     auto chunk_response   = msgs::client::read_response{};
     auto chunk_serializer = msgs::chunk::serializer{};
 
-    for (auto i = 0; i < location_response.locations_size(); ++i)
+   for (auto i = 0; i < location_response.locations_size(); ++i)
     {
         auto chunk_sock = location_response.service(i).connect();
         if (!chunk_sock.valid())
@@ -267,6 +366,178 @@ sadfilesys::read(char const* path, char* buf, size_t size, off_t offset,
 
     logger::debug("read() finished"sv);
     return result;
+}
+
+int
+sadfilesys::write(char const* path, const char* buf, uint32_t size,
+		  uint32_t offset, fuse_file_info* fi)
+{
+    logger::debug("write() called at " + std::string(path) + " to write " +
+    	          std::to_string(size) + " bytes at offset " +
+		  std::to_string(offset));
+ 
+    auto result{0};
+    auto location_request = msgs::master::chunk_location_request
+    {
+    	msgs::io_type::write,
+	std::string{path},
+	offset / constants::chunk_capacity
+    };
+    auto location_response	= msgs::client::chunk_location_response{};
+    auto master_serializer	= msgs::master::serializer{};
+    auto client_deserializer	= msgs::client::deserializer{};
+    auto master_sock		= master_service_.connect();
+    if (!master_sock.valid())
+    {
+    	result = -ENETUNREACH;	// Network is unreachable
+	logger::debug("write() failed with error " +
+		      std::string(strerror(-result)));
+	return result;
+    }
+    auto master_ch = msgs::channel{std::move(master_sock)};
+
+    auto flush = [](auto const& ch) {
+    	ch.flush();
+	return true;
+    };
+    if (!(master_serializer.serialize(location_request, master_ch) &&
+        flush(master_ch) &&
+	client_deserializer.deserialize(location_response, master_ch).first))
+    {
+        result = -EPROTONOSUPPORT;	// Protocol not supported
+        logger::debug("write() failed to get chunk location " +
+                      std::string(strerror(-result)));
+        return result;
+    }
+    if (!location_response.ok())
+    {
+        result = -EBADMSG;	// Bad message
+        logger::debug("write() chunk location not found " +
+                      std::string(strerror(-result)));
+        return result;
+    }
+    if (size == 0) // Not sure if we ever get such a request
+    {
+        logger::debug("write() of size 0 requested"sv);
+    	return result;
+    }
+    if (location_response.locations_size() == 0)
+    {
+    	result =  -EPROTO;	// Protocol error
+        logger::debug("write() empty chunk location returned " +
+                      std::string(strerror(-result)));
+        return result;
+    }
+
+    auto file_size	= location_response.file_size();
+    logger::debug("write() got file size " + std::to_string(file_size));
+    if (offset != file_size)
+    {
+        result = -EPROTONOSUPPORT;	// Protocol not supported
+        logger::debug("write() only supports append, failed " +
+                      std::string(strerror(-result)));
+        return result;
+    }
+    auto cur_chunk_size = file_size % constants::chunk_capacity;
+    auto write_size	= std::min<uint32_t>(size,
+    					      constants::chunk_capacity -
+					      	cur_chunk_size);
+    auto chunk_serializer = msgs::chunk::serializer{};
+    // lambda to get replica servers
+    auto get_replica_servers =
+    [&location_response](auto primary_server_index) {
+    	auto replica_servers = std::vector<comm::service>{};
+	for (auto i  = 0; i < location_response.locations_size(); ++i)
+	{
+		if (i == primary_server_index)
+		{
+			continue;
+		}
+		replica_servers.emplace_back(location_response.service(i));
+	}
+	return replica_servers;
+    };
+		
+    for (auto i = 0; i < location_response.locations_size(); ++i)
+    {
+    	auto chunk_sock = location_response.service(i).connect();
+	if (!chunk_sock.valid())
+	{
+		result = -ENETUNREACH; // Network is unreachable
+		continue;
+	}
+	auto chunk_ch = msgs::channel{std::move(chunk_sock)};
+    	auto append_ack	= msgs::client::acknowledgement{};
+	auto append_request = msgs::chunk::append_request
+	{
+	    location_response.chunk_id(),
+	    write_size,
+	    get_replica_servers(i),
+	    std::string(path)
+	};
+
+	if (!(chunk_serializer.serialize(append_request, chunk_ch) &&
+	    flush(chunk_ch) &&
+	    client_deserializer.deserialize(append_ack, chunk_ch).first))
+	{
+        	result = -EPROTONOSUPPORT;	// Protocol not supported
+		continue;
+	}
+	if (!append_ack.ok())
+	{
+		result = -EPROTO; // Network is unreachable
+		continue;
+	}
+	auto stream = msgs::chunk::stream{std::string(buf, write_size)};
+	if (!(chunk_serializer.serialize(stream, chunk_ch) && flush(chunk_ch)))
+	{
+		// This should never happen
+        	result = -EPROTONOSUPPORT;	// Protocol not supported
+		logger::debug("write() streaming data failed! " +
+			      std::string(strerror(-result)));
+		return result;
+	}
+	result = write_size;
+	break;
+     }
+     if (result < 0)
+     {
+     	logger::debug("write() failed with error " +
+        std::string(strerror(-result)));
+	return result;
+     }
+
+     if (write_size < size)
+     {
+     	auto ret = write(path, buf + write_size, size - write_size,
+		        offset + write_size, fi);
+	if (ret < 0)
+	{
+		return result;
+	}
+	return result + ret;
+     }
+     
+     master_sock	= master_service_.connect();
+     auto release_lock	= msgs::master::release_lock{std::string(path)};
+     auto release_ack	= msgs::client::acknowledgement{};
+     if (!master_sock.valid())
+     {
+	logger::debug("write() release lock failed "sv);
+	return result;
+     }
+     master_ch = msgs::channel{std::move(master_sock)};
+     if (!(master_serializer.serialize(release_lock, master_ch) &&
+         flush(master_ch) &&
+	 client_deserializer.deserialize(release_ack, master_ch).first &&
+	 release_ack.ok()))
+     {
+	logger::debug("write() release lock failed "sv);
+	return result;
+     }
+     	
+     logger::debug("write() finished"sv);
+     return result;
 }
 
 } // namespace sadfs

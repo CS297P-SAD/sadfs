@@ -55,15 +55,14 @@ namespace time
 
 using namespace std::literals;
 constexpr auto server_ttl = 1min;
-constexpr auto file_ttl   = 1min;
+constexpr auto file_ttl   = 1s;
 
-time_point
-from_now(std::chrono::minutes delta) noexcept
+auto from_now = [](auto delta) noexcept
 {
     return (std::chrono::steady_clock::now() + delta)
         .time_since_epoch()
         .count();
-}
+};
 
 time_point
 now() noexcept
@@ -377,6 +376,28 @@ sadmd::handle(msgs::master::chunk_write_notification const& cwn,
     }
 
     return ack_chunk(true, ch);
+}
+
+bool
+sadmd::handle(msgs::master::read_dir_request const& rdr,
+	      msgs::message_header const&, msgs::channel const& ch)
+{
+    auto filenames = std::vector<std::string>{};
+    if (rdr.dirname() == "/")
+    {
+	    logger::debug("read_dir_request number of files " + 
+			  std::to_string(files_.size()));
+	    filenames.reserve(files_.size());
+	    for (auto it : files_)
+	    {
+		filenames.push_back(it.first);
+	    }
+    }
+
+    auto response = msgs::client::read_dir_response{filenames};
+    auto result = msgs::client::serializer{}.serialize(response, ch);
+    ch.flush();
+    return result;
 }
 
 bool

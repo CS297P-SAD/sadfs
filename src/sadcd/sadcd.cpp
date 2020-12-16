@@ -117,7 +117,7 @@ sadcd::start_main(std::promise<void>       death,
     auto handler = request_handler{master_, serverid_};
     try
     {
-        auto listener = comm::listener{service_};
+        auto listener = comm::listener{{"0.0.0.0", to_int(service_.port())}};
         while (!ready(kill_switch, 0ms))
         {
             serve_client(listener, handler); // serve one client's request(s)
