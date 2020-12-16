@@ -295,7 +295,7 @@ sadfilesys::read(char const* path, char* buf, uint32_t size, uint32_t offset,
                       std::string(strerror(-result)));
         return result;
     }
-
+logger::debug("IPaddress:" + to_string(location_response.service(0).ip()));
     auto file_size = location_response.file_size();
     logger::debug("read() got file size " + std::to_string(file_size));
     if (offset >= file_size)
@@ -431,13 +431,18 @@ sadfilesys::write(char const* path, const char* buf, uint32_t size,
 
     auto file_size	= location_response.file_size();
     logger::debug("write() got file size " + std::to_string(file_size));
-    if (offset != file_size)
+    if (offset > file_size)
     {
         result = -EPROTONOSUPPORT;	// Protocol not supported
-        logger::debug("write() only supports append, failed " +
+        logger::debug("write() failed " +
                       std::string(strerror(-result)));
         return result;
     }
+
+    buf = buf + (file_size - offset);
+    size -= (file_size - offset);
+    offset = file_size;
+
     auto cur_chunk_size = file_size % constants::chunk_capacity;
     auto write_size	= std::min<uint32_t>(size,
     					      constants::chunk_capacity -
